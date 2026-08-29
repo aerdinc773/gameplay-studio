@@ -2,6 +2,7 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>Creator Engine - İnceleme</title>
 
@@ -18,97 +19,100 @@ body {
     font-family: Consolas, "Courier New", monospace;
 }
 
-/* ÜST BAŞLIK */
-
 .header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+
     background: #181818;
-    color: white;
-    padding: 20px;
-    font-family: Arial, sans-serif;
+    padding: 18px 22px;
+
     border-bottom: 1px solid #444;
+
+    font-family: Arial, sans-serif;
 }
 
 .header h1 {
-    margin: 0;
+    margin: 0 0 6px 0;
 }
 
 .header p {
+    margin: 0;
     color: #aaa;
-    margin-bottom: 0;
 }
 
-/* 3 SÜTUN */
-
-.container {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    height: calc(100vh - 116px);
-    padding: 8px;
-}
-
-/* KOD ALANLARI */
-
-textarea {
+#search {
     width: 100%;
-    height: 100%;
+    margin-top: 14px;
+    padding: 10px;
 
     background: #0b0b0b;
+    color: white;
+
+    border: 1px solid #444;
+    border-radius: 5px;
+}
+
+.project-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    padding: 10px;
+}
+
+.file-card {
+    min-width: 0;
+    background: #0b0b0b;
+    border: 1px solid #333;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.file-header {
+    padding: 10px 12px;
+    background: #202020;
+    color: white;
+
+    font-size: 13px;
+    font-weight: bold;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.code {
+    margin: 0;
+    padding: 14px;
+
+    height: 430px;
+
+    overflow: auto;
+
+    background: #090909;
     color: #ddd;
 
-    border: 1px solid #333;
-    outline: none;
-
-    padding: 15px;
-
     font-family: Consolas, "Courier New", monospace;
-    font-size: 13px;
+    font-size: 12px;
     line-height: 1.45;
 
-    resize: none;
-
     white-space: pre;
-    overflow: auto;
 }
 
-/* SÜTUN BAŞLIKLARI */
-
-.column {
-    position: relative;
-    min-width: 0;
+.hidden {
+    display: none;
 }
 
-.label {
-    position: absolute;
-    top: 6px;
-    right: 12px;
-
-    background: #222;
-    color: #888;
-
-    padding: 4px 8px;
-
-    font-family: Arial, sans-serif;
-    font-size: 11px;
-
-    border-radius: 4px;
-
-    z-index: 2;
+@media (max-width: 1100px) {
+    .project-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
-/* EKRAN DARALIRSA */
-
-@media (max-width: 900px) {
-
-    .container {
+@media (max-width: 700px) {
+    .project-grid {
         grid-template-columns: 1fr;
-        height: auto;
     }
-
-    textarea {
-        height: 500px;
-    }
-
 }
 
 </style>
@@ -121,73 +125,25 @@ textarea {
 <h1>🚀 Creator Engine — Proje İnceleme</h1>
 
 <p>
-Proje dökümü — içerik üç sütuna bölünerek gösterilir.
-Kodlar çalıştırılmaz, yalnızca düz metin olarak gösterilir.
+inceleme.txt → otomatik proje görüntüleyici |
+Dosya sayısı: 1
 </p>
 
-</div>
-
-
-<div class="container">
-
-    <div class="column">
-
-        <div class="label">1 / 3</div>
-
-        <textarea
-            id="column1"
-            spellcheck="false"
-            readonly
-        ></textarea>
-
-    </div>
-
-
-    <div class="column">
-
-        <div class="label">2 / 3</div>
-
-        <textarea
-            id="column2"
-            spellcheck="false"
-            readonly
-        ></textarea>
-
-    </div>
-
-
-    <div class="column">
-
-        <div class="label">3 / 3</div>
-
-        <textarea
-            id="column3"
-            spellcheck="false"
-            readonly
-        ></textarea>
-
-    </div>
+<input
+    id="search"
+    type="text"
+    placeholder="🔍 Dosya veya kod içinde ara..."
+    oninput="searchFiles()"
+>
 
 </div>
 
+<div class="project-grid">
 
-<!--
-===========================================================
-İNCELEME VERİSİ
-===========================================================
 
-AŞAĞIDAKİ KISMA inceleme.txt'nin TAMAMINI
-SADECE BİR KEZ YAPIŞTIR.
-
-===========================================================
--->
-
-<textarea id="source" style="display:none;">
-
-CREATOR ENGINE TAM PROJE RAPORU
-Oluşturulma: 08/29/2026 11:46:36
-
-================ PROJE AĞACI ================
+<section class="file-card">
+    <div class="file-header">📄 PROJE AĞACI</div>
+    <pre class="code">===========
 Folder PATH listing
 Volume serial number is 00000072 BEDC:0D87
 C:.
@@ -8988,22 +8944,22 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 
-DB_FILE = BASE_DIR / "data" / "creator_engine.db"
+DB_FILE = BASE_DIR / &quot;data&quot; / &quot;creator_engine.db&quot;
 
 
 def add_youtube_id():
 
     print()
-    print("========================================")
-    print("ğŸ§  CREATOR ENGINE â€” DB GÃœNCELLEME")
-    print("========================================")
+    print(&quot;========================================&quot;)
+    print(&quot;ğŸ§  CREATOR ENGINE â€” DB GÃœNCELLEME&quot;)
+    print(&quot;========================================&quot;)
     print()
 
     db = sqlite3.connect(DB_FILE)
     cursor = db.cursor()
 
     columns = cursor.execute(
-        "PRAGMA table_info(videos)"
+        &quot;PRAGMA table_info(videos)&quot;
     ).fetchall()
 
     column_names = [
@@ -9011,35 +8967,35 @@ def add_youtube_id():
         for column in columns
     ]
 
-    if "youtube_id" in column_names:
+    if &quot;youtube_id&quot; in column_names:
 
-        print("â„¹ï¸ youtube_id kolonu zaten mevcut.")
+        print(&quot;â„¹ï¸ youtube_id kolonu zaten mevcut.&quot;)
 
     else:
 
         cursor.execute(
-            """
+            &quot;&quot;&quot;
             ALTER TABLE videos
             ADD COLUMN youtube_id TEXT
-            """
+            &quot;&quot;&quot;
         )
 
         db.commit()
 
         print(
-            "âœ… youtube_id kolonu baÅŸarÄ±yla eklendi."
+            &quot;âœ… youtube_id kolonu baÅŸarÄ±yla eklendi.&quot;
         )
 
     db.close()
 
     print()
-    print("========================================")
-    print("âœ… DB GÃœNCELLEMESÄ° TAMAMLANDI")
-    print("========================================")
+    print(&quot;========================================&quot;)
+    print(&quot;âœ… DB GÃœNCELLEMESÄ° TAMAMLANDI&quot;)
+    print(&quot;========================================&quot;)
     print()
 
 
-if __name__ == "__main__":
+if __name__ == &quot;__main__&quot;:
 
     add_youtube_id()
 
@@ -9076,44 +9032,44 @@ def build_ai_strategy():
     analysis = analyze_videos()
 
     total_videos = analysis[
-        "total_videos"
+        &quot;total_videos&quot;
     ]
 
     print()
-    print("========================================")
-    print("ğŸ§  AI STRATEGY ANALYST")
-    print("========================================")
+    print(&quot;========================================&quot;)
+    print(&quot;ğŸ§  AI STRATEGY ANALYST&quot;)
+    print(&quot;========================================&quot;)
 
     print()
     print(
-        f"ğŸ“Š Analiz edilen video: "
-        f"{total_videos}"
+        f&quot;ğŸ“Š Analiz edilen video: &quot;
+        f&quot;{total_videos}&quot;
     )
 
     # ========================================================
     # YETERLÄ° VERÄ° YOK
     # ========================================================
 
-    if total_videos < MINIMUM_VIDEOS_FOR_AI:
+    if total_videos &lt; MINIMUM_VIDEOS_FOR_AI:
 
         print()
         print(
-            f"ğŸŸ¡ AI analizi iÃ§in en az "
-            f"{MINIMUM_VIDEOS_FOR_AI} video gerekli."
+            f&quot;ğŸŸ¡ AI analizi iÃ§in en az &quot;
+            f&quot;{MINIMUM_VIDEOS_FOR_AI} video gerekli.&quot;
         )
 
         print(
-            f"ğŸ“¦ Åu anda {total_videos} video var."
+            f&quot;ğŸ“¦ Åu anda {total_videos} video var.&quot;
         )
 
         print(
-            "ğŸ’° AI Ã§aÄŸrÄ±sÄ± yapÄ±lmadÄ±."
+            &quot;ğŸ’° AI Ã§aÄŸrÄ±sÄ± yapÄ±lmadÄ±.&quot;
         )
 
         return {
-            "status": "INSUFFICIENT_DATA",
-            "total_videos": total_videos,
-            "strategy": None,
+            &quot;status&quot;: &quot;INSUFFICIENT_DATA&quot;,
+            &quot;total_videos&quot;: total_videos,
+            &quot;strategy&quot;: None,
         }
 
     # ========================================================
@@ -9121,69 +9077,69 @@ def build_ai_strategy():
     # ========================================================
 
     if not analysis[
-        "performance_available"
+        &quot;performance_available&quot;
     ]:
 
         print()
         print(
-            "ğŸŸ¡ HenÃ¼z performans verisi yok."
+            &quot;ğŸŸ¡ HenÃ¼z performans verisi yok.&quot;
         )
 
         print(
-            "AI strateji analizi yapÄ±lmayacak."
+            &quot;AI strateji analizi yapÄ±lmayacak.&quot;
         )
 
         return {
-            "status": "NO_PERFORMANCE_DATA",
-            "total_videos": total_videos,
-            "strategy": None,
+            &quot;status&quot;: &quot;NO_PERFORMANCE_DATA&quot;,
+            &quot;total_videos&quot;: total_videos,
+            &quot;strategy&quot;: None,
         }
 
     # ========================================================
-    # AI'YA GÃ–NDERÄ°LECEK Ã–ZET
+    # AI&#x27;YA GÃ–NDERÄ°LECEK Ã–ZET
     # ========================================================
 
     analytics_summary = {
 
-        "total_videos":
-            analysis["total_videos"],
+        &quot;total_videos&quot;:
+            analysis[&quot;total_videos&quot;],
 
-        "average_duration":
-            analysis["average_duration"],
+        &quot;average_duration&quot;:
+            analysis[&quot;average_duration&quot;],
 
-        "average_images":
-            analysis["average_images"],
+        &quot;average_images&quot;:
+            analysis[&quot;average_images&quot;],
 
-        "total_views":
-            analysis["total_views"],
+        &quot;total_views&quot;:
+            analysis[&quot;total_views&quot;],
 
-        "total_likes":
-            analysis["total_likes"],
+        &quot;total_likes&quot;:
+            analysis[&quot;total_likes&quot;],
 
-        "total_comments":
-            analysis["total_comments"],
+        &quot;total_comments&quot;:
+            analysis[&quot;total_comments&quot;],
 
-        "average_views":
-            analysis["average_views"],
+        &quot;average_views&quot;:
+            analysis[&quot;average_views&quot;],
 
-        "average_likes":
-            analysis["average_likes"],
+        &quot;average_likes&quot;:
+            analysis[&quot;average_likes&quot;],
 
-        "average_comments":
-            analysis["average_comments"],
+        &quot;average_comments&quot;:
+            analysis[&quot;average_comments&quot;],
 
-        "top_topics":
-            analysis["top_topics"],
+        &quot;top_topics&quot;:
+            analysis[&quot;top_topics&quot;],
 
-        "best_video":
-            analysis["best_video"],
+        &quot;best_video&quot;:
+            analysis[&quot;best_video&quot;],
     }
 
     # ========================================================
     # AI Ä°STEMÄ°
     # ========================================================
 
-    prompt = f"""
+    prompt = f&quot;&quot;&quot;
 Sen bir YouTube Shorts strateji analistisin.
 
 Sana bir kanalÄ±n performans verilerinin
@@ -9207,7 +9163,7 @@ strateji oluÅŸtur.
 - Gelecekte test edilmesi gereken fikirler Ã¶ner.
 - AynÄ± konuyu sÃ¼rekli tekrar etmeyi Ã¶nerme.
 - KanalÄ±n Ã§eÅŸitliliÄŸini koru.
-- Stratejiyi doÄŸrudan Content Engine'in
+- Stratejiyi doÄŸrudan Content Engine&#x27;in
   kullanabileceÄŸi ÅŸekilde yaz.
 
 SADECE JSON DÃ–NDÃœR.
@@ -9215,25 +9171,25 @@ SADECE JSON DÃ–NDÃœR.
 FORMAT:
 
 {{
-    "summary": "KanalÄ±n genel durumu",
-    "winning_topics": [
-        "baÅŸarÄ±lÄ± konu 1",
-        "baÅŸarÄ±lÄ± konu 2"
+    &quot;summary&quot;: &quot;KanalÄ±n genel durumu&quot;,
+    &quot;winning_topics&quot;: [
+        &quot;baÅŸarÄ±lÄ± konu 1&quot;,
+        &quot;baÅŸarÄ±lÄ± konu 2&quot;
     ],
-    "recommended_topics": [
-        "Ã¶nerilen konu 1",
-        "Ã¶nerilen konu 2",
-        "Ã¶nerilen konu 3"
+    &quot;recommended_topics&quot;: [
+        &quot;Ã¶nerilen konu 1&quot;,
+        &quot;Ã¶nerilen konu 2&quot;,
+        &quot;Ã¶nerilen konu 3&quot;
     ],
-    "duration_strategy": "Video sÃ¼re stratejisi",
-    "visual_strategy": "GÃ¶rsel stratejisi",
-    "hook_strategy": "Hook stratejisi",
-    "content_strategy": "Genel iÃ§erik stratejisi",
-    "tests": [
-        "test edilmesi gereken ÅŸey 1",
-        "test edilmesi gereken ÅŸey 2"
+    &quot;duration_strategy&quot;: &quot;Video sÃ¼re stratejisi&quot;,
+    &quot;visual_strategy&quot;: &quot;GÃ¶rsel stratejisi&quot;,
+    &quot;hook_strategy&quot;: &quot;Hook stratejisi&quot;,
+    &quot;content_strategy&quot;: &quot;Genel iÃ§erik stratejisi&quot;,
+    &quot;tests&quot;: [
+        &quot;test edilmesi gereken ÅŸey 1&quot;,
+        &quot;test edilmesi gereken ÅŸey 2&quot;
     ],
-    "confidence": "LOW"
+    &quot;confidence&quot;: &quot;LOW&quot;
 }}
 
 KANAL ANALÄ°Z VERÄ°SÄ°:
@@ -9243,7 +9199,7 @@ KANAL ANALÄ°Z VERÄ°SÄ°:
     ensure_ascii=False,
     indent=2
 )}
-"""
+&quot;&quot;&quot;
 
     # ========================================================
     # AI Ã‡AÄRISI
@@ -9251,11 +9207,11 @@ KANAL ANALÄ°Z VERÄ°SÄ°:
 
     print()
     print(
-        "ğŸ¤– AI kanal stratejisini analiz ediyor..."
+        &quot;ğŸ¤– AI kanal stratejisini analiz ediyor...&quot;
     )
 
     response = client.responses.create(
-        model="gpt-5.4-mini",
+        model=&quot;gpt-5.4-mini&quot;,
         input=prompt,
     )
 
@@ -9265,13 +9221,13 @@ KANAL ANALÄ°Z VERÄ°SÄ°:
     # MARKDOWN TEMÄ°ZLE
     # ========================================================
 
-    if raw.startswith("```json"):
+    if raw.startswith(&quot;```json&quot;):
 
         raw = raw[
-            len("```json"):
+            len(&quot;```json&quot;):
         ].strip()
 
-    if raw.endswith("```"):
+    if raw.endswith(&quot;```&quot;):
 
         raw = raw[
             :-3
@@ -9289,15 +9245,15 @@ KANAL ANALÄ°Z VERÄ°SÄ°:
 
         print()
         print(
-            "âŒ AI JSON Ã§Ä±ktÄ±sÄ± okunamadÄ±."
+            &quot;âŒ AI JSON Ã§Ä±ktÄ±sÄ± okunamadÄ±.&quot;
         )
 
         print()
-        print("AI Ã§Ä±ktÄ±sÄ±:")
+        print(&quot;AI Ã§Ä±ktÄ±sÄ±:&quot;)
         print(raw)
 
         raise ValueError(
-            "AI strateji Ã§Ä±ktÄ±sÄ± geÃ§erli JSON deÄŸil."
+            &quot;AI strateji Ã§Ä±ktÄ±sÄ± geÃ§erli JSON deÄŸil.&quot;
         ) from error
 
     # ========================================================
@@ -9305,103 +9261,103 @@ KANAL ANALÄ°Z VERÄ°SÄ°:
     # ========================================================
 
     print()
-    print("========================================")
-    print("ğŸ¯ AI STRATEJÄ°SÄ°")
-    print("========================================")
+    print(&quot;========================================&quot;)
+    print(&quot;ğŸ¯ AI STRATEJÄ°SÄ°&quot;)
+    print(&quot;========================================&quot;)
 
     print()
     print(
-        f"ğŸ“Œ Ã–zet:\n"
-        f"{strategy.get('summary', '')}"
+        f&quot;ğŸ“Œ Ã–zet:\n&quot;
+        f&quot;{strategy.get(&#x27;summary&#x27;, &#x27;&#x27;)}&quot;
     )
 
     print()
-    print("ğŸ† BAÅARILI KONULAR")
+    print(&quot;ğŸ† BAÅARILI KONULAR&quot;)
 
     for topic in strategy.get(
-        "winning_topics",
+        &quot;winning_topics&quot;,
         []
     ):
 
         print(
-            f"â€¢ {topic}"
+            f&quot;â€¢ {topic}&quot;
         )
 
     print()
-    print("ğŸ’¡ Ã–NERÄ°LEN KONULAR")
+    print(&quot;ğŸ’¡ Ã–NERÄ°LEN KONULAR&quot;)
 
     for topic in strategy.get(
-        "recommended_topics",
+        &quot;recommended_topics&quot;,
         []
     ):
 
         print(
-            f"â€¢ {topic}"
+            f&quot;â€¢ {topic}&quot;
         )
 
     print()
-    print("â±ï¸ SÃœRE STRATEJÄ°SÄ°")
+    print(&quot;â±ï¸ SÃœRE STRATEJÄ°SÄ°&quot;)
     print(
         strategy.get(
-            "duration_strategy",
-            ""
+            &quot;duration_strategy&quot;,
+            &quot;&quot;
         )
     )
 
     print()
-    print("ğŸ–¼ï¸ GÃ–RSEL STRATEJÄ°SÄ°")
+    print(&quot;ğŸ–¼ï¸ GÃ–RSEL STRATEJÄ°SÄ°&quot;)
     print(
         strategy.get(
-            "visual_strategy",
-            ""
+            &quot;visual_strategy&quot;,
+            &quot;&quot;
         )
     )
 
     print()
-    print("ğŸ£ HOOK STRATEJÄ°SÄ°")
+    print(&quot;ğŸ£ HOOK STRATEJÄ°SÄ°&quot;)
     print(
         strategy.get(
-            "hook_strategy",
-            ""
+            &quot;hook_strategy&quot;,
+            &quot;&quot;
         )
     )
 
     print()
-    print("ğŸ¯ Ä°Ã‡ERÄ°K STRATEJÄ°SÄ°")
+    print(&quot;ğŸ¯ Ä°Ã‡ERÄ°K STRATEJÄ°SÄ°&quot;)
     print(
         strategy.get(
-            "content_strategy",
-            ""
+            &quot;content_strategy&quot;,
+            &quot;&quot;
         )
     )
 
     print()
-    print("ğŸ§ª TESTLER")
+    print(&quot;ğŸ§ª TESTLER&quot;)
 
     for test in strategy.get(
-        "tests",
+        &quot;tests&quot;,
         []
     ):
 
         print(
-            f"â€¢ {test}"
+            f&quot;â€¢ {test}&quot;
         )
 
     print()
     print(
-        "ğŸ“ˆ GÃ¼ven seviyesi: "
-        f"{strategy.get('confidence', 'LOW')}"
+        &quot;ğŸ“ˆ GÃ¼ven seviyesi: &quot;
+        f&quot;{strategy.get(&#x27;confidence&#x27;, &#x27;LOW&#x27;)}&quot;
     )
 
     print()
-    print("========================================")
-    print("âœ… AI STRATEJÄ° ANALÄ°ZÄ° TAMAMLANDI")
-    print("========================================")
+    print(&quot;========================================&quot;)
+    print(&quot;âœ… AI STRATEJÄ° ANALÄ°ZÄ° TAMAMLANDI&quot;)
+    print(&quot;========================================&quot;)
 
     return {
-        "status": "OK",
-        "total_videos": total_videos,
-        "strategy": strategy,
+        &quot;status&quot;: &quot;OK&quot;,
+        &quot;total_videos&quot;: total_videos,
+        &quot;strategy&quot;: strategy,
     }
 
 
@@ -9409,7 +9365,7 @@ KANAL ANALÄ°Z VERÄ°SÄ°:
 # TEST
 # ============================================================
 
-if __name__ == "__main__":
+if __name__ == &quot;__main__&quot;:
 
     build_ai_strategy()
 
@@ -9441,25 +9397,25 @@ def analyze_videos():
     if not videos:
 
         return {
-            "total_videos": 0,
-            "average_duration": 0,
-            "average_images": 0,
-            "total_views": 0,
-            "total_likes": 0,
-            "total_comments": 0,
-            "average_views": 0,
-            "average_likes": 0,
-            "average_comments": 0,
-            "top_topics": [],
-            "best_video": None,
-            "top_videos": [],
-            "worst_videos": [],
-            "duration_performance": [],
-            "engagement_rate": 0,
-            "average_watch_time": 0,
-            "average_watch_percentage": 0,
-            "above_average_videos": 0,
-            "performance_available": False,
+            &quot;total_videos&quot;: 0,
+            &quot;average_duration&quot;: 0,
+            &quot;average_images&quot;: 0,
+            &quot;total_views&quot;: 0,
+            &quot;total_likes&quot;: 0,
+            &quot;total_comments&quot;: 0,
+            &quot;average_views&quot;: 0,
+            &quot;average_likes&quot;: 0,
+            &quot;average_comments&quot;: 0,
+            &quot;top_topics&quot;: [],
+            &quot;best_video&quot;: None,
+            &quot;top_videos&quot;: [],
+            &quot;worst_videos&quot;: [],
+            &quot;duration_performance&quot;: [],
+            &quot;engagement_rate&quot;: 0,
+            &quot;average_watch_time&quot;: 0,
+            &quot;average_watch_percentage&quot;: 0,
+            &quot;above_average_videos&quot;: 0,
+            &quot;performance_available&quot;: False,
         }
 
     # ========================================================
@@ -9469,31 +9425,31 @@ def analyze_videos():
     total_videos = len(videos)
 
     durations = [
-        video["duration"]
+        video[&quot;duration&quot;]
         for video in videos
-        if video["duration"] is not None
-        and video["duration"] > 0
+        if video[&quot;duration&quot;] is not None
+        and video[&quot;duration&quot;] &gt; 0
     ]
 
     image_counts = [
-        video["image_count"]
+        video[&quot;image_count&quot;]
         for video in videos
-        if video["image_count"] is not None
-        and video["image_count"] > 0
+        if video[&quot;image_count&quot;] is not None
+        and video[&quot;image_count&quot;] &gt; 0
     ]
 
     total_views = sum(
-        video["views"] or 0
+        video[&quot;views&quot;] or 0
         for video in videos
     )
 
     total_likes = sum(
-        video["likes"] or 0
+        video[&quot;likes&quot;] or 0
         for video in videos
     )
 
     total_comments = sum(
-        video["comments"] or 0
+        video[&quot;comments&quot;] or 0
         for video in videos
     )
 
@@ -9538,7 +9494,7 @@ def analyze_videos():
     performance_videos = [
         video
         for video in videos
-        if (video["views"] or 0) > 0
+        if (video[&quot;views&quot;] or 0) &gt; 0
     ]
 
     performance_available = bool(
@@ -9550,17 +9506,17 @@ def analyze_videos():
     # ========================================================
 
     watch_time_values = [
-        video["average_watch_time"]
+        video[&quot;average_watch_time&quot;]
         for video in videos
-        if video["average_watch_time"] is not None
-        and video["average_watch_time"] > 0
+        if video[&quot;average_watch_time&quot;] is not None
+        and video[&quot;average_watch_time&quot;] &gt; 0
     ]
 
     watch_percentage_values = [
-        video["watch_percentage"]
+        video[&quot;watch_percentage&quot;]
         for video in videos
-        if video["watch_percentage"] is not None
-        and video["watch_percentage"] > 0
+        if video[&quot;watch_percentage&quot;] is not None
+        and video[&quot;watch_percentage&quot;] &gt; 0
     ]
 
     average_watch_time = (
@@ -9588,7 +9544,7 @@ def analyze_videos():
         )
         / total_views
         * 100
-        if total_views > 0
+        if total_views &gt; 0
         else 0
     )
 
@@ -9597,17 +9553,17 @@ def analyze_videos():
     # ========================================================
 
     topics = [
-        video["topic"]
+        video[&quot;topic&quot;]
         for video in videos
-        if video["topic"]
+        if video[&quot;topic&quot;]
     ]
 
     topic_counter = Counter(topics)
 
     top_topics = [
         {
-            "topic": topic,
-            "count": count,
+            &quot;topic&quot;: topic,
+            &quot;count&quot;: count,
         }
         for topic, count
         in topic_counter.most_common(10)
@@ -9620,33 +9576,33 @@ def analyze_videos():
     sorted_videos = sorted(
         performance_videos,
         key=lambda video: (
-            video["views"] or 0
+            video[&quot;views&quot;] or 0
         ),
         reverse=True,
     )
 
     top_videos = [
         {
-            "video_number":
-                video["video_number"],
+            &quot;video_number&quot;:
+                video[&quot;video_number&quot;],
 
-            "topic":
-                video["topic"],
+            &quot;topic&quot;:
+                video[&quot;topic&quot;],
 
-            "views":
-                video["views"] or 0,
+            &quot;views&quot;:
+                video[&quot;views&quot;] or 0,
 
-            "likes":
-                video["likes"] or 0,
+            &quot;likes&quot;:
+                video[&quot;likes&quot;] or 0,
 
-            "comments":
-                video["comments"] or 0,
+            &quot;comments&quot;:
+                video[&quot;comments&quot;] or 0,
 
-            "duration":
-                video["duration"] or 0,
+            &quot;duration&quot;:
+                video[&quot;duration&quot;] or 0,
 
-            "watch_percentage":
-                video["watch_percentage"] or 0,
+            &quot;watch_percentage&quot;:
+                video[&quot;watch_percentage&quot;] or 0,
         }
         for video in sorted_videos[:10]
     ]
@@ -9658,23 +9614,23 @@ def analyze_videos():
     worst_sorted = sorted(
         performance_videos,
         key=lambda video: (
-            video["views"] or 0
+            video[&quot;views&quot;] or 0
         ),
     )
 
     worst_videos = [
         {
-            "video_number":
-                video["video_number"],
+            &quot;video_number&quot;:
+                video[&quot;video_number&quot;],
 
-            "topic":
-                video["topic"],
+            &quot;topic&quot;:
+                video[&quot;topic&quot;],
 
-            "views":
-                video["views"] or 0,
+            &quot;views&quot;:
+                video[&quot;views&quot;] or 0,
 
-            "duration":
-                video["duration"] or 0,
+            &quot;duration&quot;:
+                video[&quot;duration&quot;] or 0,
         }
         for video in worst_sorted[:10]
     ]
@@ -9690,26 +9646,26 @@ def analyze_videos():
         best = sorted_videos[0]
 
         best_video = {
-            "video_number":
-                best["video_number"],
+            &quot;video_number&quot;:
+                best[&quot;video_number&quot;],
 
-            "topic":
-                best["topic"],
+            &quot;topic&quot;:
+                best[&quot;topic&quot;],
 
-            "views":
-                best["views"] or 0,
+            &quot;views&quot;:
+                best[&quot;views&quot;] or 0,
 
-            "likes":
-                best["likes"] or 0,
+            &quot;likes&quot;:
+                best[&quot;likes&quot;] or 0,
 
-            "comments":
-                best["comments"] or 0,
+            &quot;comments&quot;:
+                best[&quot;comments&quot;] or 0,
 
-            "duration":
-                best["duration"] or 0,
+            &quot;duration&quot;:
+                best[&quot;duration&quot;] or 0,
 
-            "watch_percentage":
-                best["watch_percentage"] or 0,
+            &quot;watch_percentage&quot;:
+                best[&quot;watch_percentage&quot;] or 0,
         }
 
     # ========================================================
@@ -9719,8 +9675,8 @@ def analyze_videos():
     above_average_videos = len([
         video
         for video in performance_videos
-        if (video["views"] or 0)
-        > average_views
+        if (video[&quot;views&quot;] or 0)
+        &gt; average_views
     ])
 
     # ========================================================
@@ -9728,46 +9684,46 @@ def analyze_videos():
     # ========================================================
 
     duration_groups = {
-        "0-20 sn": [],
-        "21-30 sn": [],
-        "31-45 sn": [],
-        "46-60 sn": [],
-        "61+ sn": [],
+        &quot;0-20 sn&quot;: [],
+        &quot;21-30 sn&quot;: [],
+        &quot;31-45 sn&quot;: [],
+        &quot;46-60 sn&quot;: [],
+        &quot;61+ sn&quot;: [],
     }
 
     for video in performance_videos:
 
-        duration = video["duration"] or 0
-        views = video["views"] or 0
+        duration = video[&quot;duration&quot;] or 0
+        views = video[&quot;views&quot;] or 0
 
-        if duration <= 20:
+        if duration &lt;= 20:
 
             duration_groups[
-                "0-20 sn"
+                &quot;0-20 sn&quot;
             ].append(views)
 
-        elif duration <= 30:
+        elif duration &lt;= 30:
 
             duration_groups[
-                "21-30 sn"
+                &quot;21-30 sn&quot;
             ].append(views)
 
-        elif duration <= 45:
+        elif duration &lt;= 45:
 
             duration_groups[
-                "31-45 sn"
+                &quot;31-45 sn&quot;
             ].append(views)
 
-        elif duration <= 60:
+        elif duration &lt;= 60:
 
             duration_groups[
-                "46-60 sn"
+                &quot;46-60 sn&quot;
             ].append(views)
 
         else:
 
             duration_groups[
-                "61+ sn"
+                &quot;61+ sn&quot;
             ].append(views)
 
     duration_performance = []
@@ -9777,13 +9733,13 @@ def analyze_videos():
         if values:
 
             duration_performance.append({
-                "range": group,
-                "video_count": len(values),
-                "average_views": round(
+                &quot;range&quot;: group,
+                &quot;video_count&quot;: len(values),
+                &quot;average_views&quot;: round(
                     sum(values) / len(values),
                     2
                 ),
-                "total_views": sum(values),
+                &quot;total_views&quot;: sum(values),
             })
 
     # ========================================================
@@ -9792,85 +9748,85 @@ def analyze_videos():
 
     return {
 
-        "total_videos":
+        &quot;total_videos&quot;:
             total_videos,
 
-        "average_duration":
+        &quot;average_duration&quot;:
             round(
                 average_duration,
                 2
             ),
 
-        "average_images":
+        &quot;average_images&quot;:
             round(
                 average_images,
                 2
             ),
 
-        "total_views":
+        &quot;total_views&quot;:
             total_views,
 
-        "total_likes":
+        &quot;total_likes&quot;:
             total_likes,
 
-        "total_comments":
+        &quot;total_comments&quot;:
             total_comments,
 
-        "average_views":
+        &quot;average_views&quot;:
             round(
                 average_views,
                 2
             ),
 
-        "average_likes":
+        &quot;average_likes&quot;:
             round(
                 average_likes,
                 2
             ),
 
-        "average_comments":
+        &quot;average_comments&quot;:
             round(
                 average_comments,
                 2
             ),
 
-        "top_topics":
+        &quot;top_topics&quot;:
             top_topics,
 
-        "best_video":
+        &quot;best_video&quot;:
             best_video,
 
-        "top_videos":
+        &quot;top_videos&quot;:
             top_videos,
 
-        "worst_videos":
+        &quot;worst_videos&quot;:
             worst_videos,
 
-        "duration_performance":
+        &quot;duration_performance&quot;:
             duration_performance,
 
-        "engagement_rate":
+        &quot;engagement_rate&quot;:
             round(
                 engagement_rate,
                 2
             ),
 
-        "average_watch_time":
+        &quot;average_watch_time&quot;:
             round(
                 average_watch_time,
                 2
             ),
 
-        "average_watch_percentage":
+        &quot;average_watch_percentage&quot;:
             round(
                 average_watch_percentage,
                 2
             ),
 
-        "above_average_videos":
+        &quot;above_average_videos&quot;:
             above_average_videos,
 
-        "performance_available":
+        &quot;performance_available&quot;:
             performance_available,
     }
 
@@ -9884,14 +9840,14 @@ def print_analysis():
     analysis = analyze_videos()
 
     print()
-    print("========================================")
-    print("ğŸ§  CREATOR ENGINE ANALYTICS ENGINE 2.0")
-    print("========================================")
+    print(&quot;========================================&quot;)
+    print(&quot;ğŸ§  CREATOR ENGINE ANALYTICS ENGINE 2.0&quot;)
+    print(&quot;========================================&quot;)
 
-    if analysis["total_videos"] == 0:
+    if analysis[&quot;total_videos&quot;] == 0:
 
         print()
-        print("HenÃ¼z analiz edilecek video yok.")
+        print(&quot;HenÃ¼z analiz edilecek video yok.&quot;)
         print()
 
         return
@@ -9902,18 +9858,18 @@ def print_analysis():
 
     print()
     print(
-        f"ğŸ¬ Toplam video       : "
-        f"{analysis['total_videos']}"
+        f&quot;ğŸ¬ Toplam video       : &quot;
+        f&quot;{analysis[&#x27;total_videos&#x27;]}&quot;
     )
 
     print(
-        f"â±ï¸ Ortalama sÃ¼re      : "
-        f"{analysis['average_duration']:.2f} sn"
+        f&quot;â±ï¸ Ortalama sÃ¼re      : &quot;
+        f&quot;{analysis[&#x27;average_duration&#x27;]:.2f} sn&quot;
     )
 
     print(
-        f"ğŸ–¼ï¸ Ortalama gÃ¶rsel    : "
-        f"{analysis['average_images']:.2f}"
+        f&quot;ğŸ–¼ï¸ Ortalama gÃ¶rsel    : &quot;
+        f&quot;{analysis[&#x27;average_images&#x27;]:.2f}&quot;
     )
 
     # ========================================================
@@ -9921,50 +9877,50 @@ def print_analysis():
     # ========================================================
 
     print()
-    print("ğŸ“Š PERFORMANS")
+    print(&quot;ğŸ“Š PERFORMANS&quot;)
 
     print(
-        f"ğŸ‘ï¸ Toplam izlenme     : "
-        f"{analysis['total_views']}"
+        f&quot;ğŸ‘ï¸ Toplam izlenme     : &quot;
+        f&quot;{analysis[&#x27;total_views&#x27;]}&quot;
     )
 
     print(
-        f"ğŸ‘ï¸ Ortalama izlenme   : "
-        f"{analysis['average_views']:.2f}"
+        f&quot;ğŸ‘ï¸ Ortalama izlenme   : &quot;
+        f&quot;{analysis[&#x27;average_views&#x27;]:.2f}&quot;
     )
 
     print(
-        f"â¤ï¸ Toplam beÄŸeni      : "
-        f"{analysis['total_likes']}"
+        f&quot;â¤ï¸ Toplam beÄŸeni      : &quot;
+        f&quot;{analysis[&#x27;total_likes&#x27;]}&quot;
     )
 
     print(
-        f"ğŸ’¬ Toplam yorum       : "
-        f"{analysis['total_comments']}"
+        f&quot;ğŸ’¬ Toplam yorum       : &quot;
+        f&quot;{analysis[&#x27;total_comments&#x27;]}&quot;
     )
 
     print(
-        f"ğŸ”¥ EtkileÅŸim oranÄ±    : "
-        f"{analysis['engagement_rate']:.2f}%"
+        f&quot;ğŸ”¥ EtkileÅŸim oranÄ±    : &quot;
+        f&quot;{analysis[&#x27;engagement_rate&#x27;]:.2f}%&quot;
     )
 
     # ========================================================
     # WATCH
     # ========================================================
 
-    if analysis["average_watch_time"] > 0:
+    if analysis[&quot;average_watch_time&quot;] &gt; 0:
 
         print()
-        print("â±ï¸ Ä°ZLEYÄ°CÄ° DAVRANIÅI")
+        print(&quot;â±ï¸ Ä°ZLEYÄ°CÄ° DAVRANIÅI&quot;)
 
         print(
-            f"Ortalama izlenme sÃ¼resi: "
-            f"{analysis['average_watch_time']:.2f} sn"
+            f&quot;Ortalama izlenme sÃ¼resi: &quot;
+            f&quot;{analysis[&#x27;average_watch_time&#x27;]:.2f} sn&quot;
         )
 
         print(
-            f"Ortalama izlenme yÃ¼zdesi: "
-            f"{analysis['average_watch_percentage']:.2f}%"
+            f&quot;Ortalama izlenme yÃ¼zdesi: &quot;
+            f&quot;{analysis[&#x27;average_watch_percentage&#x27;]:.2f}%&quot;
         )
 
     # ========================================================
@@ -9973,22 +9929,22 @@ def print_analysis():
 
     print()
 
-    if analysis["performance_available"]:
+    if analysis[&quot;performance_available&quot;]:
 
         print(
-            "ğŸŸ¢ Performans verisi mevcut."
+            &quot;ğŸŸ¢ Performans verisi mevcut.&quot;
         )
 
         print(
-            f"ğŸ“ˆ Ortalama Ã¼zerindeki video: "
-            f"{analysis['above_average_videos']}"
+            f&quot;ğŸ“ˆ Ortalama Ã¼zerindeki video: &quot;
+            f&quot;{analysis[&#x27;above_average_videos&#x27;]}&quot;
         )
 
     else:
 
         print(
-            "ğŸŸ¡ HenÃ¼z YouTube performans "
-            "verisi bulunmuyor."
+            &quot;ğŸŸ¡ HenÃ¼z YouTube performans &quot;
+            &quot;verisi bulunmuyor.&quot;
         )
 
     # ========================================================
@@ -9996,17 +9952,17 @@ def print_analysis():
     # ========================================================
 
     print()
-    print("â±ï¸ SÃœREYE GÃ–RE PERFORMANS")
+    print(&quot;â±ï¸ SÃœREYE GÃ–RE PERFORMANS&quot;)
 
     for item in analysis[
-        "duration_performance"
+        &quot;duration_performance&quot;
     ]:
 
         print(
-            f"{item['range']:10} | "
-            f"{item['video_count']:2} video | "
-            f"ortalama "
-            f"{item['average_views']:.0f} izlenme"
+            f&quot;{item[&#x27;range&#x27;]:10} | &quot;
+            f&quot;{item[&#x27;video_count&#x27;]:2} video | &quot;
+            f&quot;ortalama &quot;
+            f&quot;{item[&#x27;average_views&#x27;]:.0f} izlenme&quot;
         )
 
     # ========================================================
@@ -10014,19 +9970,19 @@ def print_analysis():
     # ========================================================
 
     print()
-    print("ğŸ† EN Ä°YÄ° 10 VÄ°DEO")
+    print(&quot;ğŸ† EN Ä°YÄ° 10 VÄ°DEO&quot;)
 
     for index, video in enumerate(
-        analysis["top_videos"],
+        analysis[&quot;top_videos&quot;],
         start=1
     ):
 
         print(
-            f"#{index:02d} | "
-            f"Video #{video['video_number']:03d} | "
-            f"{video['views']} izlenme | "
-            f"{video['duration']:.0f} sn | "
-            f"{video['topic']}"
+            f&quot;#{index:02d} | &quot;
+            f&quot;Video #{video[&#x27;video_number&#x27;]:03d} | &quot;
+            f&quot;{video[&#x27;views&#x27;]} izlenme | &quot;
+            f&quot;{video[&#x27;duration&#x27;]:.0f} sn | &quot;
+            f&quot;{video[&#x27;topic&#x27;]}&quot;
         )
 
     # ========================================================
@@ -10034,19 +9990,19 @@ def print_analysis():
     # ========================================================
 
     print()
-    print("ğŸ“‰ EN DÃœÅÃœK 10 VÄ°DEO")
+    print(&quot;ğŸ“‰ EN DÃœÅÃœK 10 VÄ°DEO&quot;)
 
     for index, video in enumerate(
-        analysis["worst_videos"],
+        analysis[&quot;worst_videos&quot;],
         start=1
     ):
 
         print(
-            f"#{index:02d} | "
-            f"Video #{video['video_number']:03d} | "
-            f"{video['views']} izlenme | "
-            f"{video['duration']:.0f} sn | "
-            f"{video['topic']}"
+            f&quot;#{index:02d} | &quot;
+            f&quot;Video #{video[&#x27;video_number&#x27;]:03d} | &quot;
+            f&quot;{video[&#x27;views&#x27;]} izlenme | &quot;
+            f&quot;{video[&#x27;duration&#x27;]:.0f} sn | &quot;
+            f&quot;{video[&#x27;topic&#x27;]}&quot;
         )
 
     # ========================================================
@@ -10054,66 +10010,66 @@ def print_analysis():
     # ========================================================
 
     print()
-    print("ğŸ“š EN Ã‡OK KULLANILAN KONULAR")
+    print(&quot;ğŸ“š EN Ã‡OK KULLANILAN KONULAR&quot;)
 
-    for item in analysis["top_topics"]:
+    for item in analysis[&quot;top_topics&quot;]:
 
         print(
-            f"â€¢ {item['topic']} "
-            f"({item['count']} video)"
+            f&quot;â€¢ {item[&#x27;topic&#x27;]} &quot;
+            f&quot;({item[&#x27;count&#x27;]} video)&quot;
         )
 
     # ========================================================
     # EN BAÅARILI
     # ========================================================
 
-    best = analysis["best_video"]
+    best = analysis[&quot;best_video&quot;]
 
     if best:
 
         print()
-        print("ğŸ”¥ EN BAÅARILI VÄ°DEO")
+        print(&quot;ğŸ”¥ EN BAÅARILI VÄ°DEO&quot;)
 
         print(
-            f"Video: #{best['video_number']:03d}"
+            f&quot;Video: #{best[&#x27;video_number&#x27;]:03d}&quot;
         )
 
         print(
-            f"Konu: {best['topic']}"
+            f&quot;Konu: {best[&#x27;topic&#x27;]}&quot;
         )
 
         print(
-            f"Ä°zlenme: {best['views']}"
+            f&quot;Ä°zlenme: {best[&#x27;views&#x27;]}&quot;
         )
 
         print(
-            f"BeÄŸeni: {best['likes']}"
+            f&quot;BeÄŸeni: {best[&#x27;likes&#x27;]}&quot;
         )
 
         print(
-            f"Yorum: {best['comments']}"
+            f&quot;Yorum: {best[&#x27;comments&#x27;]}&quot;
         )
 
         print(
-            f"SÃ¼re: {best['duration']:.2f} sn"
+            f&quot;SÃ¼re: {best[&#x27;duration&#x27;]:.2f} sn&quot;
         )
 
         print(
-            f"Ä°zlenme yÃ¼zdesi: "
-            f"{best['watch_percentage']:.2f}%"
+            f&quot;Ä°zlenme yÃ¼zdesi: &quot;
+            f&quot;{best[&#x27;watch_percentage&#x27;]:.2f}%&quot;
         )
 
     print()
-    print("========================================")
-    print("âœ… GELÄ°ÅMÄ°Å ANALÄ°Z TAMAMLANDI")
-    print("========================================")
+    print(&quot;========================================&quot;)
+    print(&quot;âœ… GELÄ°ÅMÄ°Å ANALÄ°Z TAMAMLANDI&quot;)
+    print(&quot;========================================&quot;)
 
 
 # ============================================================
 # TEST
 # ============================================================
 
-if __name__ == "__main__":
+if __name__ == &quot;__main__&quot;:
 
     print_analysis()
 
@@ -10137,14 +10093,14 @@ def show_report():
     videos = get_all_videos()
 
     print()
-    print("========================================")
-    print("ğŸ§  CREATOR ENGINE ANALYTICS")
-    print("========================================")
+    print(&quot;========================================&quot;)
+    print(&quot;ğŸ§  CREATOR ENGINE ANALYTICS&quot;)
+    print(&quot;========================================&quot;)
 
     if not videos:
 
         print()
-        print("HenÃ¼z Analytics verisi bulunmuyor.")
+        print(&quot;HenÃ¼z Analytics verisi bulunmuyor.&quot;)
         print()
 
         return
@@ -10156,17 +10112,17 @@ def show_report():
     total_videos = len(videos)
 
     durations = [
-        video["duration"]
+        video[&quot;duration&quot;]
         for video in videos
-        if video["duration"] is not None
-        and video["duration"] > 0
+        if video[&quot;duration&quot;] is not None
+        and video[&quot;duration&quot;] &gt; 0
     ]
 
     image_counts = [
-        video["image_count"]
+        video[&quot;image_count&quot;]
         for video in videos
-        if video["image_count"] is not None
-        and video["image_count"] > 0
+        if video[&quot;image_count&quot;] is not None
+        and video[&quot;image_count&quot;] &gt; 0
     ]
 
     # ========================================================
@@ -10192,7 +10148,7 @@ def show_report():
     longest_video = (
         max(
             videos,
-            key=lambda video: video["duration"]
+            key=lambda video: video[&quot;duration&quot;]
         )
         if videos
         else None
@@ -10203,9 +10159,9 @@ def show_report():
             [
                 video
                 for video in videos
-                if video["duration"] > 0
+                if video[&quot;duration&quot;] &gt; 0
             ],
-            key=lambda video: video["duration"]
+            key=lambda video: video[&quot;duration&quot;]
         )
         if durations
         else None
@@ -10216,16 +10172,16 @@ def show_report():
     # ========================================================
 
     print()
-    print(f"ğŸ¬ Toplam video       : {total_videos}")
+    print(f&quot;ğŸ¬ Toplam video       : {total_videos}&quot;)
 
     print(
-        f"â±ï¸ Ortalama sÃ¼re      : "
-        f"{average_duration:.2f} saniye"
+        f&quot;â±ï¸ Ortalama sÃ¼re      : &quot;
+        f&quot;{average_duration:.2f} saniye&quot;
     )
 
     print(
-        f"ğŸ–¼ï¸ Ortalama gÃ¶rsel    : "
-        f"{average_images:.2f}"
+        f&quot;ğŸ–¼ï¸ Ortalama gÃ¶rsel    : &quot;
+        f&quot;{average_images:.2f}&quot;
     )
 
     # ========================================================
@@ -10235,18 +10191,18 @@ def show_report():
     if longest_video:
 
         print()
-        print("â±ï¸ EN UZUN VÄ°DEO")
+        print(&quot;â±ï¸ EN UZUN VÄ°DEO&quot;)
         print(
-            f"Video: "
-            f"{longest_video['video_number']}"
+            f&quot;Video: &quot;
+            f&quot;{longest_video[&#x27;video_number&#x27;]}&quot;
         )
         print(
-            f"SÃ¼re: "
-            f"{longest_video['duration']:.2f} saniye"
+            f&quot;SÃ¼re: &quot;
+            f&quot;{longest_video[&#x27;duration&#x27;]:.2f} saniye&quot;
         )
         print(
-            f"Konu: "
-            f"{longest_video['topic']}"
+            f&quot;Konu: &quot;
+            f&quot;{longest_video[&#x27;topic&#x27;]}&quot;
         )
 
     # ========================================================
@@ -10256,18 +10212,18 @@ def show_report():
     if shortest_video:
 
         print()
-        print("âš¡ EN KISA VÄ°DEO")
+        print(&quot;âš¡ EN KISA VÄ°DEO&quot;)
         print(
-            f"Video: "
-            f"{shortest_video['video_number']}"
+            f&quot;Video: &quot;
+            f&quot;{shortest_video[&#x27;video_number&#x27;]}&quot;
         )
         print(
-            f"SÃ¼re: "
-            f"{shortest_video['duration']:.2f} saniye"
+            f&quot;SÃ¼re: &quot;
+            f&quot;{shortest_video[&#x27;duration&#x27;]:.2f} saniye&quot;
         )
         print(
-            f"Konu: "
-            f"{shortest_video['topic']}"
+            f&quot;Konu: &quot;
+            f&quot;{shortest_video[&#x27;topic&#x27;]}&quot;
         )
 
     # ========================================================
@@ -10275,30 +10231,30 @@ def show_report():
     # ========================================================
 
     print()
-    print("----------------------------------------")
-    print("ğŸ“‹ VÄ°DEOLAR")
-    print("----------------------------------------")
+    print(&quot;----------------------------------------&quot;)
+    print(&quot;ğŸ“‹ VÄ°DEOLAR&quot;)
+    print(&quot;----------------------------------------&quot;)
 
     for video in videos:
 
         print(
-            f"#{video['video_number']:03d} | "
-            f"{video['duration']:.2f} sn | "
-            f"{video['image_count']} gÃ¶rsel | "
-            f"{video['topic']}"
+            f&quot;#{video[&#x27;video_number&#x27;]:03d} | &quot;
+            f&quot;{video[&#x27;duration&#x27;]:.2f} sn | &quot;
+            f&quot;{video[&#x27;image_count&#x27;]} gÃ¶rsel | &quot;
+            f&quot;{video[&#x27;topic&#x27;]}&quot;
         )
 
     print()
-    print("========================================")
-    print("âœ… ANALYTICS RAPORU TAMAMLANDI")
-    print("========================================")
+    print(&quot;========================================&quot;)
+    print(&quot;âœ… ANALYTICS RAPORU TAMAMLANDI&quot;)
+    print(&quot;========================================&quot;)
 
 
 # ============================================================
 # Ã‡ALIÅTIR
 # ============================================================
 
-if __name__ == "__main__":
+if __name__ == &quot;__main__&quot;:
 
     show_report()
 
@@ -10315,8 +10271,8 @@ import sqlite3
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 
-DATA_DIR = BASE_DIR / "data"
-DATABASE_FILE = DATA_DIR / "creator_engine.db"
+DATA_DIR = BASE_DIR / &quot;data&quot;
+DATABASE_FILE = DATA_DIR / &quot;creator_engine.db&quot;
 
 
 # ============================================================
@@ -10350,7 +10306,7 @@ def initialize_database():
     cursor = connection.cursor()
 
     cursor.execute(
-        """
+        &quot;&quot;&quot;
         CREATE TABLE IF NOT EXISTS videos (
 
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -10384,7 +10340,7 @@ def initialize_database():
             watch_percentage REAL DEFAULT 0
 
         )
-        """
+        &quot;&quot;&quot;
     )
 
     connection.commit()
@@ -10392,13 +10348,13 @@ def initialize_database():
     connection.close()
 
     print()
-    print("========================================")
-    print("ğŸ§  ANALYTICS DATABASE")
-    print("========================================")
+    print(&quot;========================================&quot;)
+    print(&quot;ğŸ§  ANALYTICS DATABASE&quot;)
+    print(&quot;========================================&quot;)
     print()
-    print("âœ… VeritabanÄ± hazÄ±r.")
+    print(&quot;âœ… VeritabanÄ± hazÄ±r.&quot;)
     print()
-    print(f"ğŸ“ {DATABASE_FILE}")
+    print(f&quot;ğŸ“ {DATABASE_FILE}&quot;)
 
 
 # ============================================================
@@ -10420,7 +10376,7 @@ def add_video(
     cursor = connection.cursor()
 
     cursor.execute(
-        """
+        &quot;&quot;&quot;
         INSERT INTO videos (
             video_number,
             topic,
@@ -10432,7 +10388,7 @@ def add_video(
         )
 
         VALUES (?, ?, ?, ?, ?, ?, ?)
-        """,
+        &quot;&quot;&quot;,
         (
             video_number,
             topic,
@@ -10472,7 +10428,7 @@ def update_video_stats(
     cursor = connection.cursor()
 
     cursor.execute(
-        """
+        &quot;&quot;&quot;
         UPDATE videos
 
         SET
@@ -10484,7 +10440,7 @@ def update_video_stats(
             watch_percentage = ?
 
         WHERE id = ?
-        """,
+        &quot;&quot;&quot;,
         (
             views,
             likes,
@@ -10512,11 +10468,11 @@ def get_all_videos():
     cursor = connection.cursor()
 
     cursor.execute(
-        """
+        &quot;&quot;&quot;
         SELECT *
         FROM videos
         ORDER BY id ASC
-        """
+        &quot;&quot;&quot;
     )
 
     videos = cursor.fetchall()
@@ -10530,7 +10486,7 @@ def get_all_videos():
 # TEST
 # ============================================================
 
-if __name__ == "__main__":
+if __name__ == &quot;__main__&quot;:
 
     initialize_database()
 
@@ -10547,64 +10503,64 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 
-DB_FILE = BASE_DIR / "data" / "creator_engine.db"
+DB_FILE = BASE_DIR / &quot;data&quot; / &quot;creator_engine.db&quot;
 
 
 def show_schema():
 
     print()
-    print("========================================")
-    print("ğŸ§  CREATOR ENGINE â€” DATABASE SCHEMA")
-    print("========================================")
+    print(&quot;========================================&quot;)
+    print(&quot;ğŸ§  CREATOR ENGINE â€” DATABASE SCHEMA&quot;)
+    print(&quot;========================================&quot;)
     print()
 
-    print(f"ğŸ“ VeritabanÄ±: {DB_FILE}")
+    print(f&quot;ğŸ“ VeritabanÄ±: {DB_FILE}&quot;)
     print()
 
     db = sqlite3.connect(DB_FILE)
     cursor = db.cursor()
 
     tables = cursor.execute(
-        """
+        &quot;&quot;&quot;
         SELECT name
         FROM sqlite_master
-        WHERE type = 'table'
+        WHERE type = &#x27;table&#x27;
         ORDER BY name
-        """
+        &quot;&quot;&quot;
     ).fetchall()
 
-    print("=== TABLOLAR ===")
+    print(&quot;=== TABLOLAR ===&quot;)
     print()
 
     for table in tables:
 
         table_name = table[0]
 
-        print(f"ğŸ“¦ {table_name}")
+        print(f&quot;ğŸ“¦ {table_name}&quot;)
 
         columns = cursor.execute(
-            f'PRAGMA table_info("{table_name}")'
+            f&#x27;PRAGMA table_info(&quot;{table_name}&quot;)&#x27;
         ).fetchall()
 
         for column in columns:
 
             print(
-                f"   {column[1]} | "
-                f"{column[2]} | "
-                f"PK={column[5]}"
+                f&quot;   {column[1]} | &quot;
+                f&quot;{column[2]} | &quot;
+                f&quot;PK={column[5]}&quot;
             )
 
         print()
 
     db.close()
 
-    print("========================================")
-    print("âœ… ÅEMA OKUMA TAMAMLANDI")
-    print("========================================")
+    print(&quot;========================================&quot;)
+    print(&quot;âœ… ÅEMA OKUMA TAMAMLANDI&quot;)
+    print(&quot;========================================&quot;)
     print()
 
 
-if __name__ == "__main__":
+if __name__ == &quot;__main__&quot;:
 
     show_schema()
 
@@ -10622,12 +10578,12 @@ from app.analytics.database import (
 
 
 # ============================================================
-# CREATOR ENGINE â€” ESKÄ° VÄ°DEOLARI ANALYTICS'E AKTAR
+# CREATOR ENGINE â€” ESKÄ° VÄ°DEOLARI ANALYTICS&#x27;E AKTAR
 # ============================================================
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 
-SHORTS_DIR = BASE_DIR / "shorts"
+SHORTS_DIR = BASE_DIR / &quot;shorts&quot;
 
 
 # ============================================================
@@ -10640,13 +10596,13 @@ def get_video_duration(video_file):
 
         result = subprocess.run(
             [
-                "ffprobe",
-                "-v",
-                "error",
-                "-show_entries",
-                "format=duration",
-                "-of",
-                "default=noprint_wrappers=1:nokey=1",
+                &quot;ffprobe&quot;,
+                &quot;-v&quot;,
+                &quot;error&quot;,
+                &quot;-show_entries&quot;,
+                &quot;format=duration&quot;,
+                &quot;-of&quot;,
+                &quot;default=noprint_wrappers=1:nokey=1&quot;,
                 str(video_file),
             ],
             capture_output=True,
@@ -10662,7 +10618,7 @@ def get_video_duration(video_file):
 
         print()
         print(
-            f"âš ï¸ Video sÃ¼resi alÄ±namadÄ±: {error}"
+            f&quot;âš ï¸ Video sÃ¼resi alÄ±namadÄ±: {error}&quot;
         )
 
         return 0.0
@@ -10685,10 +10641,10 @@ def get_image_count(image_folder):
             if file.is_file()
             and file.suffix.lower()
             in [
-                ".png",
-                ".jpg",
-                ".jpeg",
-                ".webp",
+                &quot;.png&quot;,
+                &quot;.jpg&quot;,
+                &quot;.jpeg&quot;,
+                &quot;.webp&quot;,
             ]
         ]
     )
@@ -10702,14 +10658,14 @@ def get_hook(script_file):
 
     if not script_file.exists():
 
-        return ""
+        return &quot;&quot;
 
     try:
 
         lines = [
             line.strip()
             for line in script_file.read_text(
-                encoding="utf-8"
+                encoding=&quot;utf-8&quot;
             ).splitlines()
             if line.strip()
         ]
@@ -10722,10 +10678,10 @@ def get_hook(script_file):
 
         print()
         print(
-            f"âš ï¸ Senaryo okunamadÄ±: {error}"
+            f&quot;âš ï¸ Senaryo okunamadÄ±: {error}&quot;
         )
 
-    return ""
+    return &quot;&quot;
 
 
 # ============================================================
@@ -10739,12 +10695,12 @@ def video_exists(video_number):
     cursor = connection.cursor()
 
     cursor.execute(
-        """
+        &quot;&quot;&quot;
         SELECT id
         FROM videos
         WHERE video_number = ?
         LIMIT 1
-        """,
+        &quot;&quot;&quot;,
         (video_number,),
     )
 
@@ -10763,28 +10719,28 @@ def import_video(video_number):
 
     video_folder = (
         SHORTS_DIR
-        / f"{video_number:03d}"
+        / f&quot;{video_number:03d}&quot;
     )
 
     video_file = (
         video_folder
-        / "video.mp4"
+        / &quot;video.mp4&quot;
     )
 
     image_folder = (
         video_folder
-        / "gorseller"
+        / &quot;gorseller&quot;
     )
 
     script_file = (
         video_folder
-        / "senaryo.txt"
+        / &quot;senaryo.txt&quot;
     )
 
     if not video_file.exists():
 
         print(
-            f"âš ï¸ #{video_number:03d} video.mp4 bulunamadÄ±."
+            f&quot;âš ï¸ #{video_number:03d} video.mp4 bulunamadÄ±.&quot;
         )
 
         return False
@@ -10792,36 +10748,36 @@ def import_video(video_number):
     if video_exists(video_number):
 
         print(
-            f"â­ï¸ #{video_number:03d} zaten Analytics'te var."
+            f&quot;â­ï¸ #{video_number:03d} zaten Analytics&#x27;te var.&quot;
         )
 
         return False
 
     print()
     print(
-        "----------------------------------------"
+        &quot;----------------------------------------&quot;
     )
     print(
-        f"ğŸ¬ VIDEO #{video_number:03d}"
+        f&quot;ğŸ¬ VIDEO #{video_number:03d}&quot;
     )
     print(
-        "----------------------------------------"
+        &quot;----------------------------------------&quot;
     )
 
     print()
 
     topic = input(
-        "ğŸ“Œ Konu: "
+        &quot;ğŸ“Œ Konu: &quot;
     ).strip()
 
     while not topic:
 
         print(
-            "âš ï¸ Konu boÅŸ bÄ±rakÄ±lamaz."
+            &quot;âš ï¸ Konu boÅŸ bÄ±rakÄ±lamaz.&quot;
         )
 
         topic = input(
-            "ğŸ“Œ Konu: "
+            &quot;ğŸ“Œ Konu: &quot;
         ).strip()
 
     hook = get_hook(
@@ -10839,7 +10795,7 @@ def import_video(video_number):
     created_at = datetime.fromtimestamp(
         video_file.stat().st_mtime
     ).isoformat(
-        timespec="seconds"
+        timespec=&quot;seconds&quot;
     )
 
     connection = get_connection()
@@ -10847,7 +10803,7 @@ def import_video(video_number):
     cursor = connection.cursor()
 
     cursor.execute(
-        """
+        &quot;&quot;&quot;
         INSERT INTO videos (
             video_number,
             topic,
@@ -10859,7 +10815,7 @@ def import_video(video_number):
         )
 
         VALUES (?, ?, ?, ?, ?, ?, ?)
-        """,
+        &quot;&quot;&quot;,
         (
             video_number,
             topic,
@@ -10879,23 +10835,23 @@ def import_video(video_number):
 
     print()
     print(
-        "âœ… Analytics'e eklendi."
+        &quot;âœ… Analytics&#x27;e eklendi.&quot;
     )
 
     print(
-        f"ğŸ§  ID: {analytics_id}"
+        f&quot;ğŸ§  ID: {analytics_id}&quot;
     )
 
     print(
-        f"ğŸ“¹ Video: #{video_number:03d}"
+        f&quot;ğŸ“¹ Video: #{video_number:03d}&quot;
     )
 
     print(
-        f"â±ï¸ SÃ¼re: {duration:.2f} saniye"
+        f&quot;â±ï¸ SÃ¼re: {duration:.2f} saniye&quot;
     )
 
     print(
-        f"ğŸ–¼ï¸ GÃ¶rsel: {image_count}"
+        f&quot;ğŸ–¼ï¸ GÃ¶rsel: {image_count}&quot;
     )
 
     return True
@@ -10909,37 +10865,37 @@ def main():
 
     print()
     print(
-        "========================================"
+        &quot;========================================&quot;
     )
     print(
-        "ğŸ“¥ CREATOR ENGINE"
+        &quot;ğŸ“¥ CREATOR ENGINE&quot;
     )
     print(
-        "ESKÄ° VÄ°DEO ANALYTICS AKTARIMI"
+        &quot;ESKÄ° VÄ°DEO ANALYTICS AKTARIMI&quot;
     )
     print(
-        "========================================"
+        &quot;========================================&quot;
     )
 
     initialize_database()
 
     print()
     print(
-        "007 - 013 arasÄ±ndaki gerÃ§ek videolar aktarÄ±lacak."
+        &quot;007 - 013 arasÄ±ndaki gerÃ§ek videolar aktarÄ±lacak.&quot;
     )
 
     print(
-        "Her video iÃ§in sadece KONUYU gireceksin."
+        &quot;Her video iÃ§in sadece KONUYU gireceksin.&quot;
     )
 
     print(
-        "SÃ¼re ve gÃ¶rsel sayÄ±sÄ±nÄ± sistem otomatik bulacak."
+        &quot;SÃ¼re ve gÃ¶rsel sayÄ±sÄ±nÄ± sistem otomatik bulacak.&quot;
     )
 
     print()
 
     input(
-        "BaÅŸlamak iÃ§in ENTER'a bas..."
+        &quot;BaÅŸlamak iÃ§in ENTER&#x27;a bas...&quot;
     )
 
     imported = 0
@@ -10957,28 +10913,28 @@ def main():
 
     print()
     print(
-        "========================================"
+        &quot;========================================&quot;
     )
     print(
-        "ğŸ“Š AKTARIM TAMAMLANDI"
+        &quot;ğŸ“Š AKTARIM TAMAMLANDI&quot;
     )
     print(
-        "========================================"
+        &quot;========================================&quot;
     )
 
     print()
     print(
-        f"âœ… Yeni eklenen video: {imported}"
+        f&quot;âœ… Yeni eklenen video: {imported}&quot;
     )
 
     print(
-        "ğŸ§  Analytics veritabanÄ± gÃ¼ncellendi."
+        &quot;ğŸ§  Analytics veritabanÄ± gÃ¼ncellendi.&quot;
     )
 
     print()
 
 
-if __name__ == "__main__":
+if __name__ == &quot;__main__&quot;:
 
     main()
 
@@ -10999,8 +10955,8 @@ BASE_DIR = Path(__file__).resolve().parents[2]
 
 STRATEGY_FILE = (
     BASE_DIR
-    / "data"
-    / "current_strategy.json"
+    / &quot;data&quot;
+    / &quot;current_strategy.json&quot;
 )
 
 
@@ -11012,7 +10968,7 @@ def build_strategy():
 
     analysis = analyze_videos()
 
-    total_videos = analysis["total_videos"]
+    total_videos = analysis[&quot;total_videos&quot;]
 
     # ========================================================
     # VERÄ° YOK
@@ -11021,10 +10977,10 @@ def build_strategy():
     if total_videos == 0:
 
         return {
-            "status": "NO_DATA",
-            "message": (
-                "Strateji oluÅŸturmak iÃ§in "
-                "yeterli veri yok."
+            &quot;status&quot;: &quot;NO_DATA&quot;,
+            &quot;message&quot;: (
+                &quot;Strateji oluÅŸturmak iÃ§in &quot;
+                &quot;yeterli veri yok.&quot;
             ),
         }
 
@@ -11033,71 +10989,71 @@ def build_strategy():
     # ========================================================
 
     average_duration = analysis[
-        "average_duration"
+        &quot;average_duration&quot;
     ]
 
     average_images = analysis[
-        "average_images"
+        &quot;average_images&quot;
     ]
 
     top_topics = analysis[
-        "top_topics"
+        &quot;top_topics&quot;
     ]
 
     best_video = analysis[
-        "best_video"
+        &quot;best_video&quot;
     ]
 
     # ========================================================
     # SÃœRE STRATEJÄ°SÄ°
     # ========================================================
 
-    if average_duration <= 30:
+    if average_duration &lt;= 30:
 
         duration_strategy = (
-            "KÄ±sa videolar tercih edilmeli. "
-            "YaklaÅŸÄ±k 25-35 saniye hedeflenebilir."
+            &quot;KÄ±sa videolar tercih edilmeli. &quot;
+            &quot;YaklaÅŸÄ±k 25-35 saniye hedeflenebilir.&quot;
         )
 
-    elif average_duration <= 45:
+    elif average_duration &lt;= 45:
 
         duration_strategy = (
-            "Mevcut sÃ¼re aralÄ±ÄŸÄ± uygun gÃ¶rÃ¼nÃ¼yor. "
-            "YaklaÅŸÄ±k 30-45 saniye hedeflenebilir."
+            &quot;Mevcut sÃ¼re aralÄ±ÄŸÄ± uygun gÃ¶rÃ¼nÃ¼yor. &quot;
+            &quot;YaklaÅŸÄ±k 30-45 saniye hedeflenebilir.&quot;
         )
 
     else:
 
         duration_strategy = (
-            "Videolar nispeten uzun. "
-            "Gereksiz bÃ¶lÃ¼mler azaltÄ±larak "
-            "30-45 saniye aralÄ±ÄŸÄ± test edilebilir."
+            &quot;Videolar nispeten uzun. &quot;
+            &quot;Gereksiz bÃ¶lÃ¼mler azaltÄ±larak &quot;
+            &quot;30-45 saniye aralÄ±ÄŸÄ± test edilebilir.&quot;
         )
 
     # ========================================================
     # GÃ–RSEL STRATEJÄ°SÄ°
     # ========================================================
 
-    if average_images <= 4:
+    if average_images &lt;= 4:
 
         image_strategy = (
-            "Video baÅŸÄ±na yaklaÅŸÄ±k 4-5 gÃ¶rsel "
-            "kullanÄ±lmasÄ± test edilebilir."
+            &quot;Video baÅŸÄ±na yaklaÅŸÄ±k 4-5 gÃ¶rsel &quot;
+            &quot;kullanÄ±lmasÄ± test edilebilir.&quot;
         )
 
-    elif average_images <= 6:
+    elif average_images &lt;= 6:
 
         image_strategy = (
-            "Mevcut gÃ¶rsel yoÄŸunluÄŸu uygun. "
-            "YaklaÅŸÄ±k 5 gÃ¶rsel kullanÄ±labilir."
+            &quot;Mevcut gÃ¶rsel yoÄŸunluÄŸu uygun. &quot;
+            &quot;YaklaÅŸÄ±k 5 gÃ¶rsel kullanÄ±labilir.&quot;
         )
 
     else:
 
         image_strategy = (
-            "GÃ¶rsel sayÄ±sÄ± yÃ¼ksek. "
-            "Sadece Ã¶nemli sahneler iÃ§in gÃ¶rsel "
-            "Ã¼retilmesi maliyeti azaltabilir."
+            &quot;GÃ¶rsel sayÄ±sÄ± yÃ¼ksek. &quot;
+            &quot;Sadece Ã¶nemli sahneler iÃ§in gÃ¶rsel &quot;
+            &quot;Ã¼retilmesi maliyeti azaltabilir.&quot;
         )
 
     # ========================================================
@@ -11107,22 +11063,22 @@ def build_strategy():
     if top_topics:
 
         topic_strategy = (
-            "Mevcut verilerde kullanÄ±lan konular: "
-            + ", ".join(
-                item["topic"]
+            &quot;Mevcut verilerde kullanÄ±lan konular: &quot;
+            + &quot;, &quot;.join(
+                item[&quot;topic&quot;]
                 for item in top_topics[:5]
             )
         )
 
         winning_topics = [
-            item["topic"]
+            item[&quot;topic&quot;]
             for item in top_topics[:5]
         ]
 
     else:
 
         topic_strategy = (
-            "HenÃ¼z yeterli konu verisi bulunmuyor."
+            &quot;HenÃ¼z yeterli konu verisi bulunmuyor.&quot;
         )
 
         winning_topics = []
@@ -11132,11 +11088,11 @@ def build_strategy():
     # ========================================================
 
     recommended_topics = [
-        "Yapay zekanÄ±n gÃ¼nlÃ¼k hayattaki ÅŸaÅŸÄ±rtÄ±cÄ± etkileri",
-        "Ä°nsan beyninin bilinmeyen Ã¶zellikleri",
-        "Uzay ve gelecekte yaÅŸam",
-        "Bilimin gÃ¼nlÃ¼k hayattaki ÅŸaÅŸÄ±rtÄ±cÄ± gerÃ§ekleri",
-        "Teknolojinin gelecekte deÄŸiÅŸtireceÄŸi ÅŸeyler",
+        &quot;Yapay zekanÄ±n gÃ¼nlÃ¼k hayattaki ÅŸaÅŸÄ±rtÄ±cÄ± etkileri&quot;,
+        &quot;Ä°nsan beyninin bilinmeyen Ã¶zellikleri&quot;,
+        &quot;Uzay ve gelecekte yaÅŸam&quot;,
+        &quot;Bilimin gÃ¼nlÃ¼k hayattaki ÅŸaÅŸÄ±rtÄ±cÄ± gerÃ§ekleri&quot;,
+        &quot;Teknolojinin gelecekte deÄŸiÅŸtireceÄŸi ÅŸeyler&quot;,
     ]
 
     # ========================================================
@@ -11144,10 +11100,10 @@ def build_strategy():
     # ========================================================
 
     hook_strategy = (
-        "Ä°lk cÃ¼mlede doÄŸrudan merak uyandÄ±ran "
-        "bir soru, ÅŸaÅŸÄ±rtÄ±cÄ± bilgi veya gÃ¼Ã§lÃ¼ "
-        "iddia kullanÄ±lmalÄ±. Gereksiz giriÅŸ "
-        "yapÄ±lmamalÄ±."
+        &quot;Ä°lk cÃ¼mlede doÄŸrudan merak uyandÄ±ran &quot;
+        &quot;bir soru, ÅŸaÅŸÄ±rtÄ±cÄ± bilgi veya gÃ¼Ã§lÃ¼ &quot;
+        &quot;iddia kullanÄ±lmalÄ±. Gereksiz giriÅŸ &quot;
+        &quot;yapÄ±lmamalÄ±.&quot;
     )
 
     # ========================================================
@@ -11155,10 +11111,10 @@ def build_strategy():
     # ========================================================
 
     content_strategy = (
-        "Ä°Ã§erikler kÄ±sa, hÄ±zlÄ± ve bilgi odaklÄ± "
-        "olmalÄ±. Ä°lk saniyelerde gÃ¼Ã§lÃ¼ bir hook "
-        "kullanÄ±lmalÄ±. Konu boyunca merak korunmalÄ± "
-        "ve sonunda izleyiciye soru sorulmalÄ±."
+        &quot;Ä°Ã§erikler kÄ±sa, hÄ±zlÄ± ve bilgi odaklÄ± &quot;
+        &quot;olmalÄ±. Ä°lk saniyelerde gÃ¼Ã§lÃ¼ bir hook &quot;
+        &quot;kullanÄ±lmalÄ±. Konu boyunca merak korunmalÄ± &quot;
+        &quot;ve sonunda izleyiciye soru sorulmalÄ±.&quot;
     )
 
     # ========================================================
@@ -11166,11 +11122,11 @@ def build_strategy():
     # ========================================================
 
     tests = [
-        "30-45 saniye aralÄ±ÄŸÄ±nÄ± koru.",
-        "Video baÅŸÄ±na yaklaÅŸÄ±k 5 gÃ¶rsel kullan.",
-        "FarklÄ± hook tÃ¼rlerini test et.",
-        "Bilgi + merak kombinasyonunu test et.",
-        "Benzer konularÄ± farklÄ± aÃ§Ä±lardan dene.",
+        &quot;30-45 saniye aralÄ±ÄŸÄ±nÄ± koru.&quot;,
+        &quot;Video baÅŸÄ±na yaklaÅŸÄ±k 5 gÃ¶rsel kullan.&quot;,
+        &quot;FarklÄ± hook tÃ¼rlerini test et.&quot;,
+        &quot;Bilgi + merak kombinasyonunu test et.&quot;,
+        &quot;Benzer konularÄ± farklÄ± aÃ§Ä±lardan dene.&quot;,
     ]
 
     # ========================================================
@@ -11183,17 +11139,17 @@ def build_strategy():
 
         best_video_strategy = {
 
-            "video_number":
-                best_video["video_number"],
+            &quot;video_number&quot;:
+                best_video[&quot;video_number&quot;],
 
-            "topic":
-                best_video["topic"],
+            &quot;topic&quot;:
+                best_video[&quot;topic&quot;],
 
-            "views":
-                best_video["views"],
+            &quot;views&quot;:
+                best_video[&quot;views&quot;],
 
-            "duration":
-                best_video["duration"],
+            &quot;duration&quot;:
+                best_video[&quot;duration&quot;],
         }
 
     # ========================================================
@@ -11202,55 +11158,55 @@ def build_strategy():
 
     strategy = {
 
-        "status":
-            "OK",
+        &quot;status&quot;:
+            &quot;OK&quot;,
 
-        "total_videos":
+        &quot;total_videos&quot;:
             total_videos,
 
-        "average_duration":
+        &quot;average_duration&quot;:
             average_duration,
 
-        "average_images":
+        &quot;average_images&quot;:
             average_images,
 
-        "summary":
+        &quot;summary&quot;:
             (
-                f"{total_videos} video analiz edildi. "
-                f"Ortalama video sÃ¼resi "
-                f"{average_duration:.2f} saniye. "
-                f"Ortalama gÃ¶rsel sayÄ±sÄ± "
-                f"{average_images:.2f}."
+                f&quot;{total_videos} video analiz edildi. &quot;
+                f&quot;Ortalama video sÃ¼resi &quot;
+                f&quot;{average_duration:.2f} saniye. &quot;
+                f&quot;Ortalama gÃ¶rsel sayÄ±sÄ± &quot;
+                f&quot;{average_images:.2f}.&quot;
             ),
 
-        "duration_strategy":
+        &quot;duration_strategy&quot;:
             duration_strategy,
 
-        "visual_strategy":
+        &quot;visual_strategy&quot;:
             image_strategy,
 
-        "image_strategy":
+        &quot;image_strategy&quot;:
             image_strategy,
 
-        "topic_strategy":
+        &quot;topic_strategy&quot;:
             topic_strategy,
 
-        "winning_topics":
+        &quot;winning_topics&quot;:
             winning_topics,
 
-        "recommended_topics":
+        &quot;recommended_topics&quot;:
             recommended_topics,
 
-        "hook_strategy":
+        &quot;hook_strategy&quot;:
             hook_strategy,
 
-        "content_strategy":
+        &quot;content_strategy&quot;:
             content_strategy,
 
-        "tests":
+        &quot;tests&quot;:
             tests,
 
-        "best_video":
+        &quot;best_video&quot;:
             best_video_strategy,
     }
 
@@ -11272,8 +11228,8 @@ def save_strategy(strategy):
 
         with open(
             STRATEGY_FILE,
-            "w",
-            encoding="utf-8"
+            &quot;w&quot;,
+            encoding=&quot;utf-8&quot;
         ) as file:
 
             json.dump(
@@ -11289,7 +11245,7 @@ def save_strategy(strategy):
 
         print()
         print(
-            f"âš ï¸ Strateji kaydedilemedi: {error}"
+            f&quot;âš ï¸ Strateji kaydedilemedi: {error}&quot;
         )
 
         return False
@@ -11304,20 +11260,20 @@ def print_strategy():
     strategy = build_strategy()
 
     print()
-    print("========================================")
-    print("ğŸ¯ CREATOR ENGINE STRATEGY ENGINE")
-    print("========================================")
+    print(&quot;========================================&quot;)
+    print(&quot;ğŸ¯ CREATOR ENGINE STRATEGY ENGINE&quot;)
+    print(&quot;========================================&quot;)
 
     # ========================================================
     # VERÄ° YOK
     # ========================================================
 
-    if strategy["status"] == "NO_DATA":
+    if strategy[&quot;status&quot;] == &quot;NO_DATA&quot;:
 
         print()
         print(
-            "âš ï¸",
-            strategy["message"]
+            &quot;âš ï¸&quot;,
+            strategy[&quot;message&quot;]
         )
 
         print()
@@ -11330,18 +11286,18 @@ def print_strategy():
 
     print()
     print(
-        f"ğŸ¬ Analiz edilen video: "
-        f"{strategy['total_videos']}"
+        f&quot;ğŸ¬ Analiz edilen video: &quot;
+        f&quot;{strategy[&#x27;total_videos&#x27;]}&quot;
     )
 
     print(
-        f"â±ï¸ Ortalama sÃ¼re: "
-        f"{strategy['average_duration']:.2f} sn"
+        f&quot;â±ï¸ Ortalama sÃ¼re: &quot;
+        f&quot;{strategy[&#x27;average_duration&#x27;]:.2f} sn&quot;
     )
 
     print(
-        f"ğŸ–¼ï¸ Ortalama gÃ¶rsel: "
-        f"{strategy['average_images']:.2f}"
+        f&quot;ğŸ–¼ï¸ Ortalama gÃ¶rsel: &quot;
+        f&quot;{strategy[&#x27;average_images&#x27;]:.2f}&quot;
     )
 
     # ========================================================
@@ -11349,10 +11305,10 @@ def print_strategy():
     # ========================================================
 
     print()
-    print("â±ï¸ SÃœRE STRATEJÄ°SÄ°")
+    print(&quot;â±ï¸ SÃœRE STRATEJÄ°SÄ°&quot;)
 
     print(
-        strategy["duration_strategy"]
+        strategy[&quot;duration_strategy&quot;]
     )
 
     # ========================================================
@@ -11360,10 +11316,10 @@ def print_strategy():
     # ========================================================
 
     print()
-    print("ğŸ–¼ï¸ GÃ–RSEL STRATEJÄ°SÄ°")
+    print(&quot;ğŸ–¼ï¸ GÃ–RSEL STRATEJÄ°SÄ°&quot;)
 
     print(
-        strategy["visual_strategy"]
+        strategy[&quot;visual_strategy&quot;]
     )
 
     # ========================================================
@@ -11371,37 +11327,37 @@ def print_strategy():
     # ========================================================
 
     print()
-    print("ğŸ“š KONU STRATEJÄ°SÄ°")
+    print(&quot;ğŸ“š KONU STRATEJÄ°SÄ°&quot;)
 
     print(
-        strategy["topic_strategy"]
+        strategy[&quot;topic_strategy&quot;]
     )
 
     # ========================================================
     # EN Ä°YÄ° VÄ°DEO
     # ========================================================
 
-    best = strategy["best_video"]
+    best = strategy[&quot;best_video&quot;]
 
     if best:
 
         print()
-        print("ğŸ”¥ EN Ä°YÄ° VÄ°DEO")
+        print(&quot;ğŸ”¥ EN Ä°YÄ° VÄ°DEO&quot;)
 
         print(
-            f"Video: #{best['video_number']:03d}"
+            f&quot;Video: #{best[&#x27;video_number&#x27;]:03d}&quot;
         )
 
         print(
-            f"Konu: {best['topic']}"
+            f&quot;Konu: {best[&#x27;topic&#x27;]}&quot;
         )
 
         print(
-            f"Ä°zlenme: {best['views']}"
+            f&quot;Ä°zlenme: {best[&#x27;views&#x27;]}&quot;
         )
 
         print(
-            f"SÃ¼re: {best['duration']:.2f} sn"
+            f&quot;SÃ¼re: {best[&#x27;duration&#x27;]:.2f} sn&quot;
         )
 
     # ========================================================
@@ -11409,22 +11365,22 @@ def print_strategy():
     # ========================================================
 
     print()
-    print("ğŸ’¾ STRATEJÄ° KAYDI")
+    print(&quot;ğŸ’¾ STRATEJÄ° KAYDI&quot;)
 
     if save_strategy(strategy):
 
         print(
-            "âœ… AI stratejisi kaydedildi."
+            &quot;âœ… AI stratejisi kaydedildi.&quot;
         )
 
         print(
-            f"ğŸ“ {STRATEGY_FILE}"
+            f&quot;ğŸ“ {STRATEGY_FILE}&quot;
         )
 
     else:
 
         print(
-            "âŒ AI stratejisi kaydedilemedi."
+            &quot;âŒ AI stratejisi kaydedilemedi.&quot;
         )
 
     # ========================================================
@@ -11432,16 +11388,16 @@ def print_strategy():
     # ========================================================
 
     print()
-    print("========================================")
-    print("âœ… STRATEJÄ° OLUÅTURULDU")
-    print("========================================")
+    print(&quot;========================================&quot;)
+    print(&quot;âœ… STRATEJÄ° OLUÅTURULDU&quot;)
+    print(&quot;========================================&quot;)
 
 
 # ============================================================
 # TEST
 # ============================================================
 
-if __name__ == "__main__":
+if __name__ == &quot;__main__&quot;:
 
     print_strategy()
 
@@ -11470,8 +11426,8 @@ api_key=OPENAI_API_KEY
 MINIMUM_VIDEOS_FOR_AI = 10
 
 STRATEGY_FILE = (
-Path("data")
-/ "current_strategy.json"
+Path(&quot;data&quot;)
+/ &quot;current_strategy.json&quot;
 )
 
 # ============================================================
@@ -11490,8 +11446,8 @@ STRATEGY_FILE.parent.mkdir(
 
 with open(
     STRATEGY_FILE,
-    "w",
-    encoding="utf-8"
+    &quot;w&quot;,
+    encoding=&quot;utf-8&quot;
 ) as file:
 
     json.dump(
@@ -11519,8 +11475,8 @@ try:
 
     with open(
         STRATEGY_FILE,
-        "r",
-        encoding="utf-8"
+        &quot;r&quot;,
+        encoding=&quot;utf-8&quot;
     ) as file:
 
         return json.load(file)
@@ -11529,7 +11485,7 @@ except Exception as error:
 
     print()
     print(
-        f"âš ï¸ Strateji dosyasÄ± okunamadÄ±: {error}"
+        f&quot;âš ï¸ Strateji dosyasÄ± okunamadÄ±: {error}&quot;
     )
 
     return None
@@ -11547,44 +11503,44 @@ def build_ai_strategy():
 analysis = analyze_videos()
 
 total_videos = analysis[
-    "total_videos"
+    &quot;total_videos&quot;
 ]
 
 print()
-print("========================================")
-print("ğŸ§  AI STRATEGY ANALYST")
-print("========================================")
+print(&quot;========================================&quot;)
+print(&quot;ğŸ§  AI STRATEGY ANALYST&quot;)
+print(&quot;========================================&quot;)
 
 print()
 print(
-    f"ğŸ“Š Analiz edilen video: "
-    f"{total_videos}"
+    f&quot;ğŸ“Š Analiz edilen video: &quot;
+    f&quot;{total_videos}&quot;
 )
 
 # ========================================================
 # YETERLÄ° VERÄ° YOK
 # ========================================================
 
-if total_videos < MINIMUM_VIDEOS_FOR_AI:
+if total_videos &lt; MINIMUM_VIDEOS_FOR_AI:
 
     print()
     print(
-        f"ğŸŸ¡ AI analizi iÃ§in en az "
-        f"{MINIMUM_VIDEOS_FOR_AI} video gerekli."
+        f&quot;ğŸŸ¡ AI analizi iÃ§in en az &quot;
+        f&quot;{MINIMUM_VIDEOS_FOR_AI} video gerekli.&quot;
     )
 
     print(
-        f"ğŸ“¦ Åu anda {total_videos} video var."
+        f&quot;ğŸ“¦ Åu anda {total_videos} video var.&quot;
     )
 
     print(
-        "ğŸ’° AI Ã§aÄŸrÄ±sÄ± yapÄ±lmadÄ±."
+        &quot;ğŸ’° AI Ã§aÄŸrÄ±sÄ± yapÄ±lmadÄ±.&quot;
     )
 
     return {
-        "status": "INSUFFICIENT_DATA",
-        "total_videos": total_videos,
-        "strategy": None,
+        &quot;status&quot;: &quot;INSUFFICIENT_DATA&quot;,
+        &quot;total_videos&quot;: total_videos,
+        &quot;strategy&quot;: None,
     }
 
 # ========================================================
@@ -11592,69 +11548,69 @@ if total_videos < MINIMUM_VIDEOS_FOR_AI:
 # ========================================================
 
 if not analysis[
-    "performance_available"
+    &quot;performance_available&quot;
 ]:
 
     print()
     print(
-        "ğŸŸ¡ HenÃ¼z performans verisi yok."
+        &quot;ğŸŸ¡ HenÃ¼z performans verisi yok.&quot;
     )
 
     print(
-        "AI strateji analizi yapÄ±lmayacak."
+        &quot;AI strateji analizi yapÄ±lmayacak.&quot;
     )
 
     return {
-        "status": "NO_PERFORMANCE_DATA",
-        "total_videos": total_videos,
-        "strategy": None,
+        &quot;status&quot;: &quot;NO_PERFORMANCE_DATA&quot;,
+        &quot;total_videos&quot;: total_videos,
+        &quot;strategy&quot;: None,
     }
 
 # ========================================================
-# AI'YA GÃ–NDERÄ°LECEK Ã–ZET
+# AI&#x27;YA GÃ–NDERÄ°LECEK Ã–ZET
 # ========================================================
 
 analytics_summary = {
 
-    "total_videos":
-        analysis["total_videos"],
+    &quot;total_videos&quot;:
+        analysis[&quot;total_videos&quot;],
 
-    "average_duration":
-        analysis["average_duration"],
+    &quot;average_duration&quot;:
+        analysis[&quot;average_duration&quot;],
 
-    "average_images":
-        analysis["average_images"],
+    &quot;average_images&quot;:
+        analysis[&quot;average_images&quot;],
 
-    "total_views":
-        analysis["total_views"],
+    &quot;total_views&quot;:
+        analysis[&quot;total_views&quot;],
 
-    "total_likes":
-        analysis["total_likes"],
+    &quot;total_likes&quot;:
+        analysis[&quot;total_likes&quot;],
 
-    "total_comments":
-        analysis["total_comments"],
+    &quot;total_comments&quot;:
+        analysis[&quot;total_comments&quot;],
 
-    "average_views":
-        analysis["average_views"],
+    &quot;average_views&quot;:
+        analysis[&quot;average_views&quot;],
 
-    "average_likes":
-        analysis["average_likes"],
+    &quot;average_likes&quot;:
+        analysis[&quot;average_likes&quot;],
 
-    "average_comments":
-        analysis["average_comments"],
+    &quot;average_comments&quot;:
+        analysis[&quot;average_comments&quot;],
 
-    "top_topics":
-        analysis["top_topics"],
+    &quot;top_topics&quot;:
+        analysis[&quot;top_topics&quot;],
 
-    "best_video":
-        analysis["best_video"],
+    &quot;best_video&quot;:
+        analysis[&quot;best_video&quot;],
 }
 
 # ========================================================
 # AI PROMPT
 # ========================================================
 
-prompt = f"""
+prompt = f&quot;&quot;&quot;
 ```
 
 Sen bir YouTube Shorts strateji analistisin.
@@ -11680,7 +11636,7 @@ strateji oluÅŸtur.
 * Gelecekte test edilmesi gereken fikirler Ã¶ner.
 * AynÄ± konuyu sÃ¼rekli tekrar etmeyi Ã¶nerme.
 * KanalÄ±n Ã§eÅŸitliliÄŸini koru.
-* Stratejiyi Content Engine'in kullanabileceÄŸi
+* Stratejiyi Content Engine&#x27;in kullanabileceÄŸi
   ÅŸekilde yaz.
 
 SADECE JSON DÃ–NDÃœR.
@@ -11688,25 +11644,25 @@ SADECE JSON DÃ–NDÃœR.
 FORMAT:
 
 {{
-"summary": "KanalÄ±n genel durumu",
-"winning_topics": [
-"baÅŸarÄ±lÄ± konu 1",
-"baÅŸarÄ±lÄ± konu 2"
+&quot;summary&quot;: &quot;KanalÄ±n genel durumu&quot;,
+&quot;winning_topics&quot;: [
+&quot;baÅŸarÄ±lÄ± konu 1&quot;,
+&quot;baÅŸarÄ±lÄ± konu 2&quot;
 ],
-"recommended_topics": [
-"Ã¶nerilen konu 1",
-"Ã¶nerilen konu 2",
-"Ã¶nerilen konu 3"
+&quot;recommended_topics&quot;: [
+&quot;Ã¶nerilen konu 1&quot;,
+&quot;Ã¶nerilen konu 2&quot;,
+&quot;Ã¶nerilen konu 3&quot;
 ],
-"duration_strategy": "Video sÃ¼re stratejisi",
-"visual_strategy": "GÃ¶rsel stratejisi",
-"hook_strategy": "Hook stratejisi",
-"content_strategy": "Genel iÃ§erik stratejisi",
-"tests": [
-"test edilmesi gereken ÅŸey 1",
-"test edilmesi gereken ÅŸey 2"
+&quot;duration_strategy&quot;: &quot;Video sÃ¼re stratejisi&quot;,
+&quot;visual_strategy&quot;: &quot;GÃ¶rsel stratejisi&quot;,
+&quot;hook_strategy&quot;: &quot;Hook stratejisi&quot;,
+&quot;content_strategy&quot;: &quot;Genel iÃ§erik stratejisi&quot;,
+&quot;tests&quot;: [
+&quot;test edilmesi gereken ÅŸey 1&quot;,
+&quot;test edilmesi gereken ÅŸey 2&quot;
 ],
-"confidence": "LOW"
+&quot;confidence&quot;: &quot;LOW&quot;
 }}
 
 KANAL ANALÄ°Z VERÄ°SÄ°:
@@ -11716,7 +11672,7 @@ analytics_summary,
 ensure_ascii=False,
 indent=2
 )}
-"""
+&quot;&quot;&quot;
 
 ````
 # ========================================================
@@ -11725,11 +11681,11 @@ indent=2
 
 print()
 print(
-    "ğŸ¤– AI kanal stratejisini analiz ediyor..."
+    &quot;ğŸ¤– AI kanal stratejisini analiz ediyor...&quot;
 )
 
 response = client.responses.create(
-    model="gpt-5.4-mini",
+    model=&quot;gpt-5.4-mini&quot;,
     input=prompt,
 )
 
@@ -11739,13 +11695,13 @@ raw = response.output_text.strip()
 # MARKDOWN TEMÄ°ZLE
 # ========================================================
 
-if raw.startswith("```json"):
+if raw.startswith(&quot;```json&quot;):
 
     raw = raw[
-        len("```json"):
+        len(&quot;```json&quot;):
     ].strip()
 
-if raw.endswith("```"):
+if raw.endswith(&quot;```&quot;):
 
     raw = raw[
         :-3
@@ -11763,15 +11719,15 @@ except json.JSONDecodeError as error:
 
     print()
     print(
-        "âŒ AI JSON Ã§Ä±ktÄ±sÄ± okunamadÄ±."
+        &quot;âŒ AI JSON Ã§Ä±ktÄ±sÄ± okunamadÄ±.&quot;
     )
 
     print()
-    print("AI Ã§Ä±ktÄ±sÄ±:")
+    print(&quot;AI Ã§Ä±ktÄ±sÄ±:&quot;)
     print(raw)
 
     raise ValueError(
-        "AI strateji Ã§Ä±ktÄ±sÄ± geÃ§erli JSON deÄŸil."
+        &quot;AI strateji Ã§Ä±ktÄ±sÄ± geÃ§erli JSON deÄŸil.&quot;
     ) from error
 
 # ========================================================
@@ -11784,11 +11740,11 @@ save_strategy(
 
 print()
 print(
-    "ğŸ’¾ AI stratejisi kaydedildi:"
+    &quot;ğŸ’¾ AI stratejisi kaydedildi:&quot;
 )
 
 print(
-    f"ğŸ“ {STRATEGY_FILE}"
+    f&quot;ğŸ“ {STRATEGY_FILE}&quot;
 )
 
 # ========================================================
@@ -11796,107 +11752,107 @@ print(
 # ========================================================
 
 print()
-print("========================================")
-print("ğŸ¯ AI STRATEJÄ°SÄ°")
-print("========================================")
+print(&quot;========================================&quot;)
+print(&quot;ğŸ¯ AI STRATEJÄ°SÄ°&quot;)
+print(&quot;========================================&quot;)
 
 print()
 print(
-    f"ğŸ“Œ Ã–zet:\n"
-    f"{strategy.get('summary', '')}"
+    f&quot;ğŸ“Œ Ã–zet:\n&quot;
+    f&quot;{strategy.get(&#x27;summary&#x27;, &#x27;&#x27;)}&quot;
 )
 
 print()
-print("ğŸ† BAÅARILI KONULAR")
+print(&quot;ğŸ† BAÅARILI KONULAR&quot;)
 
 for topic in strategy.get(
-    "winning_topics",
+    &quot;winning_topics&quot;,
     []
 ):
 
     print(
-        f"â€¢ {topic}"
+        f&quot;â€¢ {topic}&quot;
     )
 
 print()
-print("ğŸ’¡ Ã–NERÄ°LEN KONULAR")
+print(&quot;ğŸ’¡ Ã–NERÄ°LEN KONULAR&quot;)
 
 for topic in strategy.get(
-    "recommended_topics",
+    &quot;recommended_topics&quot;,
     []
 ):
 
     print(
-        f"â€¢ {topic}"
+        f&quot;â€¢ {topic}&quot;
     )
 
 print()
-print("â±ï¸ SÃœRE STRATEJÄ°SÄ°")
+print(&quot;â±ï¸ SÃœRE STRATEJÄ°SÄ°&quot;)
 
 print(
     strategy.get(
-        "duration_strategy",
-        ""
+        &quot;duration_strategy&quot;,
+        &quot;&quot;
     )
 )
 
 print()
-print("ğŸ–¼ï¸ GÃ–RSEL STRATEJÄ°SÄ°")
+print(&quot;ğŸ–¼ï¸ GÃ–RSEL STRATEJÄ°SÄ°&quot;)
 
 print(
     strategy.get(
-        "visual_strategy",
-        ""
+        &quot;visual_strategy&quot;,
+        &quot;&quot;
     )
 )
 
 print()
-print("ğŸ£ HOOK STRATEJÄ°SÄ°")
+print(&quot;ğŸ£ HOOK STRATEJÄ°SÄ°&quot;)
 
 print(
     strategy.get(
-        "hook_strategy",
-        ""
+        &quot;hook_strategy&quot;,
+        &quot;&quot;
     )
 )
 
 print()
-print("ğŸ¯ Ä°Ã‡ERÄ°K STRATEJÄ°SÄ°")
+print(&quot;ğŸ¯ Ä°Ã‡ERÄ°K STRATEJÄ°SÄ°&quot;)
 
 print(
     strategy.get(
-        "content_strategy",
-        ""
+        &quot;content_strategy&quot;,
+        &quot;&quot;
     )
 )
 
 print()
-print("ğŸ§ª TESTLER")
+print(&quot;ğŸ§ª TESTLER&quot;)
 
 for test in strategy.get(
-    "tests",
+    &quot;tests&quot;,
     []
 ):
 
     print(
-        f"â€¢ {test}"
+        f&quot;â€¢ {test}&quot;
     )
 
 print()
 print(
-    "ğŸ“ˆ GÃ¼ven seviyesi: "
-    f"{strategy.get('confidence', 'LOW')}"
+    &quot;ğŸ“ˆ GÃ¼ven seviyesi: &quot;
+    f&quot;{strategy.get(&#x27;confidence&#x27;, &#x27;LOW&#x27;)}&quot;
 )
 
 print()
-print("========================================")
-print("âœ… AI STRATEJÄ° ANALÄ°ZÄ° TAMAMLANDI")
-print("========================================")
+print(&quot;========================================&quot;)
+print(&quot;âœ… AI STRATEJÄ° ANALÄ°ZÄ° TAMAMLANDI&quot;)
+print(&quot;========================================&quot;)
 
 return {
-    "status": "OK",
-    "total_videos": total_videos,
-    "strategy": strategy,
+    &quot;status&quot;: &quot;OK&quot;,
+    &quot;total_videos&quot;: total_videos,
+    &quot;strategy&quot;: strategy,
 }
 ````
 
@@ -11906,7 +11862,7 @@ return {
 
 # ============================================================
 
-if **name** == "**main**":
+if **name** == &quot;**main**&quot;:
 
 ```
 build_ai_strategy()
@@ -11924,8 +11880,8 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 
 def evaluate_content(content):
     response = client.responses.create(
-        model="gpt-5.4-mini",
-        input=f"""
+        model=&quot;gpt-5.4-mini&quot;,
+        input=f&quot;&quot;&quot;
 Sen profesyonel bir YouTube Shorts editÃ¶rÃ¼sÃ¼n.
 
 AÅŸaÄŸÄ±daki iÃ§eriÄŸi deÄŸerlendir.
@@ -11960,41 +11916,41 @@ ONAY veya RED
 
 Ã–NEMLÄ°:
 Toplam puan 85 veya Ã¼zerindeyse SONUC ONAY olmalÄ±.
-Toplam puan 85'in altÄ±ndaysa SONUC RED olmalÄ±.
+Toplam puan 85&#x27;in altÄ±ndaysa SONUC RED olmalÄ±.
 
 Sadece bu formatÄ± kullan.
-""",
+&quot;&quot;&quot;,
     )
 
     editor_result = response.output_text
 
     print()
-    print("=== AI EDITÃ–R ===")
+    print(&quot;=== AI EDITÃ–R ===&quot;)
     print(editor_result)
 
     # -----------------------------
     # OTOMATÄ°K KARAR
     # -----------------------------
 
-    decision = "RED"
+    decision = &quot;RED&quot;
 
     for line in editor_result.splitlines():
 
-        if "Toplam puan:" in line:
+        if &quot;Toplam puan:&quot; in line:
             try:
-                score_text = line.split(":", 1)[1]
-                score = int(score_text.split("/")[0].strip())
+                score_text = line.split(&quot;:&quot;, 1)[1]
+                score = int(score_text.split(&quot;/&quot;)[0].strip())
 
-                if score >= 85:
-                    decision = "ONAY"
+                if score &gt;= 85:
+                    decision = &quot;ONAY&quot;
                 else:
-                    decision = "RED"
+                    decision = &quot;RED&quot;
 
             except (ValueError, IndexError):
-                decision = "RED"
+                decision = &quot;RED&quot;
 
     print()
-    print("ğŸ¯ OTOMATÄ°K KARAR:", decision)
+    print(&quot;ğŸ¯ OTOMATÄ°K KARAR:&quot;, decision)
 
     return editor_result, decision
 
@@ -12023,7 +11979,7 @@ client = OpenAI(
     api_key=OPENAI_API_KEY
 )
 
-STRATEGY_FILE = Path("data") / "current_strategy.json"
+STRATEGY_FILE = Path(&quot;data&quot;) / &quot;current_strategy.json&quot;
 
 
 # ============================================================
@@ -12039,8 +11995,8 @@ def load_strategy():
 
         with open(
             STRATEGY_FILE,
-            "r",
-            encoding="utf-8"
+            &quot;r&quot;,
+            encoding=&quot;utf-8&quot;
         ) as file:
 
             return json.load(file)
@@ -12049,7 +12005,7 @@ def load_strategy():
 
         print()
         print(
-            f"âš ï¸ Strateji okunamadÄ±: {error}"
+            f&quot;âš ï¸ Strateji okunamadÄ±: {error}&quot;
         )
 
         return None
@@ -12062,55 +12018,55 @@ def load_strategy():
 def create_short(topic):
 
     print()
-    print("=== KANAL STRATEJÄ°SÄ° ===")
+    print(&quot;=== KANAL STRATEJÄ°SÄ° ===&quot;)
 
     strategy = load_strategy()
 
-    strategy_context = ""
+    strategy_context = &quot;&quot;
 
     if strategy:
 
         print()
         print(
-            "ğŸ§  KayÄ±tlÄ± AI stratejisi bulundu."
+            &quot;ğŸ§  KayÄ±tlÄ± AI stratejisi bulundu.&quot;
         )
 
         print(
-            f"ğŸ“ {STRATEGY_FILE}"
+            f&quot;ğŸ“ {STRATEGY_FILE}&quot;
         )
 
-        strategy_context = f"""
+        strategy_context = f&quot;&quot;&quot;
 
 KANALIN MEVCUT AI STRATEJÄ°SÄ°:
 
 Genel analiz:
-{strategy.get("summary", "")}
+{strategy.get(&quot;summary&quot;, &quot;&quot;)}
 
 BaÅŸarÄ±lÄ± konular:
-{", ".join(
-    strategy.get("winning_topics", [])
+{&quot;, &quot;.join(
+    strategy.get(&quot;winning_topics&quot;, [])
 )}
 
 Ã–nerilen konular:
-{", ".join(
-    strategy.get("recommended_topics", [])
+{&quot;, &quot;.join(
+    strategy.get(&quot;recommended_topics&quot;, [])
 )}
 
 SÃ¼re stratejisi:
-{strategy.get("duration_strategy", "")}
+{strategy.get(&quot;duration_strategy&quot;, &quot;&quot;)}
 
 GÃ¶rsel stratejisi:
-{strategy.get("visual_strategy", "")}
+{strategy.get(&quot;visual_strategy&quot;, &quot;&quot;)}
 
 Hook stratejisi:
-{strategy.get("hook_strategy", "")}
+{strategy.get(&quot;hook_strategy&quot;, &quot;&quot;)}
 
 Ä°Ã§erik stratejisi:
-{strategy.get("content_strategy", "")}
+{strategy.get(&quot;content_strategy&quot;, &quot;&quot;)}
 
 Test Ã¶nerileri:
-{", ".join(
-    strategy.get("tests", [])
+{&quot;, &quot;.join(
+    strategy.get(&quot;tests&quot;, [])
 )}
 
 Bu stratejiyi yeni iÃ§erik Ã¼retirken dikkate al.
@@ -12120,17 +12076,17 @@ Verilen konuya uygun olan Ã¶nerileri kullan.
 
 AynÄ± konularÄ± gereksiz yere tekrar etme.
 Yeni fikirler Ã¼ret.
-"""
+&quot;&quot;&quot;
 
     else:
 
         print()
         print(
-            "ğŸ“¦ KayÄ±tlÄ± AI stratejisi bulunamadÄ±."
+            &quot;ğŸ“¦ KayÄ±tlÄ± AI stratejisi bulunamadÄ±.&quot;
         )
 
         print(
-            "ğŸ¬ Standart iÃ§erik Ã¼retimi kullanÄ±lacak."
+            &quot;ğŸ¬ Standart iÃ§erik Ã¼retimi kullanÄ±lacak.&quot;
         )
 
     # ========================================================
@@ -12138,13 +12094,13 @@ Yeni fikirler Ã¼ret.
     # ========================================================
 
     print()
-    print("=== AI Ä°Ã‡ERÄ°K ÃœRETÄ°MÄ° ===")
+    print(&quot;=== AI Ä°Ã‡ERÄ°K ÃœRETÄ°MÄ° ===&quot;)
 
     response = client.responses.create(
 
-        model="gpt-5.4-mini",
+        model=&quot;gpt-5.4-mini&quot;,
 
-        input=f"""
+        input=f&quot;&quot;&quot;
 
 Sen profesyonel bir YouTube Shorts iÃ§erik Ã¼reticisisin.
 
@@ -12182,7 +12138,7 @@ Her gÃ¶rsel farklÄ± bir sahneyi anlatsÄ±n.
 GÃ¶rseller senaryodaki anlatÄ±mla uyumlu olsun.
 
 Sadece bu bÃ¶lÃ¼mleri oluÅŸtur.
-""",
+&quot;&quot;&quot;,
     )
 
     content = response.output_text
@@ -12192,25 +12148,25 @@ Sadece bu bÃ¶lÃ¼mleri oluÅŸtur.
     # ========================================================
 
     print()
-    print("=== AI EDÄ°TÃ–R KONTROLÃœ ===")
+    print(&quot;=== AI EDÄ°TÃ–R KONTROLÃœ ===&quot;)
 
     editor_result, decision = evaluate_content(
         content
     )
 
-    if decision != "ONAY":
+    if decision != &quot;ONAY&quot;:
 
         print()
-        print("âŒ Ä°Ã‡ERÄ°K REDDEDÄ°LDÄ°")
-        print("Dosya kaydedilmeyecek.")
+        print(&quot;âŒ Ä°Ã‡ERÄ°K REDDEDÄ°LDÄ°&quot;)
+        print(&quot;Dosya kaydedilmeyecek.&quot;)
 
         return
 
     print()
-    print("âœ… Ä°Ã‡ERÄ°K ONAYLANDI")
+    print(&quot;âœ… Ä°Ã‡ERÄ°K ONAYLANDI&quot;)
 
     print()
-    print("=== AI SHORTS Ä°Ã‡ERÄ°K PAKETÄ° ===")
+    print(&quot;=== AI SHORTS Ä°Ã‡ERÄ°K PAKETÄ° ===&quot;)
     print(content)
 
     # ========================================================
@@ -12218,11 +12174,11 @@ Sadece bu bÃ¶lÃ¼mleri oluÅŸtur.
     # ========================================================
 
     required_sections = [
-        "[SENARYO]",
-        "[BASLIK]",
-        "[ACIKLAMA]",
-        "[HASHTAG]",
-        "[GÃ–RSEL_PROMPT]",
+        &quot;[SENARYO]&quot;,
+        &quot;[BASLIK]&quot;,
+        &quot;[ACIKLAMA]&quot;,
+        &quot;[HASHTAG]&quot;,
+        &quot;[GÃ–RSEL_PROMPT]&quot;,
     ]
 
     missing_sections = [
@@ -12235,20 +12191,20 @@ Sadece bu bÃ¶lÃ¼mleri oluÅŸtur.
 
         print()
         print(
-            "âš ï¸ KALÄ°TE KONTROL BAÅARISIZ"
+            &quot;âš ï¸ KALÄ°TE KONTROL BAÅARISIZ&quot;
         )
 
-        print("Eksik bÃ¶lÃ¼mler:")
+        print(&quot;Eksik bÃ¶lÃ¼mler:&quot;)
 
         for section in missing_sections:
 
             print(
-                f"- {section}"
+                f&quot;- {section}&quot;
             )
 
         print()
         print(
-            "Dosya kaydedilmedi."
+            &quot;Dosya kaydedilmedi.&quot;
         )
 
         return
@@ -12257,7 +12213,7 @@ Sadece bu bÃ¶lÃ¼mleri oluÅŸtur.
     # SHORTS KLASÃ–RÃœ
     # ========================================================
 
-    shorts_folder = Path("shorts")
+    shorts_folder = Path(&quot;shorts&quot;)
 
     shorts_folder.mkdir(
         exist_ok=True
@@ -12294,7 +12250,7 @@ Sadece bu bÃ¶lÃ¼mleri oluÅŸtur.
 
     video_folder = (
         shorts_folder
-        / f"{next_number:03d}"
+        / f&quot;{next_number:03d}&quot;
     )
 
     video_folder.mkdir()
@@ -12305,11 +12261,11 @@ Sadece bu bÃ¶lÃ¼mleri oluÅŸtur.
 
     sections = {
 
-        "SENARYO": "",
-        "BASLIK": "",
-        "ACIKLAMA": "",
-        "HASHTAG": "",
-        "GÃ–RSEL_PROMPT": "",
+        &quot;SENARYO&quot;: &quot;&quot;,
+        &quot;BASLIK&quot;: &quot;&quot;,
+        &quot;ACIKLAMA&quot;: &quot;&quot;,
+        &quot;HASHTAG&quot;: &quot;&quot;,
+        &quot;GÃ–RSEL_PROMPT&quot;: &quot;&quot;,
 
     }
 
@@ -12319,31 +12275,31 @@ Sadece bu bÃ¶lÃ¼mleri oluÅŸtur.
 
         line = line.strip()
 
-        if line == "[SENARYO]":
+        if line == &quot;[SENARYO]&quot;:
 
-            current_section = "SENARYO"
+            current_section = &quot;SENARYO&quot;
 
-        elif line == "[BASLIK]":
+        elif line == &quot;[BASLIK]&quot;:
 
-            current_section = "BASLIK"
+            current_section = &quot;BASLIK&quot;
 
-        elif line == "[ACIKLAMA]":
+        elif line == &quot;[ACIKLAMA]&quot;:
 
-            current_section = "ACIKLAMA"
+            current_section = &quot;ACIKLAMA&quot;
 
-        elif line == "[HASHTAG]":
+        elif line == &quot;[HASHTAG]&quot;:
 
-            current_section = "HASHTAG"
+            current_section = &quot;HASHTAG&quot;
 
-        elif line == "[GÃ–RSEL_PROMPT]":
+        elif line == &quot;[GÃ–RSEL_PROMPT]&quot;:
 
-            current_section = "GÃ–RSEL_PROMPT"
+            current_section = &quot;GÃ–RSEL_PROMPT&quot;
 
         elif current_section:
 
             sections[
                 current_section
-            ] += line + "\n"
+            ] += line + &quot;\n&quot;
 
     # ========================================================
     # BOÅ BÃ–LÃœMLERÄ° KONTROL ET
@@ -12363,17 +12319,17 @@ Sadece bu bÃ¶lÃ¼mleri oluÅŸtur.
 
         print()
         print(
-            "âš ï¸ KALÄ°TE KONTROL BAÅARISIZ"
+            &quot;âš ï¸ KALÄ°TE KONTROL BAÅARISIZ&quot;
         )
 
         print(
-            "BoÅŸ bÃ¶lÃ¼mler:"
+            &quot;BoÅŸ bÃ¶lÃ¼mler:&quot;
         )
 
         for section in empty_sections:
 
             print(
-                f"- {section}"
+                f&quot;- {section}&quot;
             )
 
         video_folder.rmdir()
@@ -12386,20 +12342,20 @@ Sadece bu bÃ¶lÃ¼mleri oluÅŸtur.
 
     files = {
 
-        "SENARYO":
-            "senaryo.txt",
+        &quot;SENARYO&quot;:
+            &quot;senaryo.txt&quot;,
 
-        "BASLIK":
-            "baslik.txt",
+        &quot;BASLIK&quot;:
+            &quot;baslik.txt&quot;,
 
-        "ACIKLAMA":
-            "aciklama.txt",
+        &quot;ACIKLAMA&quot;:
+            &quot;aciklama.txt&quot;,
 
-        "HASHTAG":
-            "hashtag.txt",
+        &quot;HASHTAG&quot;:
+            &quot;hashtag.txt&quot;,
 
-        "GÃ–RSEL_PROMPT":
-            "gorsel_prompt.txt",
+        &quot;GÃ–RSEL_PROMPT&quot;:
+            &quot;gorsel_prompt.txt&quot;,
 
     }
 
@@ -12412,8 +12368,8 @@ Sadece bu bÃ¶lÃ¼mleri oluÅŸtur.
 
         with open(
             file_path,
-            "w",
-            encoding="utf-8"
+            &quot;w&quot;,
+            encoding=&quot;utf-8&quot;
         ) as file:
 
             file.write(
@@ -12424,12 +12380,12 @@ Sadece bu bÃ¶lÃ¼mleri oluÅŸtur.
 
     print()
     print(
-        "âœ… KALÄ°TE KONTROL BAÅARILI"
+        &quot;âœ… KALÄ°TE KONTROL BAÅARILI&quot;
     )
 
     print(
-        f"Ä°Ã§erik paketi kaydedildi: "
-        f"{video_folder}"
+        f&quot;Ä°Ã§erik paketi kaydedildi: &quot;
+        f&quot;{video_folder}&quot;
     )
 
     # ========================================================
@@ -12438,17 +12394,17 @@ Sadece bu bÃ¶lÃ¼mleri oluÅŸtur.
 
     prompt_file = (
         video_folder
-        / "gorsel_prompt.txt"
+        / &quot;gorsel_prompt.txt&quot;
     )
 
     image_folder = (
         video_folder
-        / "gorseller"
+        / &quot;gorseller&quot;
     )
 
     print()
     print(
-        "=== AI GÃ–RSEL ÃœRETÄ°MÄ° ==="
+        &quot;=== AI GÃ–RSEL ÃœRETÄ°MÄ° ===&quot;
     )
 
     generate_images_from_prompt_file(
@@ -12462,16 +12418,16 @@ Sadece bu bÃ¶lÃ¼mleri oluÅŸtur.
 
     audio_file = (
         video_folder
-        / "ses.mp3"
+        / &quot;ses.mp3&quot;
     )
 
     print()
     print(
-        "=== AI SES ÃœRETÄ°MÄ° ==="
+        &quot;=== AI SES ÃœRETÄ°MÄ° ===&quot;
     )
 
     generate_voice(
-        text=sections["SENARYO"],
+        text=sections[&quot;SENARYO&quot;],
         output_file=audio_file,
     )
 
@@ -12479,14 +12435,14 @@ Sadece bu bÃ¶lÃ¼mleri oluÅŸtur.
 
         print()
         print(
-            "âŒ SES OLUÅTURULAMADI"
+            &quot;âŒ SES OLUÅTURULAMADI&quot;
         )
 
         return
 
     print()
     print(
-        f"âœ… Ses hazÄ±r: {audio_file}"
+        f&quot;âœ… Ses hazÄ±r: {audio_file}&quot;
     )
 
     # ========================================================
@@ -12495,12 +12451,12 @@ Sadece bu bÃ¶lÃ¼mleri oluÅŸtur.
 
     video_file = (
         video_folder
-        / "video.mp4"
+        / &quot;video.mp4&quot;
     )
 
     print()
     print(
-        "=== VÄ°DEO OLUÅTURMA ==="
+        &quot;=== VÄ°DEO OLUÅTURMA ===&quot;
     )
 
     create_video(
@@ -12513,7 +12469,7 @@ Sadece bu bÃ¶lÃ¼mleri oluÅŸtur.
 
         print()
         print(
-            "âŒ VÄ°DEO OLUÅTURULAMADI"
+            &quot;âŒ VÄ°DEO OLUÅTURULAMADI&quot;
         )
 
         return
@@ -12524,16 +12480,16 @@ Sadece bu bÃ¶lÃ¼mleri oluÅŸtur.
 
     transcript_file = (
         video_folder
-        / "transkript.txt"
+        / &quot;transkript.txt&quot;
     )
 
     print()
     print(
-        "=== AI TRANSCRIBE ==="
+        &quot;=== AI TRANSCRIBE ===&quot;
     )
 
     print(
-        "ğŸ™ï¸ Ses yazÄ±ya Ã§evriliyor..."
+        &quot;ğŸ™ï¸ Ses yazÄ±ya Ã§evriliyor...&quot;
     )
 
     transcript_result = transcribe_audio(
@@ -12546,12 +12502,12 @@ Sadece bu bÃ¶lÃ¼mleri oluÅŸtur.
 
     transcript_file.write_text(
         transcript_text,
-        encoding="utf-8"
+        encoding=&quot;utf-8&quot;
     )
 
     print()
     print(
-        "=== TRANSKRÄ°PT ==="
+        &quot;=== TRANSKRÄ°PT ===&quot;
     )
 
     print(
@@ -12560,7 +12516,7 @@ Sadece bu bÃ¶lÃ¼mleri oluÅŸtur.
 
     print()
     print(
-        "âœ… TRANSKRÄ°PT TAMAMLANDI"
+        &quot;âœ… TRANSKRÄ°PT TAMAMLANDI&quot;
     )
 
     # ========================================================
@@ -12569,12 +12525,12 @@ Sadece bu bÃ¶lÃ¼mleri oluÅŸtur.
 
     subtitle_file = (
         video_folder
-        / "altyazi_ai.srt"
+        / &quot;altyazi_ai.srt&quot;
     )
 
     print()
     print(
-        "=== AI ALTYAZI OLUÅTURMA ==="
+        &quot;=== AI ALTYAZI OLUÅTURMA ===&quot;
     )
 
     create_subtitle(
@@ -12587,7 +12543,7 @@ Sadece bu bÃ¶lÃ¼mleri oluÅŸtur.
 
         print()
         print(
-            "âŒ ALTYAZI OLUÅTURULAMADI"
+            &quot;âŒ ALTYAZI OLUÅTURULAMADI&quot;
         )
 
         return
@@ -12598,12 +12554,12 @@ Sadece bu bÃ¶lÃ¼mleri oluÅŸtur.
 
     final_video = (
         video_folder
-        / "video_final.mp4"
+        / &quot;video_final.mp4&quot;
     )
 
     print()
     print(
-        "=== FÄ°NAL VÄ°DEO ==="
+        &quot;=== FÄ°NAL VÄ°DEO ===&quot;
     )
 
     add_subtitles(
@@ -12616,7 +12572,7 @@ Sadece bu bÃ¶lÃ¼mleri oluÅŸtur.
 
         print()
         print(
-            "âŒ FÄ°NAL VÄ°DEO OLUÅTURULAMADI"
+            &quot;âŒ FÄ°NAL VÄ°DEO OLUÅTURULAMADI&quot;
         )
 
         return
@@ -12627,7 +12583,7 @@ Sadece bu bÃ¶lÃ¼mleri oluÅŸtur.
 
     print()
     print(
-        "=== ANALYTICS KAYDI ==="
+        &quot;=== ANALYTICS KAYDI ===&quot;
     )
 
     image_count = len([
@@ -12640,10 +12596,10 @@ Sadece bu bÃ¶lÃ¼mleri oluÅŸtur.
 
         and file.suffix.lower()
         in [
-            ".png",
-            ".jpg",
-            ".jpeg",
-            ".webp",
+            &quot;.png&quot;,
+            &quot;.jpg&quot;,
+            &quot;.jpeg&quot;,
+            &quot;.webp&quot;,
         ]
 
     ])
@@ -12659,13 +12615,13 @@ Sadece bu bÃ¶lÃ¼mleri oluÅŸtur.
         result = subprocess.run(
 
             [
-                "ffprobe",
-                "-v",
-                "error",
-                "-show_entries",
-                "format=duration",
-                "-of",
-                "default=noprint_wrappers=1:nokey=1",
+                &quot;ffprobe&quot;,
+                &quot;-v&quot;,
+                &quot;error&quot;,
+                &quot;-show_entries&quot;,
+                &quot;format=duration&quot;,
+                &quot;-of&quot;,
+                &quot;default=noprint_wrappers=1:nokey=1&quot;,
                 str(audio_file),
             ],
 
@@ -12683,8 +12639,8 @@ Sadece bu bÃ¶lÃ¼mleri oluÅŸtur.
 
         print()
         print(
-            f"âš ï¸ Video sÃ¼resi alÄ±namadÄ±: "
-            f"{error}"
+            f&quot;âš ï¸ Video sÃ¼resi alÄ±namadÄ±: &quot;
+            f&quot;{error}&quot;
         )
 
     # ========================================================
@@ -12696,7 +12652,7 @@ Sadece bu bÃ¶lÃ¼mleri oluÅŸtur.
         line.strip()
 
         for line
-        in sections["SENARYO"].splitlines()
+        in sections[&quot;SENARYO&quot;].splitlines()
 
         if line.strip()
 
@@ -12708,7 +12664,7 @@ Sadece bu bÃ¶lÃ¼mleri oluÅŸtur.
 
         if script_lines
 
-        else ""
+        else &quot;&quot;
 
     )
 
@@ -12733,42 +12689,42 @@ Sadece bu bÃ¶lÃ¼mleri oluÅŸtur.
             image_count=image_count,
 
             created_at=datetime.now().isoformat(
-                timespec="seconds"
+                timespec=&quot;seconds&quot;
             ),
 
         )
 
         print()
         print(
-            "âœ… ANALYTICS KAYDI TAMAMLANDI"
+            &quot;âœ… ANALYTICS KAYDI TAMAMLANDI&quot;
         )
 
         print(
-            f"ğŸ§  Video ID: "
-            f"{analytics_id}"
+            f&quot;ğŸ§  Video ID: &quot;
+            f&quot;{analytics_id}&quot;
         )
 
         print(
-            f"ğŸ“¹ Video numarasÄ±: "
-            f"{next_number:03d}"
+            f&quot;ğŸ“¹ Video numarasÄ±: &quot;
+            f&quot;{next_number:03d}&quot;
         )
 
         print(
-            f"ğŸ“Š GÃ¶rsel sayÄ±sÄ±: "
-            f"{image_count}"
+            f&quot;ğŸ“Š GÃ¶rsel sayÄ±sÄ±: &quot;
+            f&quot;{image_count}&quot;
         )
 
         print(
-            f"â±ï¸ SÃ¼re: "
-            f"{video_duration:.2f} saniye"
+            f&quot;â±ï¸ SÃ¼re: &quot;
+            f&quot;{video_duration:.2f} saniye&quot;
         )
 
     except Exception as error:
 
         print()
         print(
-            f"âš ï¸ ANALYTICS KAYDI BAÅARISIZ: "
-            f"{error}"
+            f&quot;âš ï¸ ANALYTICS KAYDI BAÅARISIZ: &quot;
+            f&quot;{error}&quot;
         )
 
     # ========================================================
@@ -12777,41 +12733,41 @@ Sadece bu bÃ¶lÃ¼mleri oluÅŸtur.
 
     print()
     print(
-        "========================================"
+        &quot;========================================&quot;
     )
 
     print(
-        "ğŸ‰ SHORTS TAMAMEN OLUÅTURULDU"
+        &quot;ğŸ‰ SHORTS TAMAMEN OLUÅTURULDU&quot;
     )
 
     print(
-        "========================================"
+        &quot;========================================&quot;
     )
 
     print()
 
     print(
-        f"ğŸ“ KlasÃ¶r: {video_folder}"
+        f&quot;ğŸ“ KlasÃ¶r: {video_folder}&quot;
     )
 
     print(
-        f"ğŸ™ï¸ Ses: {audio_file}"
+        f&quot;ğŸ™ï¸ Ses: {audio_file}&quot;
     )
 
     print(
-        f"ğŸ“ Transkript: {transcript_file}"
+        f&quot;ğŸ“ Transkript: {transcript_file}&quot;
     )
 
     print(
-        f"ğŸ’¬ AltyazÄ±: {subtitle_file}"
+        f&quot;ğŸ’¬ AltyazÄ±: {subtitle_file}&quot;
     )
 
     print(
-        f"ğŸ¬ Video: {video_file}"
+        f&quot;ğŸ¬ Video: {video_file}&quot;
     )
 
     print(
-        f"ğŸ¬ Final: {final_video}"
+        f&quot;ğŸ¬ Final: {final_video}&quot;
     )
 
 ============================================================
@@ -12830,10 +12786,10 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 
 def generate_image(prompt, output_path):
     result = client.images.generate(
-        model="gpt-image-2",
+        model=&quot;gpt-image-2&quot;,
         prompt=prompt,
-        size="1024x1024",
-        quality="low",
+        size=&quot;1024x1024&quot;,
+        quality=&quot;low&quot;,
     )
 
     image_data = result.data[0].b64_json
@@ -12841,7 +12797,7 @@ def generate_image(prompt, output_path):
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    with open(output_path, "wb") as f:
+    with open(output_path, &quot;wb&quot;) as f:
         f.write(base64.b64decode(image_data))
 
     return output_path
@@ -12860,42 +12816,42 @@ def generate_images_from_prompt_file(prompt_file, output_folder):
 
     if not prompt_file.exists():
         raise FileNotFoundError(
-            f"GÃ¶rsel prompt dosyasÄ± bulunamadÄ±: {prompt_file}"
+            f&quot;GÃ¶rsel prompt dosyasÄ± bulunamadÄ±: {prompt_file}&quot;
         )
 
     output_folder.mkdir(parents=True, exist_ok=True)
 
-    text = prompt_file.read_text(encoding="utf-8")
+    text = prompt_file.read_text(encoding=&quot;utf-8&quot;)
 
     prompts = [
         prompt.strip()
-        for prompt in text.split("\n")
+        for prompt in text.split(&quot;\n&quot;)
         if prompt.strip()
     ]
 
     if not prompts:
-        raise ValueError("GÃ¶rsel promptu bulunamadÄ±.")
+        raise ValueError(&quot;GÃ¶rsel promptu bulunamadÄ±.&quot;)
 
     print()
-    print(f"ğŸ¨ Toplam {len(prompts)} gÃ¶rsel Ã¼retilecek.")
+    print(f&quot;ğŸ¨ Toplam {len(prompts)} gÃ¶rsel Ã¼retilecek.&quot;)
 
     generated_files = []
 
     for index, prompt in enumerate(prompts, start=1):
 
         print()
-        print(f"ğŸ¨ GÃ¶rsel {index}/{len(prompts)} oluÅŸturuluyor...")
+        print(f&quot;ğŸ¨ GÃ¶rsel {index}/{len(prompts)} oluÅŸturuluyor...&quot;)
 
-        output_path = output_folder / f"{index:02d}.png"
+        output_path = output_folder / f&quot;{index:02d}.png&quot;
 
         generate_image(prompt, output_path)
 
-        print(f"âœ… Kaydedildi: {output_path}")
+        print(f&quot;âœ… Kaydedildi: {output_path}&quot;)
 
         generated_files.append(output_path)
 
     print()
-    print("ğŸ‰ TÃœM GÃ–RSELLER TAMAMLANDI!")
+    print(&quot;ğŸ‰ TÃœM GÃ–RSELLER TAMAMLANDI!&quot;)
 
     return generated_files
 
@@ -12922,8 +12878,8 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 def create_ai_captions(text):
 
     response = client.responses.create(
-        model="gpt-5.4-mini",
-        input=f"""
+        model=&quot;gpt-5.4-mini&quot;,
+        input=f&quot;&quot;&quot;
 AÅŸaÄŸÄ±daki TÃ¼rkÃ§e konuÅŸma metnini YouTube Shorts altyazÄ±larÄ± iÃ§in
 doÄŸal ve okunabilir kÄ±sa parÃ§alara bÃ¶l.
 
@@ -12934,8 +12890,8 @@ KURALLAR:
 - Kelime sayÄ±sÄ±ndan Ã§ok anlam bÃ¼tÃ¼nlÃ¼ÄŸÃ¼nÃ¼ Ã¶nemse.
 - DoÄŸal konuÅŸma ritmini koru.
 - Birbirine baÄŸlÄ± kelimeleri ayÄ±rma.
-- "mi?", "mÄ±?", "mu?", "mÃ¼?" gibi soru eklerini asla tek baÅŸÄ±na bÄ±rakma.
-- "ve", "ama", "fakat", "ancak", "Ã§Ã¼nkÃ¼", "ile" gibi baÄŸlaÃ§larÄ±
+- &quot;mi?&quot;, &quot;mÄ±?&quot;, &quot;mu?&quot;, &quot;mÃ¼?&quot; gibi soru eklerini asla tek baÅŸÄ±na bÄ±rakma.
+- &quot;ve&quot;, &quot;ama&quot;, &quot;fakat&quot;, &quot;ancak&quot;, &quot;Ã§Ã¼nkÃ¼&quot;, &quot;ile&quot; gibi baÄŸlaÃ§larÄ±
   anlamsÄ±z ÅŸekilde ayÄ±rma.
 - Ã‡ok kÄ±sa anlamsÄ±z parÃ§alar oluÅŸturma.
 - Ã‡ok uzun parÃ§alar oluÅŸturma.
@@ -12957,41 +12913,41 @@ SADECE JSON DÃ–NDÃœR.
 FORMAT:
 
 {{
-    "captions": [
-        "parÃ§a 1",
-        "parÃ§a 2",
-        "parÃ§a 3"
+    &quot;captions&quot;: [
+        &quot;parÃ§a 1&quot;,
+        &quot;parÃ§a 2&quot;,
+        &quot;parÃ§a 3&quot;
     ]
 }}
 
 METÄ°N:
 
 {text}
-""",
+&quot;&quot;&quot;,
     )
 
     raw = response.output_text.strip()
 
     raw = re.sub(
-        r"^```json\s*",
-        "",
+        r&quot;^```json\s*&quot;,
+        &quot;&quot;,
         raw,
         flags=re.IGNORECASE
     )
 
     raw = re.sub(
-        r"\s*```$",
-        "",
+        r&quot;\s*```$&quot;,
+        &quot;&quot;,
         raw
     )
 
     data = json.loads(raw)
 
-    captions = data.get("captions", [])
+    captions = data.get(&quot;captions&quot;, [])
 
     if not captions:
         raise ValueError(
-            "AI altyazÄ± parÃ§alarÄ± oluÅŸturamadÄ±."
+            &quot;AI altyazÄ± parÃ§alarÄ± oluÅŸturamadÄ±.&quot;
         )
 
     return captions
@@ -13005,13 +12961,13 @@ def get_audio_duration(audio_file):
 
     result = subprocess.run(
         [
-            "ffprobe",
-            "-v",
-            "error",
-            "-show_entries",
-            "format=duration",
-            "-of",
-            "default=noprint_wrappers=1:nokey=1",
+            &quot;ffprobe&quot;,
+            &quot;-v&quot;,
+            &quot;error&quot;,
+            &quot;-show_entries&quot;,
+            &quot;format=duration&quot;,
+            &quot;-of&quot;,
+            &quot;default=noprint_wrappers=1:nokey=1&quot;,
             str(audio_file),
         ],
         capture_output=True,
@@ -13040,10 +12996,10 @@ def format_srt_time(seconds):
     milliseconds %= 1000
 
     return (
-        f"{hours:02d}:"
-        f"{minutes:02d}:"
-        f"{seconds:02d},"
-        f"{milliseconds:03d}"
+        f&quot;{hours:02d}:&quot;
+        f&quot;{minutes:02d}:&quot;
+        f&quot;{seconds:02d},&quot;
+        f&quot;{milliseconds:03d}&quot;
     )
 
 
@@ -13063,21 +13019,21 @@ def create_subtitle(
 
     if not transcript_file.exists():
         raise FileNotFoundError(
-            f"Transkript bulunamadÄ±: {transcript_file}"
+            f&quot;Transkript bulunamadÄ±: {transcript_file}&quot;
         )
 
     if not audio_file.exists():
         raise FileNotFoundError(
-            f"Ses dosyasÄ± bulunamadÄ±: {audio_file}"
+            f&quot;Ses dosyasÄ± bulunamadÄ±: {audio_file}&quot;
         )
 
     text = transcript_file.read_text(
-        encoding="utf-8"
+        encoding=&quot;utf-8&quot;
     ).strip()
 
     if not text:
         raise ValueError(
-            "Transkript boÅŸ."
+            &quot;Transkript boÅŸ.&quot;
         )
 
     duration = get_audio_duration(
@@ -13085,13 +13041,13 @@ def create_subtitle(
     )
 
     print()
-    print("=== AI ALTYAZI MOTORU ===")
+    print(&quot;=== AI ALTYAZI MOTORU ===&quot;)
     print(
-        f"ğŸ™ï¸ Ses sÃ¼resi: {duration:.2f} saniye"
+        f&quot;ğŸ™ï¸ Ses sÃ¼resi: {duration:.2f} saniye&quot;
     )
 
     print(
-        "ğŸ¤– AI doÄŸal altyazÄ± bloklarÄ±nÄ± oluÅŸturuyor..."
+        &quot;ğŸ¤– AI doÄŸal altyazÄ± bloklarÄ±nÄ± oluÅŸturuyor...&quot;
     )
 
     captions = create_ai_captions(
@@ -13099,7 +13055,7 @@ def create_subtitle(
     )
 
     print(
-        f"ğŸ“ {len(captions)} altyazÄ± bloÄŸu oluÅŸturuldu."
+        f&quot;ğŸ“ {len(captions)} altyazÄ± bloÄŸu oluÅŸturuldu.&quot;
     )
 
     # --------------------------------------------------------
@@ -13111,9 +13067,9 @@ def create_subtitle(
         for caption in captions
     )
 
-    if total_characters <= 0:
+    if total_characters &lt;= 0:
         raise ValueError(
-            "AltyazÄ± karakter sayÄ±sÄ± geÃ§ersiz."
+            &quot;AltyazÄ± karakter sayÄ±sÄ± geÃ§ersiz.&quot;
         )
 
     # --------------------------------------------------------
@@ -13152,10 +13108,10 @@ def create_subtitle(
             )
 
         srt_blocks.append(
-            f"{index}\n"
-            f"{format_srt_time(start_time)} --> "
-            f"{format_srt_time(end_time)}\n"
-            f"{caption}\n"
+            f&quot;{index}\n&quot;
+            f&quot;{format_srt_time(start_time)} --&gt; &quot;
+            f&quot;{format_srt_time(end_time)}\n&quot;
+            f&quot;{caption}\n&quot;
         )
 
         current_time = end_time
@@ -13170,24 +13126,24 @@ def create_subtitle(
     )
 
     output_file.write_text(
-        "\n".join(srt_blocks),
-        encoding="utf-8"
+        &quot;\n&quot;.join(srt_blocks),
+        encoding=&quot;utf-8&quot;
     )
 
     print()
-    print("=== ALTYAZI BLOKLARI ===")
+    print(&quot;=== ALTYAZI BLOKLARI ===&quot;)
 
     for index, caption in enumerate(
         captions,
         start=1
     ):
         print(
-            f"{index:02d}: {caption}"
+            f&quot;{index:02d}: {caption}&quot;
         )
 
     print()
-    print("âœ… AI ALTYAZI OLUÅTURULDU")
-    print(f"Dosya: {output_file}")
+    print(&quot;âœ… AI ALTYAZI OLUÅTURULDU&quot;)
+    print(f&quot;Dosya: {output_file}&quot;)
 
     return output_file
 
@@ -13209,14 +13165,14 @@ def transcribe_audio(audio_path):
 
     if not audio_path.exists():
         raise FileNotFoundError(
-            f"Ses dosyasÄ± bulunamadÄ±: {audio_path}"
+            f&quot;Ses dosyasÄ± bulunamadÄ±: {audio_path}&quot;
         )
 
-    with open(audio_path, "rb") as audio_file:
+    with open(audio_path, &quot;rb&quot;) as audio_file:
         result = client.audio.transcriptions.create(
-            model="gpt-4o-mini-transcribe",
+            model=&quot;gpt-4o-mini-transcribe&quot;,
             file=audio_file,
-            response_format="json",
+            response_format=&quot;json&quot;,
         )
 
     return result
@@ -13235,21 +13191,21 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 def generate_voice(text, output_file):
 
     print()
-    print("ğŸ™ï¸ AI SES ÃœRETÄ°MÄ°")
-    print("ğŸ”Š Ses oluÅŸturuluyor...")
+    print(&quot;ğŸ™ï¸ AI SES ÃœRETÄ°MÄ°&quot;)
+    print(&quot;ğŸ”Š Ses oluÅŸturuluyor...&quot;)
 
     response = client.audio.speech.create(
-        model="gpt-4o-mini-tts",
-        voice="alloy",
+        model=&quot;gpt-4o-mini-tts&quot;,
+        voice=&quot;alloy&quot;,
         input=text,
-        response_format="mp3",
+        response_format=&quot;mp3&quot;,
     )
 
     response.write_to_file(output_file)
 
     print()
-    print(f"âœ… SES OLUÅTURULDU")
-    print(f"Dosya: {output_file}")
+    print(f&quot;âœ… SES OLUÅTURULDU&quot;)
+    print(f&quot;Dosya: {output_file}&quot;)
 
 ============================================================
 DOSYA: app\content\video_creator.py
@@ -13266,13 +13222,13 @@ def get_audio_duration(audio_file):
 
     result = subprocess.run(
         [
-            "ffprobe",
-            "-v",
-            "error",
-            "-show_entries",
-            "format=duration",
-            "-of",
-            "default=noprint_wrappers=1:nokey=1",
+            &quot;ffprobe&quot;,
+            &quot;-v&quot;,
+            &quot;error&quot;,
+            &quot;-show_entries&quot;,
+            &quot;format=duration&quot;,
+            &quot;-of&quot;,
+            &quot;default=noprint_wrappers=1:nokey=1&quot;,
             str(audio_file),
         ],
         capture_output=True,
@@ -13303,21 +13259,21 @@ def create_video(
 
     if not image_folder.exists():
         raise FileNotFoundError(
-            f"GÃ¶rsel klasÃ¶rÃ¼ bulunamadÄ±: {image_folder}"
+            f&quot;GÃ¶rsel klasÃ¶rÃ¼ bulunamadÄ±: {image_folder}&quot;
         )
 
     if not audio_file.exists():
         raise FileNotFoundError(
-            f"Ses dosyasÄ± bulunamadÄ±: {audio_file}"
+            f&quot;Ses dosyasÄ± bulunamadÄ±: {audio_file}&quot;
         )
 
     images = sorted(
-        image_folder.glob("*.png")
+        image_folder.glob(&quot;*.png&quot;)
     )
 
     if not images:
         raise FileNotFoundError(
-            f"GÃ¶rsel bulunamadÄ±: {image_folder}"
+            f&quot;GÃ¶rsel bulunamadÄ±: {image_folder}&quot;
         )
 
     # --------------------------------------------------------
@@ -13337,19 +13293,19 @@ def create_video(
     )
 
     print()
-    print("=== VÄ°DEO OLUÅTURMA ===")
+    print(&quot;=== VÄ°DEO OLUÅTURMA ===&quot;)
     print(
-        f"ğŸ¨ GÃ¶rsel sayÄ±sÄ±: {len(images)}"
+        f&quot;ğŸ¨ GÃ¶rsel sayÄ±sÄ±: {len(images)}&quot;
     )
     print(
-        f"ğŸ™ï¸ Ses sÃ¼resi: {audio_duration:.2f} saniye"
+        f&quot;ğŸ™ï¸ Ses sÃ¼resi: {audio_duration:.2f} saniye&quot;
     )
     print(
-        f"â±ï¸ GÃ¶rsel baÅŸÄ±na sÃ¼re: "
-        f"{image_duration:.2f} saniye"
+        f&quot;â±ï¸ GÃ¶rsel baÅŸÄ±na sÃ¼re: &quot;
+        f&quot;{image_duration:.2f} saniye&quot;
     )
     print(
-        "ğŸ¬ Video oluÅŸturuluyor..."
+        &quot;ğŸ¬ Video oluÅŸturuluyor...&quot;
     )
 
     # --------------------------------------------------------
@@ -13358,31 +13314,31 @@ def create_video(
 
     concat_file = (
         image_folder.parent
-        / "image_list.txt"
+        / &quot;image_list.txt&quot;
     )
 
     with open(
         concat_file,
-        "w",
-        encoding="utf-8"
+        &quot;w&quot;,
+        encoding=&quot;utf-8&quot;
     ) as file:
 
         for image in images:
 
             file.write(
-                f"file '{image.resolve()}'\n"
+                f&quot;file &#x27;{image.resolve()}&#x27;\n&quot;
             )
 
             file.write(
-                f"duration {image_duration:.6f}\n"
+                f&quot;duration {image_duration:.6f}\n&quot;
             )
 
-        # FFmpeg concat demuxer'da son gÃ¶rselin
+        # FFmpeg concat demuxer&#x27;da son gÃ¶rselin
         # duration deÄŸerinin uygulanmasÄ± iÃ§in
         # son dosyayÄ± tekrar ekliyoruz.
 
         file.write(
-            f"file '{images[-1].resolve()}'\n"
+            f&quot;file &#x27;{images[-1].resolve()}&#x27;\n&quot;
         )
 
     # --------------------------------------------------------
@@ -13390,67 +13346,67 @@ def create_video(
     # --------------------------------------------------------
 
     command = [
-        "ffmpeg",
-        "-y",
+        &quot;ffmpeg&quot;,
+        &quot;-y&quot;,
 
-        "-f",
-        "concat",
+        &quot;-f&quot;,
+        &quot;concat&quot;,
 
-        "-safe",
-        "0",
+        &quot;-safe&quot;,
+        &quot;0&quot;,
 
-        "-i",
+        &quot;-i&quot;,
         str(concat_file),
 
-        "-i",
+        &quot;-i&quot;,
         str(audio_file),
 
         # ----------------------------------------------------
         # SHORTS FORMAT
         # ----------------------------------------------------
 
-        "-vf",
+        &quot;-vf&quot;,
         (
-            "scale=1080:1920:"
-            "force_original_aspect_ratio=increase,"
-            "crop=1080:1920"
+            &quot;scale=1080:1920:&quot;
+            &quot;force_original_aspect_ratio=increase,&quot;
+            &quot;crop=1080:1920&quot;
         ),
 
-        "-r",
-        "25",
+        &quot;-r&quot;,
+        &quot;25&quot;,
 
         # ----------------------------------------------------
         # VÄ°DEO
         # ----------------------------------------------------
 
-        "-c:v",
-        "libx264",
+        &quot;-c:v&quot;,
+        &quot;libx264&quot;,
 
-        "-preset",
-        "medium",
+        &quot;-preset&quot;,
+        &quot;medium&quot;,
 
-        "-crf",
-        "20",
+        &quot;-crf&quot;,
+        &quot;20&quot;,
 
-        "-pix_fmt",
-        "yuv420p",
+        &quot;-pix_fmt&quot;,
+        &quot;yuv420p&quot;,
 
         # ----------------------------------------------------
         # SES
         # ----------------------------------------------------
 
-        "-c:a",
-        "aac",
+        &quot;-c:a&quot;,
+        &quot;aac&quot;,
 
-        "-b:a",
-        "128k",
+        &quot;-b:a&quot;,
+        &quot;128k&quot;,
 
         # ----------------------------------------------------
         # SESÄ° KESME
         # ----------------------------------------------------
 
-        "-t",
-        f"{audio_duration:.3f}",
+        &quot;-t&quot;,
+        f&quot;{audio_duration:.3f}&quot;,
 
         str(output_file),
     ]
@@ -13477,16 +13433,16 @@ def create_video(
 
     if not output_file.exists():
         raise RuntimeError(
-            "FFmpeg Ã§alÄ±ÅŸtÄ± ancak video oluÅŸmadÄ±."
+            &quot;FFmpeg Ã§alÄ±ÅŸtÄ± ancak video oluÅŸmadÄ±.&quot;
         )
 
     print()
-    print("========================================")
-    print("âœ… VIDEO OLUÅTURULDU")
-    print("========================================")
+    print(&quot;========================================&quot;)
+    print(&quot;âœ… VIDEO OLUÅTURULDU&quot;)
+    print(&quot;========================================&quot;)
     print()
     print(
-        f"Dosya: {output_file}"
+        f&quot;Dosya: {output_file}&quot;
     )
 
     return output_file
@@ -13519,12 +13475,12 @@ def add_subtitles(
 
     if not video_file.exists():
         raise FileNotFoundError(
-            f"Video bulunamadÄ±: {video_file}"
+            f&quot;Video bulunamadÄ±: {video_file}&quot;
         )
 
     if not subtitle_file.exists():
         raise FileNotFoundError(
-            f"AltyazÄ± bulunamadÄ±: {subtitle_file}"
+            f&quot;AltyazÄ± bulunamadÄ±: {subtitle_file}&quot;
         )
 
     output_file.parent.mkdir(
@@ -13533,9 +13489,9 @@ def add_subtitles(
     )
 
     print()
-    print("=== VÄ°DEO MOTORU ===")
-    print("ğŸ¬ Video hazÄ±rlanÄ±yor...")
-    print("ğŸ“ AltyazÄ± videoya gÃ¶mÃ¼lÃ¼yor...")
+    print(&quot;=== VÄ°DEO MOTORU ===&quot;)
+    print(&quot;ğŸ¬ Video hazÄ±rlanÄ±yor...&quot;)
+    print(&quot;ğŸ“ AltyazÄ± videoya gÃ¶mÃ¼lÃ¼yor...&quot;)
 
     # --------------------------------------------------------
     # WINDOWS YOLU
@@ -13543,12 +13499,12 @@ def add_subtitles(
 
     subtitle_path = str(
         subtitle_file.resolve()
-    ).replace("\\", "/")
+    ).replace(&quot;\\&quot;, &quot;/&quot;)
 
     # FFmpeg filter iÃ§in Windows sÃ¼rÃ¼cÃ¼sÃ¼ndeki : karakterini kaÃ§Ä±r
     subtitle_path = subtitle_path.replace(
-        ":",
-        "\\:"
+        &quot;:&quot;,
+        &quot;\\:&quot;
     )
 
     # --------------------------------------------------------
@@ -13556,21 +13512,21 @@ def add_subtitles(
     # --------------------------------------------------------
 
     subtitle_style = (
-        "FontName=Arial,"
-        "FontSize=10,"
-        "Bold=1,"
-        "PrimaryColour=&H00FFFFFF,"
-        "OutlineColour=&H00000000,"
-        "BorderStyle=1,"
-        "Outline=2,"
-        "Shadow=1,"
-        "Alignment=8,"
-        "MarginV=220"
+        &quot;FontName=Arial,&quot;
+        &quot;FontSize=10,&quot;
+        &quot;Bold=1,&quot;
+        &quot;PrimaryColour=&amp;H00FFFFFF,&quot;
+        &quot;OutlineColour=&amp;H00000000,&quot;
+        &quot;BorderStyle=1,&quot;
+        &quot;Outline=2,&quot;
+        &quot;Shadow=1,&quot;
+        &quot;Alignment=8,&quot;
+        &quot;MarginV=220&quot;
     )
 
     subtitle_filter = (
-        f"subtitles='{subtitle_path}'"
-        f":force_style='{subtitle_style}'"
+        f&quot;subtitles=&#x27;{subtitle_path}&#x27;&quot;
+        f&quot;:force_style=&#x27;{subtitle_style}&#x27;&quot;
     )
 
     # --------------------------------------------------------
@@ -13578,26 +13534,26 @@ def add_subtitles(
     # --------------------------------------------------------
 
     command = [
-        "ffmpeg",
-        "-y",
+        &quot;ffmpeg&quot;,
+        &quot;-y&quot;,
 
-        "-i",
+        &quot;-i&quot;,
         str(video_file),
 
-        "-vf",
+        &quot;-vf&quot;,
         subtitle_filter,
 
-        "-c:v",
-        "libx264",
+        &quot;-c:v&quot;,
+        &quot;libx264&quot;,
 
-        "-preset",
-        "medium",
+        &quot;-preset&quot;,
+        &quot;medium&quot;,
 
-        "-crf",
-        "20",
+        &quot;-crf&quot;,
+        &quot;20&quot;,
 
-        "-c:a",
-        "copy",
+        &quot;-c:a&quot;,
+        &quot;copy&quot;,
 
         str(output_file),
     ]
@@ -13617,15 +13573,15 @@ def add_subtitles(
 
     if not output_file.exists():
         raise RuntimeError(
-            "FFmpeg Ã§alÄ±ÅŸtÄ± ancak Ã§Ä±ktÄ± videosu oluÅŸmadÄ±."
+            &quot;FFmpeg Ã§alÄ±ÅŸtÄ± ancak Ã§Ä±ktÄ± videosu oluÅŸmadÄ±.&quot;
         )
 
     print()
-    print("========================================")
-    print("âœ… FÄ°NAL VÄ°DEO OLUÅTURULDU")
-    print("========================================")
+    print(&quot;========================================&quot;)
+    print(&quot;âœ… FÄ°NAL VÄ°DEO OLUÅTURULDU&quot;)
+    print(&quot;========================================&quot;)
     print()
-    print(f"Dosya: {output_file}")
+    print(f&quot;Dosya: {output_file}&quot;)
 
     return output_file
 
@@ -13642,34 +13598,34 @@ from app.content.content_engine import create_short
 def main():
 
     print()
-    print("========================================")
-    print("ğŸ¬ CREATOR ENGINE â€” Ã‡OKLU ÃœRETÄ°M")
-    print("========================================")
+    print(&quot;========================================&quot;)
+    print(&quot;ğŸ¬ CREATOR ENGINE â€” Ã‡OKLU ÃœRETÄ°M&quot;)
+    print(&quot;========================================&quot;)
     print()
 
     try:
 
         count = int(
             input(
-                "KaÃ§ video Ã¼retilecek: "
+                &quot;KaÃ§ video Ã¼retilecek: &quot;
             ).strip()
         )
 
     except ValueError:
 
         print()
-        print("âŒ GeÃ§erli bir sayÄ± girilmedi.")
+        print(&quot;âŒ GeÃ§erli bir sayÄ± girilmedi.&quot;)
         return
 
-    if count <= 0:
+    if count &lt;= 0:
 
         print()
-        print("âŒ Video sayÄ±sÄ± 0'dan bÃ¼yÃ¼k olmalÄ±.")
+        print(&quot;âŒ Video sayÄ±sÄ± 0&#x27;dan bÃ¼yÃ¼k olmalÄ±.&quot;)
         return
 
     print()
     print(
-        f"ğŸ“¦ {count} video iÃ§in konu girilecek."
+        f&quot;ğŸ“¦ {count} video iÃ§in konu girilecek.&quot;
     )
     print()
 
@@ -13680,7 +13636,7 @@ def main():
         while True:
 
             topic = input(
-                f"{number}. Konu: "
+                f&quot;{number}. Konu: &quot;
             ).strip()
 
             if topic:
@@ -13689,13 +13645,13 @@ def main():
                 break
 
             print(
-                "âš ï¸ Konu boÅŸ bÄ±rakÄ±lamaz."
+                &quot;âš ï¸ Konu boÅŸ bÄ±rakÄ±lamaz.&quot;
             )
 
     print()
-    print("========================================")
-    print("ğŸš€ Ã‡OKLU ÃœRETÄ°M BAÅLIYOR")
-    print("========================================")
+    print(&quot;========================================&quot;)
+    print(&quot;ğŸš€ Ã‡OKLU ÃœRETÄ°M BAÅLIYOR&quot;)
+    print(&quot;========================================&quot;)
     print()
 
     success_count = 0
@@ -13707,14 +13663,14 @@ def main():
     ):
 
         print()
-        print("========================================")
+        print(&quot;========================================&quot;)
         print(
-            f"ğŸ¬ VÄ°DEO {index}/{count}"
+            f&quot;ğŸ¬ VÄ°DEO {index}/{count}&quot;
         )
         print(
-            f"ğŸ“Œ KONU: {topic}"
+            f&quot;ğŸ“Œ KONU: {topic}&quot;
         )
-        print("========================================")
+        print(&quot;========================================&quot;)
         print()
 
         try:
@@ -13729,7 +13685,7 @@ def main():
 
                 print()
                 print(
-                    "âŒ Bu video oluÅŸturulamadÄ±."
+                    &quot;âŒ Bu video oluÅŸturulamadÄ±.&quot;
                 )
 
             else:
@@ -13738,7 +13694,7 @@ def main():
 
                 print()
                 print(
-                    "âœ… Bu video tamamlandÄ±."
+                    &quot;âœ… Bu video tamamlandÄ±.&quot;
                 )
 
         except Exception as error:
@@ -13747,42 +13703,42 @@ def main():
 
             print()
             print(
-                "âŒ VÄ°DEO ÃœRETÄ°M HATASI"
+                &quot;âŒ VÄ°DEO ÃœRETÄ°M HATASI&quot;
             )
 
             print(
-                f"Hata: {error}"
+                f&quot;Hata: {error}&quot;
             )
 
             print()
             print(
-                "â¡ï¸ Sonraki videoya geÃ§iliyor..."
+                &quot;â¡ï¸ Sonraki videoya geÃ§iliyor...&quot;
             )
 
     print()
-    print("========================================")
-    print("ğŸ“Š Ã‡OKLU ÃœRETÄ°M TAMAMLANDI")
-    print("========================================")
+    print(&quot;========================================&quot;)
+    print(&quot;ğŸ“Š Ã‡OKLU ÃœRETÄ°M TAMAMLANDI&quot;)
+    print(&quot;========================================&quot;)
     print()
 
     print(
-        f"âœ… BaÅŸarÄ±lÄ±: {success_count}"
+        f&quot;âœ… BaÅŸarÄ±lÄ±: {success_count}&quot;
     )
 
     print(
-        f"âŒ BaÅŸarÄ±sÄ±z: {failed_count}"
+        f&quot;âŒ BaÅŸarÄ±sÄ±z: {failed_count}&quot;
     )
 
     print(
-        f"ğŸ“¦ Toplam: {count}"
+        f&quot;ğŸ“¦ Toplam: {count}&quot;
     )
 
     print()
-    print("ğŸ§  Analytics kayÄ±tlarÄ± gÃ¼ncellendi.")
+    print(&quot;ğŸ§  Analytics kayÄ±tlarÄ± gÃ¼ncellendi.&quot;)
     print()
 
 
-if __name__ == "__main__":
+if __name__ == &quot;__main__&quot;:
 
     main()
 
@@ -13792,7 +13748,7 @@ DOSYA: app\core\editor_test.py
 from app.content.content_editor import evaluate_content
 
 
-test_content = """
+test_content = &quot;&quot;&quot;
 Uzayda yaÅŸamak kulaÄŸa harika geliyor ama gerÃ§ek Ã§ok daha tuhaf!
 
 Bir bardak suyu masaya koyuyorsun ama su aÅŸaÄŸÄ±ya akmÄ±yor.
@@ -13802,14 +13758,14 @@ Astronotlar uyumak iÃ§in Ã¶zel uyku tulumlarÄ± kullanÄ±yor.
 Uzun sÃ¼re uzayda kalmak ise kaslarÄ±n ve kemiklerin gÃ¼Ã§ kaybetmesine neden oluyor.
 
 Peki sen uzayda yaÅŸamaya bir hafta dayanabilir miydin?
-"""
+&quot;&quot;&quot;
 
 
 result, decision = evaluate_content(test_content)
 
 print()
-print("=== TEST SONUCU ===")
-print(f"Karar: {decision}")
+print(&quot;=== TEST SONUCU ===&quot;)
+print(f&quot;Karar: {decision}&quot;)
 
 ============================================================
 DOSYA: app\core\engine.py
@@ -13819,11 +13775,11 @@ from app.content.content_engine import create_short
 
 
 print(APP_NAME)
-print("SÃ¼rÃ¼m:", VERSION)
-print("Dil:", LANGUAGE)
-print("--------------------")
+print(&quot;SÃ¼rÃ¼m:&quot;, VERSION)
+print(&quot;Dil:&quot;, LANGUAGE)
+print(&quot;--------------------&quot;)
 
-topic = input("Konu gir: ")
+topic = input(&quot;Konu gir: &quot;)
 
 create_short(topic)
 
@@ -13833,9 +13789,9 @@ DOSYA: app\core\image_pipeline_test.py
 from app.content.image_pipeline import generate_images_from_prompt_file
 
 
-prompt_file = "shorts/004/gorsel_prompt.txt"
+prompt_file = &quot;shorts/004/gorsel_prompt.txt&quot;
 
-output_folder = "shorts/004/gorseller"
+output_folder = &quot;shorts/004/gorseller&quot;
 
 
 generate_images_from_prompt_file(
@@ -13852,42 +13808,42 @@ from app.content.image_generator import generate_image
 
 
 prompts = [
-    """
+    &quot;&quot;&quot;
     Cinematic realistic visualization of the early universe,
     expanding space, forming galaxies and stars,
     deep space background, dramatic lighting,
     scientific documentary style.
-    """,
+    &quot;&quot;&quot;,
 
-    """
+    &quot;&quot;&quot;
     A mysterious cosmic energy point expanding into the universe,
     forming particles and galaxies,
     cinematic realistic space scene,
     scientific documentary style.
-    """,
+    &quot;&quot;&quot;,
 
-    """
+    &quot;&quot;&quot;
     Early galaxies forming in the young universe,
     clouds of cosmic dust, newborn stars,
     deep space, ultra realistic, cinematic lighting.
-    """,
+    &quot;&quot;&quot;,
 
-    """
+    &quot;&quot;&quot;
     The evolution of the universe from a hot dense state
     toward galaxies and stars,
     scientific visualization, realistic, highly detailed.
-    """,
+    &quot;&quot;&quot;,
 
-    """
+    &quot;&quot;&quot;
     Epic view of the expanding universe,
     countless galaxies appearing across deep space,
     cinematic documentary photography style,
     realistic and highly detailed.
-    """
+    &quot;&quot;&quot;
 ]
 
 
-output_folder = Path("shorts") / "image_test"
+output_folder = Path(&quot;shorts&quot;) / &quot;image_test&quot;
 
 output_folder.mkdir(parents=True, exist_ok=True)
 
@@ -13895,17 +13851,17 @@ output_folder.mkdir(parents=True, exist_ok=True)
 for index, prompt in enumerate(prompts, start=1):
 
     print()
-    print(f"ğŸ¨ GÃ¶rsel {index}/5 oluÅŸturuluyor...")
+    print(f&quot;ğŸ¨ GÃ¶rsel {index}/5 oluÅŸturuluyor...&quot;)
 
-    output_path = output_folder / f"{index:02d}.png"
+    output_path = output_folder / f&quot;{index:02d}.png&quot;
 
     generate_image(prompt, output_path)
 
-    print(f"âœ… Kaydedildi: {output_path}")
+    print(f&quot;âœ… Kaydedildi: {output_path}&quot;)
 
 
 print()
-print("ğŸ‰ 5 GÃ–RSEL TAMAMLANDI!")
+print(&quot;ğŸ‰ 5 GÃ–RSEL TAMAMLANDI!&quot;)
 
 ============================================================
 DOSYA: app\core\srt_test.py
@@ -13915,15 +13871,15 @@ from pathlib import Path
 from app.content.subtitle_engine import create_subtitle
 
 
-VIDEO_FOLDER = Path("shorts/007")
+VIDEO_FOLDER = Path(&quot;shorts/007&quot;)
 
-TRANSCRIPT_FILE = VIDEO_FOLDER / "transkript.txt"
-AUDIO_FILE = VIDEO_FOLDER / "ses.mp3"
-SRT_FILE = VIDEO_FOLDER / "altyazi_ai.srt"
+TRANSCRIPT_FILE = VIDEO_FOLDER / &quot;transkript.txt&quot;
+AUDIO_FILE = VIDEO_FOLDER / &quot;ses.mp3&quot;
+SRT_FILE = VIDEO_FOLDER / &quot;altyazi_ai.srt&quot;
 
 
 print()
-print("=== SRT TEST ===")
+print(&quot;=== SRT TEST ===&quot;)
 
 
 create_subtitle(
@@ -13934,7 +13890,7 @@ create_subtitle(
 
 
 print()
-print("ğŸ‰ SRT TEST BAÅARILI")
+print(&quot;ğŸ‰ SRT TEST BAÅARILI&quot;)
 
 ============================================================
 DOSYA: app\core\subtitle_test.py
@@ -13947,12 +13903,12 @@ import subprocess
 # AYARLAR
 # ============================================================
 
-VIDEO_FOLDER = Path("shorts/007")
+VIDEO_FOLDER = Path(&quot;shorts/007&quot;)
 
-VIDEO_FILE = VIDEO_FOLDER / "video.mp4"
-SRT_FILE = VIDEO_FOLDER / "altyazi_ai.srt"
+VIDEO_FILE = VIDEO_FOLDER / &quot;video.mp4&quot;
+SRT_FILE = VIDEO_FOLDER / &quot;altyazi_ai.srt&quot;
 
-OUTPUT_VIDEO = VIDEO_FOLDER / "video_final.mp4"
+OUTPUT_VIDEO = VIDEO_FOLDER / &quot;video_final.mp4&quot;
 
 
 # ============================================================
@@ -13960,25 +13916,25 @@ OUTPUT_VIDEO = VIDEO_FOLDER / "video_final.mp4"
 # ============================================================
 
 print()
-print("=== PROFESYONEL ALTYAZI TESTÄ° ===")
+print(&quot;=== PROFESYONEL ALTYAZI TESTÄ° ===&quot;)
 
 if not VIDEO_FILE.exists():
     raise FileNotFoundError(
-        f"Video bulunamadÄ±: {VIDEO_FILE}"
+        f&quot;Video bulunamadÄ±: {VIDEO_FILE}&quot;
     )
 
 if not SRT_FILE.exists():
     raise FileNotFoundError(
-        f"AltyazÄ± bulunamadÄ±: {SRT_FILE}"
+        f&quot;AltyazÄ± bulunamadÄ±: {SRT_FILE}&quot;
     )
 
 
 print()
-print("ğŸ¬ Video bulundu:")
+print(&quot;ğŸ¬ Video bulundu:&quot;)
 print(VIDEO_FILE)
 
 print()
-print("ğŸ“ AI altyazÄ± bulundu:")
+print(&quot;ğŸ“ AI altyazÄ± bulundu:&quot;)
 print(SRT_FILE)
 
 
@@ -13989,11 +13945,11 @@ print(SRT_FILE)
 srt_path = SRT_FILE.resolve()
 
 # Windows yolunu FFmpeg subtitles filtresi iÃ§in dÃ¼zenle
-srt_filter_path = str(srt_path).replace("\\", "/")
+srt_filter_path = str(srt_path).replace(&quot;\\&quot;, &quot;/&quot;)
 
-# C: -> C\:
-if ":" in srt_filter_path:
-    srt_filter_path = srt_filter_path.replace(":", "\\:")
+# C: -&gt; C\:
+if &quot;:&quot; in srt_filter_path:
+    srt_filter_path = srt_filter_path.replace(&quot;:&quot;, &quot;\\:&quot;)
 
 
 # ============================================================
@@ -14001,16 +13957,16 @@ if ":" in srt_filter_path:
 # ============================================================
 
 subtitle_style = (
-    "FontName=Arial,"
-    "FontSize=10,"
-    "Bold=1,"
-    "PrimaryColour=&H00FFFFFF,"
-    "OutlineColour=&H00000000,"
-    "BorderStyle=1,"
-    "Outline=2,"
-    "Shadow=1,"
-    "Alignment=8,"
-    "MarginV=220"
+    &quot;FontName=Arial,&quot;
+    &quot;FontSize=10,&quot;
+    &quot;Bold=1,&quot;
+    &quot;PrimaryColour=&amp;H00FFFFFF,&quot;
+    &quot;OutlineColour=&amp;H00000000,&quot;
+    &quot;BorderStyle=1,&quot;
+    &quot;Outline=2,&quot;
+    &quot;Shadow=1,&quot;
+    &quot;Alignment=8,&quot;
+    &quot;MarginV=220&quot;
 )
 
 # ============================================================
@@ -14018,40 +13974,40 @@ subtitle_style = (
 # ============================================================
 
 subtitle_filter = (
-    f"subtitles='{srt_filter_path}'"
-    f":force_style='{subtitle_style}'"
+    f&quot;subtitles=&#x27;{srt_filter_path}&#x27;&quot;
+    f&quot;:force_style=&#x27;{subtitle_style}&#x27;&quot;
 )
 
 
 command = [
-    "ffmpeg",
-    "-y",
+    &quot;ffmpeg&quot;,
+    &quot;-y&quot;,
 
-    "-i",
+    &quot;-i&quot;,
     str(VIDEO_FILE),
 
-    "-vf",
+    &quot;-vf&quot;,
     subtitle_filter,
 
     # --------------------------------------------------------
     # VÄ°DEO
     # --------------------------------------------------------
 
-    "-c:v",
-    "libx264",
+    &quot;-c:v&quot;,
+    &quot;libx264&quot;,
 
-    "-preset",
-    "medium",
+    &quot;-preset&quot;,
+    &quot;medium&quot;,
 
-    "-crf",
-    "20",
+    &quot;-crf&quot;,
+    &quot;20&quot;,
 
     # --------------------------------------------------------
     # SES
     # --------------------------------------------------------
 
-    "-c:a",
-    "copy",
+    &quot;-c:a&quot;,
+    &quot;copy&quot;,
 
     # --------------------------------------------------------
     # Ã‡IKIÅ
@@ -14066,12 +14022,12 @@ command = [
 # ============================================================
 
 print()
-print("ğŸ¨ AltyazÄ± videoya gÃ¶mÃ¼lÃ¼yor...")
+print(&quot;ğŸ¨ AltyazÄ± videoya gÃ¶mÃ¼lÃ¼yor...&quot;)
 print()
-print("ğŸ“ Konum: Ãœst-Orta")
-print("ğŸ”  Boyut: KÃ¼Ã§Ã¼k")
-print("âšª YazÄ±: Beyaz")
-print("â¬› KenarlÄ±k: Siyah")
+print(&quot;ğŸ“ Konum: Ãœst-Orta&quot;)
+print(&quot;ğŸ”  Boyut: KÃ¼Ã§Ã¼k&quot;)
+print(&quot;âšª YazÄ±: Beyaz&quot;)
+print(&quot;â¬› KenarlÄ±k: Siyah&quot;)
 print()
 
 
@@ -14086,11 +14042,11 @@ subprocess.run(
 # ============================================================
 
 print()
-print("========================================")
-print("âœ… FÄ°NAL VÄ°DEO OLUÅTURULDU")
-print("========================================")
+print(&quot;========================================&quot;)
+print(&quot;âœ… FÄ°NAL VÄ°DEO OLUÅTURULDU&quot;)
+print(&quot;========================================&quot;)
 print()
-print(f"Dosya: {OUTPUT_VIDEO}")
+print(f&quot;Dosya: {OUTPUT_VIDEO}&quot;)
 print()
 
 ============================================================
@@ -14101,32 +14057,32 @@ from pathlib import Path
 from app.content.transcriber import transcribe_audio
 
 
-audio_file = Path("shorts/007/ses.mp3")
-output_file = Path("shorts/007/transkript.txt")
+audio_file = Path(&quot;shorts/007/ses.mp3&quot;)
+output_file = Path(&quot;shorts/007/transkript.txt&quot;)
 
 
 print()
-print("=== AI TRANSCRIBE ===")
-print("ğŸ™ï¸ Ses yazÄ±ya Ã§evriliyor...")
+print(&quot;=== AI TRANSCRIBE ===&quot;)
+print(&quot;ğŸ™ï¸ Ses yazÄ±ya Ã§evriliyor...&quot;)
 
 
 result = transcribe_audio(audio_file)
 
 
 print()
-print("=== TRANSKRÄ°PT ===")
+print(&quot;=== TRANSKRÄ°PT ===&quot;)
 print(result.text)
 
 
 output_file.write_text(
     result.text,
-    encoding="utf-8"
+    encoding=&quot;utf-8&quot;
 )
 
 
 print()
-print("âœ… TRANSKRÄ°PT TAMAMLANDI")
-print(f"Dosya: {output_file}")
+print(&quot;âœ… TRANSKRÄ°PT TAMAMLANDI&quot;)
+print(f&quot;Dosya: {output_file}&quot;)
 
 ============================================================
 DOSYA: app\core\tts_test.py
@@ -14136,26 +14092,26 @@ from pathlib import Path
 from app.content.tts_generator import generate_speech
 
 
-script_file = Path("shorts/007/senaryo.txt")
-output_file = Path("shorts/007/ses.mp3")
+script_file = Path(&quot;shorts/007/senaryo.txt&quot;)
+output_file = Path(&quot;shorts/007/ses.mp3&quot;)
 
 
 if not script_file.exists():
     raise FileNotFoundError(
-        f"Senaryo bulunamadÄ±: {script_file}"
+        f&quot;Senaryo bulunamadÄ±: {script_file}&quot;
     )
 
 
-text = script_file.read_text(encoding="utf-8").strip()
+text = script_file.read_text(encoding=&quot;utf-8&quot;).strip()
 
 
 if not text:
-    raise ValueError("Senaryo dosyasÄ± boÅŸ.")
+    raise ValueError(&quot;Senaryo dosyasÄ± boÅŸ.&quot;)
 
 
 print()
-print("=== AI TTS ===")
-print("ğŸ™ï¸ Ses oluÅŸturuluyor...")
+print(&quot;=== AI TTS ===&quot;)
+print(&quot;ğŸ™ï¸ Ses oluÅŸturuluyor...&quot;)
 
 
 generate_speech(
@@ -14165,8 +14121,8 @@ generate_speech(
 
 
 print()
-print("âœ… SES OLUÅTURULDU")
-print(f"Dosya: {output_file}")
+print(&quot;âœ… SES OLUÅTURULDU&quot;)
+print(f&quot;Dosya: {output_file}&quot;)
 
 ============================================================
 DOSYA: app\core\video_test.py
@@ -14176,15 +14132,15 @@ from pathlib import Path
 from app.content.video_pipeline import add_subtitles
 
 
-VIDEO_FOLDER = Path("shorts/007")
+VIDEO_FOLDER = Path(&quot;shorts/007&quot;)
 
-VIDEO_FILE = VIDEO_FOLDER / "video.mp4"
-SRT_FILE = VIDEO_FOLDER / "altyazi_ai.srt"
-OUTPUT_FILE = VIDEO_FOLDER / "video_final.mp4"
+VIDEO_FILE = VIDEO_FOLDER / &quot;video.mp4&quot;
+SRT_FILE = VIDEO_FOLDER / &quot;altyazi_ai.srt&quot;
+OUTPUT_FILE = VIDEO_FOLDER / &quot;video_final.mp4&quot;
 
 
 print()
-print("=== VÄ°DEO PIPELINE TEST ===")
+print(&quot;=== VÄ°DEO PIPELINE TEST ===&quot;)
 
 add_subtitles(
     video_file=VIDEO_FILE,
@@ -14193,8 +14149,8 @@ add_subtitles(
 )
 
 print()
-print("ğŸ‰ VÄ°DEO TEST BAÅARILI")
-print(f"Dosya: {OUTPUT_FILE}")
+print(&quot;ğŸ‰ VÄ°DEO TEST BAÅARILI&quot;)
+print(f&quot;Dosya: {OUTPUT_FILE}&quot;)
 
 ============================================================
 DOSYA: app\core\word_timestamp_test.py
@@ -14204,42 +14160,42 @@ from pathlib import Path
 from app.content.transcriber import transcribe_audio
 
 
-audio_file = Path("shorts/007/ses.mp3")
+audio_file = Path(&quot;shorts/007/ses.mp3&quot;)
 
 
 print()
-print("=== GERÃ‡EK KELÄ°ME ZAMANLARI TESTÄ° ===")
-print("ğŸ™ï¸ Ses analiz ediliyor...")
+print(&quot;=== GERÃ‡EK KELÄ°ME ZAMANLARI TESTÄ° ===&quot;)
+print(&quot;ğŸ™ï¸ Ses analiz ediliyor...&quot;)
 
 
 result = transcribe_audio(audio_file)
 
 
 print()
-print("=== TRANSKRÄ°PT ===")
+print(&quot;=== TRANSKRÄ°PT ===&quot;)
 print(result.text)
 
 print()
-print("=== KELÄ°ME ZAMANLARI ===")
+print(&quot;=== KELÄ°ME ZAMANLARI ===&quot;)
 
 
-if hasattr(result, "words") and result.words:
+if hasattr(result, &quot;words&quot;) and result.words:
 
     for word in result.words[:20]:
 
         print(
-            f"{word.word}  "
-            f"{word.start:.2f}s â†’ "
-            f"{word.end:.2f}s"
+            f&quot;{word.word}  &quot;
+            f&quot;{word.start:.2f}s â†’ &quot;
+            f&quot;{word.end:.2f}s&quot;
         )
 
 else:
 
-    print("âš ï¸ Kelime zamanlarÄ± dÃ¶ndÃ¼rÃ¼lmedi.")
+    print(&quot;âš ï¸ Kelime zamanlarÄ± dÃ¶ndÃ¼rÃ¼lmedi.&quot;)
 
 
 print()
-print("âœ… TEST TAMAMLANDI")
+print(&quot;âœ… TEST TAMAMLANDI&quot;)
 
 ============================================================
 DOSYA: app\youtube\youtube_analytics_sync.py
@@ -14257,8 +14213,8 @@ from google.oauth2.credentials import Credentials
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 
-TOKEN_FILE = BASE_DIR / "data" / "youtube_token.json"
-DB_FILE = BASE_DIR / "data" / "creator_engine.db"
+TOKEN_FILE = BASE_DIR / &quot;data&quot; / &quot;youtube_token.json&quot;
+DB_FILE = BASE_DIR / &quot;data&quot; / &quot;creator_engine.db&quot;
 
 
 # ============================================================
@@ -14266,7 +14222,7 @@ DB_FILE = BASE_DIR / "data" / "creator_engine.db"
 # ============================================================
 
 # Ä°lk Ã§alÄ±ÅŸtÄ±rmada False bÄ±rakÄ±yoruz.
-# True yaptÄ±ÄŸÄ±mÄ±zda veriler DB'ye yazÄ±lacak.
+# True yaptÄ±ÄŸÄ±mÄ±zda veriler DB&#x27;ye yazÄ±lacak.
 WRITE_TO_DATABASE = True
 
 
@@ -14281,8 +14237,8 @@ def get_youtube():
     )
 
     return build(
-        "youtube",
-        "v3",
+        &quot;youtube&quot;,
+        &quot;v3&quot;,
         credentials=credentials
     )
 
@@ -14294,8 +14250,8 @@ def get_analytics():
     )
 
     return build(
-        "youtubeAnalytics",
-        "v2",
+        &quot;youtubeAnalytics&quot;,
+        &quot;v2&quot;,
         credentials=credentials
     )
 
@@ -14307,20 +14263,20 @@ def get_analytics():
 def get_all_video_ids(youtube):
 
     response = youtube.channels().list(
-        part="contentDetails",
+        part=&quot;contentDetails&quot;,
         mine=True
     ).execute()
 
-    channels = response.get("items", [])
+    channels = response.get(&quot;items&quot;, [])
 
     if not channels:
         return []
 
     uploads_playlist = (
         channels[0]
-        ["contentDetails"]
-        ["relatedPlaylists"]
-        ["uploads"]
+        [&quot;contentDetails&quot;]
+        [&quot;relatedPlaylists&quot;]
+        [&quot;uploads&quot;]
     )
 
     video_ids = []
@@ -14329,20 +14285,20 @@ def get_all_video_ids(youtube):
     while True:
 
         response = youtube.playlistItems().list(
-            part="contentDetails",
+            part=&quot;contentDetails&quot;,
             playlistId=uploads_playlist,
             maxResults=50,
             pageToken=page_token
         ).execute()
 
-        for item in response.get("items", []):
+        for item in response.get(&quot;items&quot;, []):
 
             video_ids.append(
-                item["contentDetails"]["videoId"]
+                item[&quot;contentDetails&quot;][&quot;videoId&quot;]
             )
 
         page_token = response.get(
-            "nextPageToken"
+            &quot;nextPageToken&quot;
         )
 
         if not page_token:
@@ -14370,12 +14326,12 @@ def get_video_details(youtube, video_ids):
         ]
 
         response = youtube.videos().list(
-            part="snippet,contentDetails,statistics",
-            id=",".join(batch)
+            part=&quot;snippet,contentDetails,statistics&quot;,
+            id=&quot;,&quot;.join(batch)
         ).execute()
 
         videos.extend(
-            response.get("items", [])
+            response.get(&quot;items&quot;, [])
         )
 
     return videos
@@ -14390,7 +14346,7 @@ def parse_duration(duration):
     import re
 
     match = re.fullmatch(
-        r"PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?",
+        r&quot;PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?&quot;,
         duration
     )
 
@@ -14419,7 +14375,7 @@ def get_shorts(videos):
     for video in videos:
 
         duration = parse_duration(
-            video["contentDetails"]["duration"]
+            video[&quot;contentDetails&quot;][&quot;duration&quot;]
         )
 
         # Ã–nceden gÃ¶rdÃ¼ÄŸÃ¼mÃ¼z kanal yapÄ±sÄ±na gÃ¶re
@@ -14428,20 +14384,20 @@ def get_shorts(videos):
         # 3 dakikaya kadar Shorts olabileceÄŸi iÃ§in
         # sadece sÃ¼reye gÃ¶re 60 saniye sÄ±nÄ±rÄ± koymuyoruz.
 
-        title = video["snippet"].get(
-            "title",
-            ""
+        title = video[&quot;snippet&quot;].get(
+            &quot;title&quot;,
+            &quot;&quot;
         )
 
         # CanlÄ± yayÄ±n
         if title.lower().find(
-            "kanalÄ± canlÄ± yayÄ±nda"
-        ) >= 0:
+            &quot;kanalÄ± canlÄ± yayÄ±nda&quot;
+        ) &gt;= 0:
 
             continue
 
         # 3 dakikadan uzun iÃ§erikler
-        if duration > 180:
+        if duration &gt; 180:
 
             continue
 
@@ -14462,22 +14418,22 @@ def get_video_analytics(
     try:
 
         response = analytics.reports().query(
-            ids="channel==MINE",
-            startDate="2020-01-01",
-            endDate="2030-01-01",
+            ids=&quot;channel==MINE&quot;,
+            startDate=&quot;2020-01-01&quot;,
+            endDate=&quot;2030-01-01&quot;,
             metrics=(
-                "views,"
-                "likes,"
-                "comments,"
-                "estimatedMinutesWatched,"
-                "averageViewDuration,"
-                "averageViewPercentage"
+                &quot;views,&quot;
+                &quot;likes,&quot;
+                &quot;comments,&quot;
+                &quot;estimatedMinutesWatched,&quot;
+                &quot;averageViewDuration,&quot;
+                &quot;averageViewPercentage&quot;
             ),
-            filters=f"video=={video_id}"
+            filters=f&quot;video=={video_id}&quot;
         ).execute()
 
         rows = response.get(
-            "rows",
+            &quot;rows&quot;,
             []
         )
 
@@ -14487,23 +14443,23 @@ def get_video_analytics(
         row = rows[0]
 
         return {
-            "views": int(row[0]),
-            "likes": int(row[1]),
-            "comments": int(row[2]),
-            "estimated_minutes": float(row[3]),
-            "average_watch_time": float(row[4]),
-            "watch_percentage": float(row[5]),
+            &quot;views&quot;: int(row[0]),
+            &quot;likes&quot;: int(row[1]),
+            &quot;comments&quot;: int(row[2]),
+            &quot;estimated_minutes&quot;: float(row[3]),
+            &quot;average_watch_time&quot;: float(row[4]),
+            &quot;watch_percentage&quot;: float(row[5]),
         }
 
     except Exception as error:
 
         print(
-            f"âš ï¸ Analytics alÄ±namadÄ±: "
-            f"{video_id}"
+            f&quot;âš ï¸ Analytics alÄ±namadÄ±: &quot;
+            f&quot;{video_id}&quot;
         )
 
         print(
-            f"   {error}"
+            f&quot;   {error}&quot;
         )
 
         return None
@@ -14518,13 +14474,13 @@ def get_existing_video_numbers():
     db = sqlite3.connect(DB_FILE)
 
     rows = db.execute(
-        """
+        &quot;&quot;&quot;
         SELECT
             video_number,
             youtube_id
         FROM videos
         WHERE youtube_id IS NOT NULL
-        """
+        &quot;&quot;&quot;
     ).fetchall()
 
     db.close()
@@ -14542,13 +14498,13 @@ def get_next_video_number():
     db = sqlite3.connect(DB_FILE)
 
     row = db.execute(
-        """
+        &quot;&quot;&quot;
         SELECT COALESCE(
             MAX(video_number),
             0
         )
         FROM videos
-        """
+        &quot;&quot;&quot;
     ).fetchone()
 
     db.close()
@@ -14563,9 +14519,9 @@ def get_next_video_number():
 def sync():
 
     print()
-    print("========================================")
-    print("ğŸ§  CREATOR ENGINE â€” YOUTUBE ANALYTICS")
-    print("========================================")
+    print(&quot;========================================&quot;)
+    print(&quot;ğŸ§  CREATOR ENGINE â€” YOUTUBE ANALYTICS&quot;)
+    print(&quot;========================================&quot;)
     print()
 
     youtube = get_youtube()
@@ -14585,13 +14541,13 @@ def sync():
     )
 
     print(
-        f"ğŸ¬ YouTube videolarÄ±: "
-        f"{len(videos)}"
+        f&quot;ğŸ¬ YouTube videolarÄ±: &quot;
+        f&quot;{len(videos)}&quot;
     )
 
     print(
-        f"ğŸ“± Shorts olarak belirlenen: "
-        f"{len(shorts)}"
+        f&quot;ğŸ“± Shorts olarak belirlenen: &quot;
+        f&quot;{len(shorts)}&quot;
     )
 
     print()
@@ -14612,48 +14568,48 @@ def sync():
     updated = 0
     analytics_ok = 0
 
-    print("----------------------------------------")
+    print(&quot;----------------------------------------&quot;)
 
     for video in shorts:
 
-        youtube_id = video["id"]
+        youtube_id = video[&quot;id&quot;]
 
-        title = video["snippet"].get(
-            "title",
-            ""
+        title = video[&quot;snippet&quot;].get(
+            &quot;title&quot;,
+            &quot;&quot;
         )
 
-        published_at = video["snippet"].get(
-            "publishedAt",
-            ""
+        published_at = video[&quot;snippet&quot;].get(
+            &quot;publishedAt&quot;,
+            &quot;&quot;
         )
 
         duration = parse_duration(
-            video["contentDetails"]["duration"]
+            video[&quot;contentDetails&quot;][&quot;duration&quot;]
         )
 
         stats = video.get(
-            "statistics",
+            &quot;statistics&quot;,
             {}
         )
 
         views = int(
             stats.get(
-                "viewCount",
+                &quot;viewCount&quot;,
                 0
             )
         )
 
         likes = int(
             stats.get(
-                "likeCount",
+                &quot;likeCount&quot;,
                 0
             )
         )
 
         comments = int(
             stats.get(
-                "commentCount",
+                &quot;commentCount&quot;,
                 0
             )
         )
@@ -14667,13 +14623,13 @@ def sync():
 
             average_watch_time = (
                 analytics_data[
-                    "average_watch_time"
+                    &quot;average_watch_time&quot;
                 ]
             )
 
             watch_percentage = (
                 analytics_data[
-                    "watch_percentage"
+                    &quot;watch_percentage&quot;
                 ]
             )
 
@@ -14690,12 +14646,12 @@ def sync():
                 youtube_id
             ]
 
-            action = "GÃœNCELLE"
+            action = &quot;GÃœNCELLE&quot;
 
             if WRITE_TO_DATABASE:
 
                 db.execute(
-                    """
+                    &quot;&quot;&quot;
                     UPDATE videos
                     SET
                         topic = ?,
@@ -14707,7 +14663,7 @@ def sync():
                         average_watch_time = ?,
                         watch_percentage = ?
                     WHERE youtube_id = ?
-                    """,
+                    &quot;&quot;&quot;,
                     (
                         title,
                         duration,
@@ -14728,12 +14684,12 @@ def sync():
             video_number = next_number
             next_number += 1
 
-            action = "YENÄ°"
+            action = &quot;YENÄ°&quot;
 
             if WRITE_TO_DATABASE:
 
                 db.execute(
-                    """
+                    &quot;&quot;&quot;
                     INSERT INTO videos (
                         video_number,
                         topic,
@@ -14754,12 +14710,12 @@ def sync():
                     VALUES (
                         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
                     )
-                    """,
+                    &quot;&quot;&quot;,
                     (
                         video_number,
                         title,
-                        "youtube",
-                        "",
+                        &quot;youtube&quot;,
+                        &quot;&quot;,
                         duration,
                         0,
                         published_at,
@@ -14777,11 +14733,11 @@ def sync():
             added += 1
 
         print(
-            f"{action:8} "
-            f"#{video_number:03d} | "
-            f"{duration:3d} sn | "
-            f"{views:7d} izlenme | "
-            f"{title}"
+            f&quot;{action:8} &quot;
+            f&quot;#{video_number:03d} | &quot;
+            f&quot;{duration:3d} sn | &quot;
+            f&quot;{views:7d} izlenme | &quot;
+            f&quot;{title}&quot;
         )
 
     if db:
@@ -14789,44 +14745,44 @@ def sync():
         db.commit()
         db.close()
 
-    print("----------------------------------------")
+    print(&quot;----------------------------------------&quot;)
 
     print()
     print(
-        f"ğŸ†• Yeni: {added}"
+        f&quot;ğŸ†• Yeni: {added}&quot;
     )
 
     print(
-        f"ğŸ”„ GÃ¼ncellenen: {updated}"
+        f&quot;ğŸ”„ GÃ¼ncellenen: {updated}&quot;
     )
 
     print(
-        f"ğŸ“Š Analytics alÄ±nan: "
-        f"{analytics_ok}/{len(shorts)}"
+        f&quot;ğŸ“Š Analytics alÄ±nan: &quot;
+        f&quot;{analytics_ok}/{len(shorts)}&quot;
     )
 
     if WRITE_TO_DATABASE:
 
         print()
         print(
-            "ğŸ’¾ Veriler veritabanÄ±na yazÄ±ldÄ±."
+            &quot;ğŸ’¾ Veriler veritabanÄ±na yazÄ±ldÄ±.&quot;
         )
 
     else:
 
         print()
         print(
-            "âš ï¸ Ã–NÄ°ZLEME MODU"
+            &quot;âš ï¸ Ã–NÄ°ZLEME MODU&quot;
         )
 
         print(
-            "ğŸ’¾ VeritabanÄ±na hiÃ§bir deÄŸiÅŸiklik yapÄ±lmadÄ±."
+            &quot;ğŸ’¾ VeritabanÄ±na hiÃ§bir deÄŸiÅŸiklik yapÄ±lmadÄ±.&quot;
         )
 
     print()
-    print("========================================")
-    print("âœ… SENKRONÄ°ZASYON TAMAMLANDI")
-    print("========================================")
+    print(&quot;========================================&quot;)
+    print(&quot;âœ… SENKRONÄ°ZASYON TAMAMLANDI&quot;)
+    print(&quot;========================================&quot;)
     print()
 
 
@@ -14834,7 +14790,7 @@ def sync():
 # Ã‡ALIÅTIR
 # ============================================================
 
-if __name__ == "__main__":
+if __name__ == &quot;__main__&quot;:
 
     sync()
 
@@ -14855,8 +14811,8 @@ BASE_DIR = Path(__file__).resolve().parents[2]
 
 TOKEN_FILE = (
     BASE_DIR
-    / "data"
-    / "youtube_token.json"
+    / &quot;data&quot;
+    / &quot;youtube_token.json&quot;
 )
 
 
@@ -14869,9 +14825,9 @@ def get_analytics():
     if not TOKEN_FILE.exists():
 
         print()
-        print("âŒ YouTube token bulunamadÄ±.")
+        print(&quot;âŒ YouTube token bulunamadÄ±.&quot;)
         print(
-            f"ğŸ“ {TOKEN_FILE}"
+            f&quot;ğŸ“ {TOKEN_FILE}&quot;
         )
 
         return None
@@ -14881,8 +14837,8 @@ def get_analytics():
     )
 
     analytics = build(
-        "youtubeAnalytics",
-        "v2",
+        &quot;youtubeAnalytics&quot;,
+        &quot;v2&quot;,
         credentials=credentials
     )
 
@@ -14896,9 +14852,9 @@ def get_analytics():
 def test_analytics():
 
     print()
-    print("========================================")
-    print("ğŸ“Š CREATOR ENGINE â€” ANALYTICS TEST")
-    print("========================================")
+    print(&quot;========================================&quot;)
+    print(&quot;ğŸ“Š CREATOR ENGINE â€” ANALYTICS TEST&quot;)
+    print(&quot;========================================&quot;)
     print()
 
     analytics = get_analytics()
@@ -14907,7 +14863,7 @@ def test_analytics():
 
         return
 
-    print("ğŸ”Œ YouTube Analytics API baÄŸlantÄ±sÄ± baÅŸarÄ±lÄ±.")
+    print(&quot;ğŸ”Œ YouTube Analytics API baÄŸlantÄ±sÄ± baÅŸarÄ±lÄ±.&quot;)
     print()
 
     # --------------------------------------------------------
@@ -14915,64 +14871,64 @@ def test_analytics():
     # --------------------------------------------------------
 
     response = analytics.reports().query(
-        ids="channel==MINE",
-        startDate="2026-07-29",
-        endDate="2026-08-28",
+        ids=&quot;channel==MINE&quot;,
+        startDate=&quot;2026-07-29&quot;,
+        endDate=&quot;2026-08-28&quot;,
         metrics=(
-            "views,"
-            "likes,"
-            "comments,"
-            "estimatedMinutesWatched,"
-            "averageViewDuration,"
-            "averageViewPercentage"
+            &quot;views,&quot;
+            &quot;likes,&quot;
+            &quot;comments,&quot;
+            &quot;estimatedMinutesWatched,&quot;
+            &quot;averageViewDuration,&quot;
+            &quot;averageViewPercentage&quot;
         )
     ).execute()
 
-    print("========================================")
-    print("ğŸ“ˆ ANALYTICS VERÄ°LERÄ°")
-    print("========================================")
+    print(&quot;========================================&quot;)
+    print(&quot;ğŸ“ˆ ANALYTICS VERÄ°LERÄ°&quot;)
+    print(&quot;========================================&quot;)
     print()
 
     column_headers = response.get(
-        "columnHeaders",
+        &quot;columnHeaders&quot;,
         []
     )
 
     rows = response.get(
-        "rows",
+        &quot;rows&quot;,
         []
     )
 
     if not rows:
 
-        print("âš ï¸ SeÃ§ilen tarih aralÄ±ÄŸÄ±nda veri bulunamadÄ±.")
+        print(&quot;âš ï¸ SeÃ§ilen tarih aralÄ±ÄŸÄ±nda veri bulunamadÄ±.&quot;)
 
     else:
 
         headers = [
-            column["name"]
+            column[&quot;name&quot;]
             for column in column_headers
         ]
 
         print(
-            " | ".join(headers)
+            &quot; | &quot;.join(headers)
         )
 
-        print("----------------------------------------")
+        print(&quot;----------------------------------------&quot;)
 
         for row in rows:
 
             print(
-                " | ".join(
+                &quot; | &quot;.join(
                     str(value)
                     for value in row
                 )
             )
 
     print()
-    print("========================================")
-    print("âœ… ANALYTICS TESTÄ° TAMAMLANDI")
-    print("========================================")
+    print(&quot;========================================&quot;)
+    print(&quot;âœ… ANALYTICS TESTÄ° TAMAMLANDI&quot;)
+    print(&quot;========================================&quot;)
     print()
 
 
@@ -14980,7 +14936,7 @@ def test_analytics():
 # TEST
 # ============================================================
 
-if __name__ == "__main__":
+if __name__ == &quot;__main__&quot;:
 
     test_analytics()
 
@@ -14999,17 +14955,17 @@ from google.oauth2.credentials import Credentials
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 
-# Google Cloud'dan indirdiÄŸin OAuth JSON dosyasÄ±
+# Google Cloud&#x27;dan indirdiÄŸin OAuth JSON dosyasÄ±
 CLIENT_SECRET_FILE = (
     BASE_DIR
-    / "client_secret_150956391796-vpb251vj5d9dib3qccgpjqjmmnjmv4p9.apps.googleusercontent.com.json"
+    / &quot;client_secret_150956391796-vpb251vj5d9dib3qccgpjqjmmnjmv4p9.apps.googleusercontent.com.json&quot;
 )
 
 # OAuth sonrasÄ± oluÅŸturulacak token
 TOKEN_FILE = (
     BASE_DIR
-    / "data"
-    / "youtube_token.json"
+    / &quot;data&quot;
+    / &quot;youtube_token.json&quot;
 )
 
 
@@ -15018,8 +14974,8 @@ TOKEN_FILE = (
 # ============================================================
 
 SCOPES = [
-    "https://www.googleapis.com/auth/youtube.readonly",
-    "https://www.googleapis.com/auth/yt-analytics.readonly",
+    &quot;https://www.googleapis.com/auth/youtube.readonly&quot;,
+    &quot;https://www.googleapis.com/auth/yt-analytics.readonly&quot;,
 ]
 
 
@@ -15030,17 +14986,17 @@ SCOPES = [
 def authenticate_youtube():
 
     print()
-    print("========================================")
-    print("ğŸ” CREATOR ENGINE â€” YOUTUBE BAÄLANTISI")
-    print("========================================")
+    print(&quot;========================================&quot;)
+    print(&quot;ğŸ” CREATOR ENGINE â€” YOUTUBE BAÄLANTISI&quot;)
+    print(&quot;========================================&quot;)
     print()
 
     if not CLIENT_SECRET_FILE.exists():
 
-        print("âŒ OAuth JSON dosyasÄ± bulunamadÄ±.")
+        print(&quot;âŒ OAuth JSON dosyasÄ± bulunamadÄ±.&quot;)
         print()
         print(
-            f"Aranan dosya:"
+            f&quot;Aranan dosya:&quot;
         )
         print(
             CLIENT_SECRET_FILE
@@ -15063,13 +15019,13 @@ def authenticate_youtube():
                 SCOPES,
             )
 
-            print("âœ… Mevcut YouTube yetkilendirmesi bulundu.")
+            print(&quot;âœ… Mevcut YouTube yetkilendirmesi bulundu.&quot;)
 
         except Exception as error:
 
             print()
             print(
-                f"âš ï¸ Mevcut token okunamadÄ±: {error}"
+                f&quot;âš ï¸ Mevcut token okunamadÄ±: {error}&quot;
             )
 
             credentials = None
@@ -15081,16 +15037,16 @@ def authenticate_youtube():
     if credentials is None or not credentials.valid:
 
         print()
-        print("ğŸŒ Google OAuth baÅŸlatÄ±lÄ±yor...")
+        print(&quot;ğŸŒ Google OAuth baÅŸlatÄ±lÄ±yor...&quot;)
         print()
         print(
-            "TarayÄ±cÄ± aÃ§Ä±lacak."
+            &quot;TarayÄ±cÄ± aÃ§Ä±lacak.&quot;
         )
         print(
-            "33 Shorts bulunan YouTube kanalÄ±nÄ±n"
+            &quot;33 Shorts bulunan YouTube kanalÄ±nÄ±n&quot;
         )
         print(
-            "Google hesabÄ±yla giriÅŸ yap."
+            &quot;Google hesabÄ±yla giriÅŸ yap.&quot;
         )
         print()
 
@@ -15109,7 +15065,7 @@ def authenticate_youtube():
 
             print()
             print(
-                f"âŒ OAuth baÄŸlantÄ±sÄ± baÅŸarÄ±sÄ±z: {error}"
+                f&quot;âŒ OAuth baÄŸlantÄ±sÄ± baÅŸarÄ±sÄ±z: {error}&quot;
             )
 
             return None
@@ -15125,23 +15081,23 @@ def authenticate_youtube():
 
         TOKEN_FILE.write_text(
             credentials.to_json(),
-            encoding="utf-8"
+            encoding=&quot;utf-8&quot;
         )
 
         print()
-        print("âœ… YouTube yetkilendirmesi tamamlandÄ±.")
+        print(&quot;âœ… YouTube yetkilendirmesi tamamlandÄ±.&quot;)
         print()
         print(
-            f"ğŸ” Token kaydedildi:"
+            f&quot;ğŸ” Token kaydedildi:&quot;
         )
         print(
             TOKEN_FILE
         )
 
     print()
-    print("========================================")
-    print("âœ… YOUTUBE BAÄLANTISI HAZIR")
-    print("========================================")
+    print(&quot;========================================&quot;)
+    print(&quot;âœ… YOUTUBE BAÄLANTISI HAZIR&quot;)
+    print(&quot;========================================&quot;)
     print()
 
     return credentials
@@ -15151,7 +15107,7 @@ def authenticate_youtube():
 # TEST
 # ============================================================
 
-if __name__ == "__main__":
+if __name__ == &quot;__main__&quot;:
 
     authenticate_youtube()
 
@@ -15172,8 +15128,8 @@ BASE_DIR = Path(__file__).resolve().parents[2]
 
 TOKEN_FILE = (
     BASE_DIR
-    / "data"
-    / "youtube_token.json"
+    / &quot;data&quot;
+    / &quot;youtube_token.json&quot;
 )
 
 
@@ -15186,9 +15142,9 @@ def get_youtube():
     if not TOKEN_FILE.exists():
 
         print()
-        print("âŒ YouTube token bulunamadÄ±.")
+        print(&quot;âŒ YouTube token bulunamadÄ±.&quot;)
         print(
-            f"ğŸ“ {TOKEN_FILE}"
+            f&quot;ğŸ“ {TOKEN_FILE}&quot;
         )
 
         return None
@@ -15198,8 +15154,8 @@ def get_youtube():
     )
 
     youtube = build(
-        "youtube",
-        "v3",
+        &quot;youtube&quot;,
+        &quot;v3&quot;,
         credentials=credentials
     )
 
@@ -15213,16 +15169,16 @@ def get_youtube():
 def get_all_videos(youtube):
 
     # --------------------------------------------------------
-    # Ã–nce kanalÄ±n uploads playlist ID'sini al
+    # Ã–nce kanalÄ±n uploads playlist ID&#x27;sini al
     # --------------------------------------------------------
 
     channel_response = youtube.channels().list(
-        part="contentDetails",
+        part=&quot;contentDetails&quot;,
         mine=True
     ).execute()
 
     channels = channel_response.get(
-        "items",
+        &quot;items&quot;,
         []
     )
 
@@ -15232,9 +15188,9 @@ def get_all_videos(youtube):
 
     uploads_playlist_id = (
         channels[0]
-        ["contentDetails"]
-        ["relatedPlaylists"]
-        ["uploads"]
+        [&quot;contentDetails&quot;]
+        [&quot;relatedPlaylists&quot;]
+        [&quot;uploads&quot;]
     )
 
     # --------------------------------------------------------
@@ -15248,7 +15204,7 @@ def get_all_videos(youtube):
     while True:
 
         response = youtube.playlistItems().list(
-            part="snippet,contentDetails",
+            part=&quot;snippet,contentDetails&quot;,
             playlistId=uploads_playlist_id,
             maxResults=50,
             pageToken=next_page_token
@@ -15256,13 +15212,13 @@ def get_all_videos(youtube):
 
         videos.extend(
             response.get(
-                "items",
+                &quot;items&quot;,
                 []
             )
         )
 
         next_page_token = response.get(
-            "nextPageToken"
+            &quot;nextPageToken&quot;
         )
 
         if not next_page_token:
@@ -15279,9 +15235,9 @@ def get_all_videos(youtube):
 def list_videos():
 
     print()
-    print("========================================")
-    print("ğŸ“º CREATOR ENGINE â€” YOUTUBE VÄ°DEOLARI")
-    print("========================================")
+    print(&quot;========================================&quot;)
+    print(&quot;ğŸ“º CREATOR ENGINE â€” YOUTUBE VÄ°DEOLARI&quot;)
+    print(&quot;========================================&quot;)
     print()
 
     youtube = get_youtube()
@@ -15296,53 +15252,53 @@ def list_videos():
 
     if not videos:
 
-        print("âŒ Video bulunamadÄ±.")
+        print(&quot;âŒ Video bulunamadÄ±.&quot;)
         return
 
     print(
-        f"ğŸ¬ Toplam bulunan video: "
-        f"{len(videos)}"
+        f&quot;ğŸ¬ Toplam bulunan video: &quot;
+        f&quot;{len(videos)}&quot;
     )
 
     print()
 
-    print("----------------------------------------")
+    print(&quot;----------------------------------------&quot;)
 
     for index, video in enumerate(
         videos,
         start=1
     ):
 
-        snippet = video["snippet"]
+        snippet = video[&quot;snippet&quot;]
 
         video_id = (
-            video["contentDetails"]
-            ["videoId"]
+            video[&quot;contentDetails&quot;]
+            [&quot;videoId&quot;]
         )
 
         title = snippet.get(
-            "title",
-            ""
+            &quot;title&quot;,
+            &quot;&quot;
         )
 
         published_at = snippet.get(
-            "publishedAt",
-            ""
+            &quot;publishedAt&quot;,
+            &quot;&quot;
         )
 
         print(
-            f"#{index:02d} | "
-            f"{video_id} | "
-            f"{published_at} | "
-            f"{title}"
+            f&quot;#{index:02d} | &quot;
+            f&quot;{video_id} | &quot;
+            f&quot;{published_at} | &quot;
+            f&quot;{title}&quot;
         )
 
-    print("----------------------------------------")
+    print(&quot;----------------------------------------&quot;)
 
     print()
-    print("========================================")
-    print("âœ… VÄ°DEO LÄ°STESÄ° TAMAMLANDI")
-    print("========================================")
+    print(&quot;========================================&quot;)
+    print(&quot;âœ… VÄ°DEO LÄ°STESÄ° TAMAMLANDI&quot;)
+    print(&quot;========================================&quot;)
     print()
 
 
@@ -15350,7 +15306,7 @@ def list_videos():
 # TEST
 # ============================================================
 
-if __name__ == "__main__":
+if __name__ == &quot;__main__&quot;:
 
     list_videos()
 
@@ -15371,8 +15327,8 @@ BASE_DIR = Path(__file__).resolve().parents[2]
 
 TOKEN_FILE = (
     BASE_DIR
-    / "data"
-    / "youtube_token.json"
+    / &quot;data&quot;
+    / &quot;youtube_token.json&quot;
 )
 
 
@@ -15385,9 +15341,9 @@ def get_youtube():
     if not TOKEN_FILE.exists():
 
         print()
-        print("âŒ YouTube token bulunamadÄ±.")
+        print(&quot;âŒ YouTube token bulunamadÄ±.&quot;)
         print(
-            f"ğŸ“ {TOKEN_FILE}"
+            f&quot;ğŸ“ {TOKEN_FILE}&quot;
         )
 
         return None
@@ -15397,8 +15353,8 @@ def get_youtube():
     )
 
     youtube = build(
-        "youtube",
-        "v3",
+        &quot;youtube&quot;,
+        &quot;v3&quot;,
         credentials=credentials
     )
 
@@ -15412,9 +15368,9 @@ def get_youtube():
 def test_channel():
 
     print()
-    print("========================================")
-    print("ğŸ“º CREATOR ENGINE â€” YOUTUBE TEST")
-    print("========================================")
+    print(&quot;========================================&quot;)
+    print(&quot;ğŸ“º CREATOR ENGINE â€” YOUTUBE TEST&quot;)
+    print(&quot;========================================&quot;)
     print()
 
     youtube = get_youtube()
@@ -15423,63 +15379,63 @@ def test_channel():
 
         return
 
-    print("ğŸ”Œ YouTube API baÄŸlantÄ±sÄ± baÅŸarÄ±lÄ±.")
+    print(&quot;ğŸ”Œ YouTube API baÄŸlantÄ±sÄ± baÅŸarÄ±lÄ±.&quot;)
     print()
 
     response = youtube.channels().list(
-        part="snippet,statistics",
+        part=&quot;snippet,statistics&quot;,
         mine=True
     ).execute()
 
     channels = response.get(
-        "items",
+        &quot;items&quot;,
         []
     )
 
     if not channels:
 
-        print("âŒ Kanal bulunamadÄ±.")
+        print(&quot;âŒ Kanal bulunamadÄ±.&quot;)
         return
 
     channel = channels[0]
 
-    snippet = channel["snippet"]
-    statistics = channel["statistics"]
+    snippet = channel[&quot;snippet&quot;]
+    statistics = channel[&quot;statistics&quot;]
 
-    print("========================================")
-    print("ğŸ“º KANAL BÄ°LGÄ°LERÄ°")
-    print("========================================")
+    print(&quot;========================================&quot;)
+    print(&quot;ğŸ“º KANAL BÄ°LGÄ°LERÄ°&quot;)
+    print(&quot;========================================&quot;)
     print()
 
     print(
-        f"ğŸ“› Kanal adÄ±: "
-        f"{snippet.get('title', '')}"
+        f&quot;ğŸ“› Kanal adÄ±: &quot;
+        f&quot;{snippet.get(&#x27;title&#x27;, &#x27;&#x27;)}&quot;
     )
 
     print(
-        f"ğŸ†” Kanal ID: "
-        f"{channel.get('id', '')}"
+        f&quot;ğŸ†” Kanal ID: &quot;
+        f&quot;{channel.get(&#x27;id&#x27;, &#x27;&#x27;)}&quot;
     )
 
     print(
-        f"ğŸ‘¥ Abone: "
-        f"{statistics.get('subscriberCount', 'Gizli')}"
+        f&quot;ğŸ‘¥ Abone: &quot;
+        f&quot;{statistics.get(&#x27;subscriberCount&#x27;, &#x27;Gizli&#x27;)}&quot;
     )
 
     print(
-        f"ğŸ¬ Toplam video: "
-        f"{statistics.get('videoCount', 0)}"
+        f&quot;ğŸ¬ Toplam video: &quot;
+        f&quot;{statistics.get(&#x27;videoCount&#x27;, 0)}&quot;
     )
 
     print(
-        f"ğŸ‘ï¸ Toplam gÃ¶rÃ¼ntÃ¼lenme: "
-        f"{statistics.get('viewCount', 0)}"
+        f&quot;ğŸ‘ï¸ Toplam gÃ¶rÃ¼ntÃ¼lenme: &quot;
+        f&quot;{statistics.get(&#x27;viewCount&#x27;, 0)}&quot;
     )
 
     print()
-    print("========================================")
-    print("âœ… YOUTUBE BAÄLANTI TESTÄ° BAÅARILI")
-    print("========================================")
+    print(&quot;========================================&quot;)
+    print(&quot;âœ… YOUTUBE BAÄLANTI TESTÄ° BAÅARILI&quot;)
+    print(&quot;========================================&quot;)
     print()
 
 
@@ -15487,59 +15443,58 @@ def test_channel():
 # TEST
 # ============================================================
 
-if __name__ == "__main__":
+if __name__ == &quot;__main__&quot;:
 
     test_channel()
 
 ============================================================
 DOSYA: config\settings.py
 ============================================================
-APP_NAME = "Creator Engine"
-VERSION = "0.1.0"
-LANGUAGE = "tr"
+APP_NAME = &quot;Creator Engine&quot;
+VERSION = &quot;0.1.0&quot;
+LANGUAGE = &quot;tr&quot;
 from dotenv import load_dotenv
 import os
 
 load_dotenv()
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENAI_API_KEY = os.getenv(&quot;OPENAI_API_KEY&quot;)
 
 ============================================================
 DOSYA: config\__init__.py
-============================================================
+============================================================</pre>
+</section>
 
 
-</textarea>
-
+</div>
 
 <script>
 
-const source =
-    document.getElementById("source").value;
+function searchFiles() {
 
-const lines =
-    source.split("\n");
+    const query =
+        document.getElementById("search")
+        .value
+        .toLowerCase()
+        .trim();
 
-const total =
-    lines.length;
+    document
+        .querySelectorAll(".file-card")
+        .forEach(card => {
 
-const part =
-    Math.ceil(total / 3);
+            const text =
+                card.innerText.toLowerCase();
 
+            card.classList.toggle(
+                "hidden",
+                query !== "" &&
+                !text.includes(query)
+            );
 
-document.getElementById("column1").value =
-    lines.slice(0, part).join("\n");
-
-
-document.getElementById("column2").value =
-    lines.slice(part, part * 2).join("\n");
-
-
-document.getElementById("column3").value =
-    lines.slice(part * 2).join("\n");
+        });
+}
 
 </script>
-
 
 </body>
 </html>
