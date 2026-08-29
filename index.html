@@ -240,77 +240,207 @@ from app.analytics.database import (
 
 
 # ============================================================
-# CREATOR ENGINE — ANALYTICS ENGINE 2.0
+# CREATOR ENGINE — ANALYTICS ENGINE
 # ============================================================
+
+
+def row_to_dict(row):
+
+    if isinstance(row, dict):
+
+        return row
+
+    return dict(row)
+
+
+def is_short(video):
+
+    video = row_to_dict(video)
+
+    duration = (
+        video.get(&quot;duration&quot;)
+        or 0
+    )
+
+    topic = (
+        video.get(&quot;topic&quot;)
+        or &quot;&quot;
+    ).lower()
+
+
+    # --------------------------------------------------------
+    # YouTube sync ile aynı Shorts mantığı
+    # 180 saniyeden uzun videolar Shorts değildir.
+    # --------------------------------------------------------
+
+    if duration &gt; 180:
+
+        return False
+
+
+    # --------------------------------------------------------
+    # Canlı yayınları çıkar
+    # --------------------------------------------------------
+
+    live_keywords = (
+        &quot;kanalı canlı yayında&quot;,
+        &quot;canlı yayında&quot;,
+        &quot;canlı yayın&quot;,
+        &quot;live stream&quot;,
+        &quot;livestream&quot;,
+    )
+
+
+    for keyword in live_keywords:
+
+        if keyword in topic:
+
+            return False
+
+
+    return True
+
+
+def get_all_video_dicts():
+
+    rows = get_all_videos()
+
+    return [
+        row_to_dict(row)
+        for row in rows
+    ]
+
+
+def get_shorts():
+
+    videos = get_all_video_dicts()
+
+    shorts = [
+        video
+        for video in videos
+        if is_short(video)
+    ]
+
+    return shorts
+
 
 def analyze_videos():
 
     initialize_database()
 
-    videos = get_all_videos()
+    videos = get_all_video_dicts()
 
-    # ========================================================
-    # VERİ YOK
-    # ========================================================
+    shorts = [
+        video
+        for video in videos
+        if is_short(video)
+    ]
 
-    if not videos:
+
+    print()
+    print(
+        &quot;========================================&quot;
+    )
+
+    print(
+        &quot;🧠 CREATOR ENGINE — ANALYTICS&quot;
+    )
+
+    print(
+        &quot;========================================&quot;
+    )
+
+    print()
+
+    print(
+        f&quot;🎬 Toplam DB videosu: &quot;
+        f&quot;{len(videos)}&quot;
+    )
+
+    print(
+        f&quot;📱 Shorts olarak analiz edilecek: &quot;
+        f&quot;{len(shorts)}&quot;
+    )
+
+    print()
+
+
+    if not shorts:
+
+        print(
+            &quot;❌ Analiz edilecek Shorts bulunamadı.&quot;
+        )
 
         return {
             &quot;total_videos&quot;: 0,
+            &quot;shorts_videos&quot;: 0,
+            &quot;database_videos&quot;: len(videos),
             &quot;average_duration&quot;: 0,
             &quot;average_images&quot;: 0,
             &quot;total_views&quot;: 0,
             &quot;total_likes&quot;: 0,
             &quot;total_comments&quot;: 0,
+            &quot;total_shares&quot;: 0,
             &quot;average_views&quot;: 0,
             &quot;average_likes&quot;: 0,
             &quot;average_comments&quot;: 0,
+            &quot;engagement_rate&quot;: 0,
+            &quot;average_watch_time&quot;: 0,
+            &quot;average_watch_percentage&quot;: 0,
             &quot;top_topics&quot;: [],
             &quot;best_video&quot;: None,
             &quot;top_videos&quot;: [],
             &quot;worst_videos&quot;: [],
             &quot;duration_performance&quot;: [],
-            &quot;engagement_rate&quot;: 0,
-            &quot;average_watch_time&quot;: 0,
-            &quot;average_watch_percentage&quot;: 0,
             &quot;above_average_videos&quot;: 0,
             &quot;performance_available&quot;: False,
         }
+
 
     # ========================================================
     # TEMEL VERİLER
     # ========================================================
 
-    total_videos = len(videos)
+    total_videos = len(shorts)
+
 
     durations = [
-        video[&quot;duration&quot;]
-        for video in videos
-        if video[&quot;duration&quot;] is not None
-        and video[&quot;duration&quot;] &gt; 0
+        video.get(&quot;duration&quot;) or 0
+        for video in shorts
+        if (video.get(&quot;duration&quot;) or 0) &gt; 0
     ]
+
 
     image_counts = [
-        video[&quot;image_count&quot;]
-        for video in videos
-        if video[&quot;image_count&quot;] is not None
-        and video[&quot;image_count&quot;] &gt; 0
+        video.get(&quot;image_count&quot;) or 0
+        for video in shorts
+        if (video.get(&quot;image_count&quot;) or 0) &gt; 0
     ]
 
+
     total_views = sum(
-        video[&quot;views&quot;] or 0
-        for video in videos
+        video.get(&quot;views&quot;) or 0
+        for video in shorts
     )
+
 
     total_likes = sum(
-        video[&quot;likes&quot;] or 0
-        for video in videos
+        video.get(&quot;likes&quot;) or 0
+        for video in shorts
     )
 
+
     total_comments = sum(
-        video[&quot;comments&quot;] or 0
-        for video in videos
+        video.get(&quot;comments&quot;) or 0
+        for video in shorts
     )
+
+
+    total_shares = sum(
+        video.get(&quot;shares&quot;) or 0
+        for video in shorts
+    )
+
 
     # ========================================================
     # ORTALAMALAR
@@ -322,11 +452,13 @@ def analyze_videos():
         else 0
     )
 
+
     average_images = (
         sum(image_counts) / len(image_counts)
         if image_counts
         else 0
     )
+
 
     average_views = (
         total_views / total_videos
@@ -334,11 +466,13 @@ def analyze_videos():
         else 0
     )
 
+
     average_likes = (
         total_likes / total_videos
         if total_videos
         else 0
     )
+
 
     average_comments = (
         total_comments / total_videos
@@ -346,37 +480,24 @@ def analyze_videos():
         else 0
     )
 
-    # ========================================================
-    # PERFORMANS VERİSİ
-    # ========================================================
-
-    performance_videos = [
-        video
-        for video in videos
-        if (video[&quot;views&quot;] or 0) &gt; 0
-    ]
-
-    performance_available = bool(
-        performance_videos
-    )
 
     # ========================================================
     # WATCH TIME
     # ========================================================
 
     watch_time_values = [
-        video[&quot;average_watch_time&quot;]
-        for video in videos
-        if video[&quot;average_watch_time&quot;] is not None
-        and video[&quot;average_watch_time&quot;] &gt; 0
+        video.get(&quot;average_watch_time&quot;) or 0
+        for video in shorts
+        if (video.get(&quot;average_watch_time&quot;) or 0) &gt; 0
     ]
 
+
     watch_percentage_values = [
-        video[&quot;watch_percentage&quot;]
-        for video in videos
-        if video[&quot;watch_percentage&quot;] is not None
-        and video[&quot;watch_percentage&quot;] &gt; 0
+        video.get(&quot;watch_percentage&quot;) or 0
+        for video in shorts
+        if (video.get(&quot;watch_percentage&quot;) or 0) &gt; 0
     ]
+
 
     average_watch_time = (
         sum(watch_time_values)
@@ -385,6 +506,7 @@ def analyze_videos():
         else 0
     )
 
+
     average_watch_percentage = (
         sum(watch_percentage_values)
         / len(watch_percentage_values)
@@ -392,14 +514,16 @@ def analyze_videos():
         else 0
     )
 
+
     # ========================================================
-    # ETKİLEŞİM ORANI
+    # ETKİLEŞİM
     # ========================================================
 
     engagement_rate = (
         (
             total_likes
             + total_comments
+            + total_shares
         )
         / total_views
         * 100
@@ -407,199 +531,283 @@ def analyze_videos():
         else 0
     )
 
+
     # ========================================================
     # KONULAR
     # ========================================================
 
     topics = [
-        video[&quot;topic&quot;]
-        for video in videos
-        if video[&quot;topic&quot;]
+        video.get(&quot;topic&quot;)
+        for video in shorts
+        if video.get(&quot;topic&quot;)
     ]
 
-    topic_counter = Counter(topics)
+
+    topic_counter = Counter(
+        topics
+    )
+
 
     top_topics = [
         {
             &quot;topic&quot;: topic,
             &quot;count&quot;: count,
         }
+
         for topic, count
         in topic_counter.most_common(10)
     ]
 
+
     # ========================================================
-    # EN İYİ VİDEOLAR
+    # VİDEOLARDA PERFORMANS
+    # ========================================================
+
+    performance_videos = [
+        video
+        for video in shorts
+        if (video.get(&quot;views&quot;) or 0) &gt; 0
+    ]
+
+
+    # ========================================================
+    # EN İYİLER
     # ========================================================
 
     sorted_videos = sorted(
         performance_videos,
-        key=lambda video: (
-            video[&quot;views&quot;] or 0
-        ),
-        reverse=True,
+        key=lambda video:
+            video.get(&quot;views&quot;) or 0,
+        reverse=True
     )
+
 
     top_videos = [
         {
             &quot;video_number&quot;:
-                video[&quot;video_number&quot;],
+                video.get(&quot;video_number&quot;),
 
             &quot;topic&quot;:
-                video[&quot;topic&quot;],
+                video.get(&quot;topic&quot;),
 
             &quot;views&quot;:
-                video[&quot;views&quot;] or 0,
+                video.get(&quot;views&quot;) or 0,
 
             &quot;likes&quot;:
-                video[&quot;likes&quot;] or 0,
+                video.get(&quot;likes&quot;) or 0,
 
             &quot;comments&quot;:
-                video[&quot;comments&quot;] or 0,
+                video.get(&quot;comments&quot;) or 0,
+
+            &quot;shares&quot;:
+                video.get(&quot;shares&quot;) or 0,
 
             &quot;duration&quot;:
-                video[&quot;duration&quot;] or 0,
+                video.get(&quot;duration&quot;) or 0,
 
             &quot;watch_percentage&quot;:
-                video[&quot;watch_percentage&quot;] or 0,
+                video.get(&quot;watch_percentage&quot;) or 0,
+
+            &quot;average_watch_time&quot;:
+                video.get(&quot;average_watch_time&quot;) or 0,
         }
-        for video in sorted_videos[:10]
+
+        for video
+        in sorted_videos[:10]
     ]
 
+
     # ========================================================
-    # EN KÖTÜ VİDEOLAR
+    # EN DÜŞÜKLER
     # ========================================================
 
     worst_sorted = sorted(
         performance_videos,
-        key=lambda video: (
-            video[&quot;views&quot;] or 0
-        ),
+        key=lambda video:
+            video.get(&quot;views&quot;) or 0
     )
+
 
     worst_videos = [
         {
             &quot;video_number&quot;:
-                video[&quot;video_number&quot;],
+                video.get(&quot;video_number&quot;),
 
             &quot;topic&quot;:
-                video[&quot;topic&quot;],
+                video.get(&quot;topic&quot;),
 
             &quot;views&quot;:
-                video[&quot;views&quot;] or 0,
+                video.get(&quot;views&quot;) or 0,
 
             &quot;duration&quot;:
-                video[&quot;duration&quot;] or 0,
+                video.get(&quot;duration&quot;) or 0,
+
+            &quot;watch_percentage&quot;:
+                video.get(&quot;watch_percentage&quot;) or 0,
         }
-        for video in worst_sorted[:10]
+
+        for video
+        in worst_sorted[:10]
     ]
 
+
     # ========================================================
-    # EN BAŞARILI VİDEO
+    # EN BAŞARILI
     # ========================================================
 
     best_video = None
+
 
     if sorted_videos:
 
         best = sorted_videos[0]
 
+
         best_video = {
             &quot;video_number&quot;:
-                best[&quot;video_number&quot;],
+                best.get(&quot;video_number&quot;),
 
             &quot;topic&quot;:
-                best[&quot;topic&quot;],
+                best.get(&quot;topic&quot;),
 
             &quot;views&quot;:
-                best[&quot;views&quot;] or 0,
+                best.get(&quot;views&quot;) or 0,
 
             &quot;likes&quot;:
-                best[&quot;likes&quot;] or 0,
+                best.get(&quot;likes&quot;) or 0,
 
             &quot;comments&quot;:
-                best[&quot;comments&quot;] or 0,
+                best.get(&quot;comments&quot;) or 0,
+
+            &quot;shares&quot;:
+                best.get(&quot;shares&quot;) or 0,
 
             &quot;duration&quot;:
-                best[&quot;duration&quot;] or 0,
+                best.get(&quot;duration&quot;) or 0,
 
             &quot;watch_percentage&quot;:
-                best[&quot;watch_percentage&quot;] or 0,
+                best.get(&quot;watch_percentage&quot;) or 0,
         }
 
-    # ========================================================
-    # ORTALAMA ÜZERİ VİDEOLAR
-    # ========================================================
-
-    above_average_videos = len([
-        video
-        for video in performance_videos
-        if (video[&quot;views&quot;] or 0)
-        &gt; average_views
-    ])
 
     # ========================================================
-    # SÜRE PERFORMANSI
+    # ORTALAMA ÜZERİNDEKİLER
+    # ========================================================
+
+    above_average_videos = len(
+        [
+            video
+            for video in performance_videos
+            if (video.get(&quot;views&quot;) or 0)
+            &gt; average_views
+        ]
+    )
+
+
+    # ========================================================
+    # SÜRE GRUPLARI
     # ========================================================
 
     duration_groups = {
+
         &quot;0-20 sn&quot;: [],
+
         &quot;21-30 sn&quot;: [],
+
         &quot;31-45 sn&quot;: [],
+
         &quot;46-60 sn&quot;: [],
+
         &quot;61+ sn&quot;: [],
     }
 
+
     for video in performance_videos:
 
-        duration = video[&quot;duration&quot;] or 0
-        views = video[&quot;views&quot;] or 0
+        duration = (
+            video.get(&quot;duration&quot;)
+            or 0
+        )
+
+
+        views = (
+            video.get(&quot;views&quot;)
+            or 0
+        )
+
 
         if duration &lt;= 20:
 
             duration_groups[
                 &quot;0-20 sn&quot;
-            ].append(views)
+            ].append(
+                views
+            )
+
 
         elif duration &lt;= 30:
 
             duration_groups[
                 &quot;21-30 sn&quot;
-            ].append(views)
+            ].append(
+                views
+            )
+
 
         elif duration &lt;= 45:
 
             duration_groups[
                 &quot;31-45 sn&quot;
-            ].append(views)
+            ].append(
+                views
+            )
+
 
         elif duration &lt;= 60:
 
             duration_groups[
                 &quot;46-60 sn&quot;
-            ].append(views)
+            ].append(
+                views
+            )
+
 
         else:
 
             duration_groups[
                 &quot;61+ sn&quot;
-            ].append(views)
+            ].append(
+                views
+            )
+
 
     duration_performance = []
+
 
     for group, values in duration_groups.items():
 
         if values:
 
-            duration_performance.append({
-                &quot;range&quot;: group,
-                &quot;video_count&quot;: len(values),
-                &quot;average_views&quot;: round(
-                    sum(values) / len(values),
-                    2
-                ),
-                &quot;total_views&quot;: sum(values),
-            })
+            duration_performance.append(
+                {
+                    &quot;range&quot;:
+                        group,
+
+                    &quot;video_count&quot;:
+                        len(values),
+
+                    &quot;average_views&quot;:
+                        round(
+                            sum(values)
+                            / len(values),
+                            2
+                        ),
+
+                    &quot;total_views&quot;:
+                        sum(values),
+                }
+            )
+
 
     # ========================================================
     # SONUÇ
@@ -609,6 +817,12 @@ def analyze_videos():
 
         &quot;total_videos&quot;:
             total_videos,
+
+        &quot;shorts_videos&quot;:
+            total_videos,
+
+        &quot;database_videos&quot;:
+            len(videos),
 
         &quot;average_duration&quot;:
             round(
@@ -631,6 +845,9 @@ def analyze_videos():
         &quot;total_comments&quot;:
             total_comments,
 
+        &quot;total_shares&quot;:
+            total_shares,
+
         &quot;average_views&quot;:
             round(
                 average_views,
@@ -648,21 +865,6 @@ def analyze_videos():
                 average_comments,
                 2
             ),
-
-        &quot;top_topics&quot;:
-            top_topics,
-
-        &quot;best_video&quot;:
-            best_video,
-
-        &quot;top_videos&quot;:
-            top_videos,
-
-        &quot;worst_videos&quot;:
-            worst_videos,
-
-        &quot;duration_performance&quot;:
-            duration_performance,
 
         &quot;engagement_rate&quot;:
             round(
@@ -682,136 +884,122 @@ def analyze_videos():
                 2
             ),
 
+        &quot;top_topics&quot;:
+            top_topics,
+
+        &quot;best_video&quot;:
+            best_video,
+
+        &quot;top_videos&quot;:
+            top_videos,
+
+        &quot;worst_videos&quot;:
+            worst_videos,
+
+        &quot;duration_performance&quot;:
+            duration_performance,
+
         &quot;above_average_videos&quot;:
             above_average_videos,
 
         &quot;performance_available&quot;:
-            performance_available,
+            bool(
+                performance_videos
+            ),
     }
 
 
 # ============================================================
-# RAPOR
+# RAPORU YAZDIR
 # ============================================================
 
 def print_analysis():
 
     analysis = analyze_videos()
 
-    print()
-    print(&quot;========================================&quot;)
-    print(&quot;🧠 CREATOR ENGINE ANALYTICS ENGINE 2.0&quot;)
-    print(&quot;========================================&quot;)
 
-    if analysis[&quot;total_videos&quot;] == 0:
-
-        print()
-        print(&quot;Henüz analiz edilecek video yok.&quot;)
-        print()
+    if not analysis[&quot;shorts_videos&quot;]:
 
         return
 
-    # ========================================================
-    # TEMEL
-    # ========================================================
 
     print()
+
     print(
-        f&quot;🎬 Toplam video       : &quot;
-        f&quot;{analysis[&#x27;total_videos&#x27;]}&quot;
+        &quot;========================================&quot;
     )
 
     print(
-        f&quot;⏱️ Ortalama süre      : &quot;
-        f&quot;{analysis[&#x27;average_duration&#x27;]:.2f} sn&quot;
+        &quot;📊 SHORTS ANALYTICS RAPORU&quot;
     )
 
     print(
-        f&quot;🖼️ Ortalama görsel    : &quot;
-        f&quot;{analysis[&#x27;average_images&#x27;]:.2f}&quot;
+        &quot;========================================&quot;
     )
-
-    # ========================================================
-    # PERFORMANS
-    # ========================================================
 
     print()
-    print(&quot;📊 PERFORMANS&quot;)
+
 
     print(
-        f&quot;👁️ Toplam izlenme     : &quot;
+        f&quot;📱 Shorts                 : &quot;
+        f&quot;{analysis[&#x27;shorts_videos&#x27;]}&quot;
+    )
+
+
+    print(
+        f&quot;👁️ Toplam izlenme        : &quot;
         f&quot;{analysis[&#x27;total_views&#x27;]}&quot;
     )
 
+
     print(
-        f&quot;👁️ Ortalama izlenme   : &quot;
+        f&quot;👁️ Ortalama izlenme      : &quot;
         f&quot;{analysis[&#x27;average_views&#x27;]:.2f}&quot;
     )
 
+
     print(
-        f&quot;❤️ Toplam beğeni      : &quot;
+        f&quot;👍 Toplam beğeni         : &quot;
         f&quot;{analysis[&#x27;total_likes&#x27;]}&quot;
     )
 
+
     print(
-        f&quot;💬 Toplam yorum       : &quot;
+        f&quot;💬 Toplam yorum          : &quot;
         f&quot;{analysis[&#x27;total_comments&#x27;]}&quot;
     )
 
+
     print(
-        f&quot;🔥 Etkileşim oranı    : &quot;
+        f&quot;🔁 Toplam paylaşım       : &quot;
+        f&quot;{analysis[&#x27;total_shares&#x27;]}&quot;
+    )
+
+
+    print(
+        f&quot;🔥 Etkileşim oranı       : &quot;
         f&quot;{analysis[&#x27;engagement_rate&#x27;]:.2f}%&quot;
     )
 
-    # ========================================================
-    # WATCH
-    # ========================================================
 
-    if analysis[&quot;average_watch_time&quot;] &gt; 0:
+    print(
+        f&quot;⏱️ Ortalama izlenme %    : &quot;
+        f&quot;{analysis[&#x27;average_watch_percentage&#x27;]:.2f}%&quot;
+    )
 
-        print()
-        print(&quot;⏱️ İZLEYİCİ DAVRANIŞI&quot;)
 
-        print(
-            f&quot;Ortalama izlenme süresi: &quot;
-            f&quot;{analysis[&#x27;average_watch_time&#x27;]:.2f} sn&quot;
-        )
+    print(
+        f&quot;🎞️ Ortalama süre         : &quot;
+        f&quot;{analysis[&#x27;average_duration&#x27;]:.2f} sn&quot;
+    )
 
-        print(
-            f&quot;Ortalama izlenme yüzdesi: &quot;
-            f&quot;{analysis[&#x27;average_watch_percentage&#x27;]:.2f}%&quot;
-        )
-
-    # ========================================================
-    # PERFORMANS DURUMU
-    # ========================================================
 
     print()
 
-    if analysis[&quot;performance_available&quot;]:
+    print(
+        &quot;⏱️ SÜREYE GÖRE PERFORMANS&quot;
+    )
 
-        print(
-            &quot;🟢 Performans verisi mevcut.&quot;
-        )
-
-        print(
-            f&quot;📈 Ortalama üzerindeki video: &quot;
-            f&quot;{analysis[&#x27;above_average_videos&#x27;]}&quot;
-        )
-
-    else:
-
-        print(
-            &quot;🟡 Henüz YouTube performans &quot;
-            &quot;verisi bulunmuyor.&quot;
-        )
-
-    # ========================================================
-    # SÜRE PERFORMANSI
-    # ========================================================
-
-    print()
-    print(&quot;⏱️ SÜREYE GÖRE PERFORMANS&quot;)
 
     for item in analysis[
         &quot;duration_performance&quot;
@@ -824,12 +1012,15 @@ def print_analysis():
             f&quot;{item[&#x27;average_views&#x27;]:.0f} izlenme&quot;
         )
 
-    # ========================================================
-    # EN İYİ 10
-    # ========================================================
 
     print()
-    print(&quot;🏆 EN İYİ 10 VİDEO&quot;)
+
+    print(
+        &quot;🏆 EN İYİ 10 SHORTS&quot;
+    )
+
+    print()
+
 
     for index, video in enumerate(
         analysis[&quot;top_videos&quot;],
@@ -838,18 +1029,21 @@ def print_analysis():
 
         print(
             f&quot;#{index:02d} | &quot;
-            f&quot;Video #{video[&#x27;video_number&#x27;]:03d} | &quot;
+            f&quot;Video #{video[&#x27;video_number&#x27;]} | &quot;
             f&quot;{video[&#x27;views&#x27;]} izlenme | &quot;
             f&quot;{video[&#x27;duration&#x27;]:.0f} sn | &quot;
             f&quot;{video[&#x27;topic&#x27;]}&quot;
         )
 
-    # ========================================================
-    # EN KÖTÜ 10
-    # ========================================================
 
     print()
-    print(&quot;📉 EN DÜŞÜK 10 VİDEO&quot;)
+
+    print(
+        &quot;📉 EN DÜŞÜK 10 SHORTS&quot;
+    )
+
+    print()
+
 
     for index, video in enumerate(
         analysis[&quot;worst_videos&quot;],
@@ -858,75 +1052,27 @@ def print_analysis():
 
         print(
             f&quot;#{index:02d} | &quot;
-            f&quot;Video #{video[&#x27;video_number&#x27;]:03d} | &quot;
+            f&quot;Video #{video[&#x27;video_number&#x27;]} | &quot;
             f&quot;{video[&#x27;views&#x27;]} izlenme | &quot;
             f&quot;{video[&#x27;duration&#x27;]:.0f} sn | &quot;
             f&quot;{video[&#x27;topic&#x27;]}&quot;
         )
 
-    # ========================================================
-    # KONULAR
-    # ========================================================
 
     print()
-    print(&quot;📚 EN ÇOK KULLANILAN KONULAR&quot;)
 
-    for item in analysis[&quot;top_topics&quot;]:
+    print(
+        &quot;========================================&quot;
+    )
 
-        print(
-            f&quot;• {item[&#x27;topic&#x27;]} &quot;
-            f&quot;({item[&#x27;count&#x27;]} video)&quot;
-        )
+    print(
+        &quot;✅ SHORTS ANALİZİ TAMAMLANDI&quot;
+    )
 
-    # ========================================================
-    # EN BAŞARILI
-    # ========================================================
+    print(
+        &quot;========================================&quot;
+    )
 
-    best = analysis[&quot;best_video&quot;]
-
-    if best:
-
-        print()
-        print(&quot;🔥 EN BAŞARILI VİDEO&quot;)
-
-        print(
-            f&quot;Video: #{best[&#x27;video_number&#x27;]:03d}&quot;
-        )
-
-        print(
-            f&quot;Konu: {best[&#x27;topic&#x27;]}&quot;
-        )
-
-        print(
-            f&quot;İzlenme: {best[&#x27;views&#x27;]}&quot;
-        )
-
-        print(
-            f&quot;Beğeni: {best[&#x27;likes&#x27;]}&quot;
-        )
-
-        print(
-            f&quot;Yorum: {best[&#x27;comments&#x27;]}&quot;
-        )
-
-        print(
-            f&quot;Süre: {best[&#x27;duration&#x27;]:.2f} sn&quot;
-        )
-
-        print(
-            f&quot;İzlenme yüzdesi: &quot;
-            f&quot;{best[&#x27;watch_percentage&#x27;]:.2f}%&quot;
-        )
-
-    print()
-    print(&quot;========================================&quot;)
-    print(&quot;✅ GELİŞMİŞ ANALİZ TAMAMLANDI&quot;)
-    print(&quot;========================================&quot;)
-
-
-# ============================================================
-# TEST
-# ============================================================
 
 if __name__ == &quot;__main__&quot;:
 
@@ -1019,468 +1165,349 @@ if __name__ == &quot;__main__&quot;:
 📄 app/analytics/strategy_store.py
 </div>
 
-<pre><code class="language-python">from pathlib import Path
-import json
+<pre><code class="language-python">import json
+from pathlib import Path
 
 from openai import OpenAI
 
-from config.settings import OPENAI_API_KEY
-
 from app.analytics.analytics_engine import analyze_videos
 
-client = OpenAI(
-api_key=OPENAI_API_KEY
-)
 
 # ============================================================
-
-# CREATOR ENGINE — AI STRATEGY ANALYST
-
+# CREATOR ENGINE — AI STRATEGY STORE
 # ============================================================
 
-MINIMUM_VIDEOS_FOR_AI = 10
+BASE_DIR = Path(__file__).resolve().parents[2]
 
-STRATEGY_FILE = (
-Path(&quot;data&quot;)
-/ &quot;current_strategy.json&quot;
-)
+DATA_DIR = BASE_DIR / &quot;data&quot;
 
-# ============================================================
+STRATEGY_FILE = DATA_DIR / &quot;current_strategy.json&quot;
 
-# STRATEJİYİ KAYDET
 
 # ============================================================
-
-def save_strategy(strategy):
-
-```
-STRATEGY_FILE.parent.mkdir(
-    parents=True,
-    exist_ok=True
-)
-
-with open(
-    STRATEGY_FILE,
-    &quot;w&quot;,
-    encoding=&quot;utf-8&quot;
-) as file:
-
-    json.dump(
-        strategy,
-        file,
-        ensure_ascii=False,
-        indent=4
-    )
-```
-
+# OPENAI
 # ============================================================
 
-# STRATEJİYİ OKU
+client = OpenAI()
+
 
 # ============================================================
-
-def load_strategy():
-
-```
-if not STRATEGY_FILE.exists():
-
-    return None
-
-try:
-
-    with open(
-        STRATEGY_FILE,
-        &quot;r&quot;,
-        encoding=&quot;utf-8&quot;
-    ) as file:
-
-        return json.load(file)
-
-except Exception as error:
-
-    print()
-    print(
-        f&quot;⚠️ Strateji dosyası okunamadı: {error}&quot;
-    )
-
-    return None
-```
-
+# ANALYTICS VERİSİNİ HAZIRLA
 # ============================================================
 
-# AI STRATEJİSİ OLUŞTUR
+def get_analytics_data():
 
+    analysis = analyze_videos()
+
+    return analysis
+
+
+# ============================================================
+# AI STRATEJİ OLUŞTUR
 # ============================================================
 
 def build_ai_strategy():
 
-```
-analysis = analyze_videos()
+    print()
+    print(&quot;========================================&quot;)
+    print(&quot;🧠 AI STRATEJİ OLUŞTURMA&quot;)
+    print(&quot;========================================&quot;)
+    print()
 
-total_videos = analysis[
-    &quot;total_videos&quot;
-]
+    analytics = get_analytics_data()
 
-print()
-print(&quot;========================================&quot;)
-print(&quot;🧠 AI STRATEGY ANALYST&quot;)
-print(&quot;========================================&quot;)
+    if not analytics:
 
-print()
-print(
-    f&quot;📊 Analiz edilen video: &quot;
-    f&quot;{total_videos}&quot;
-)
+        print(&quot;❌ Analytics verisi alınamadı.&quot;)
 
-# ========================================================
-# YETERLİ VERİ YOK
-# ========================================================
+        return None
 
-if total_videos &lt; MINIMUM_VIDEOS_FOR_AI:
+
+    print(
+        f&quot;🎬 Analiz edilen video: &quot;
+        f&quot;{analytics.get(&#x27;total_videos&#x27;, 0)}&quot;
+    )
 
     print()
-    print(
-        f&quot;🟡 AI analizi için en az &quot;
-        f&quot;{MINIMUM_VIDEOS_FOR_AI} video gerekli.&quot;
-    )
 
-    print(
-        f&quot;📦 Şu anda {total_videos} video var.&quot;
-    )
 
-    print(
-        &quot;💰 AI çağrısı yapılmadı.&quot;
-    )
+    # ========================================================
+    # AI PROMPT
+    # ========================================================
 
-    return {
-        &quot;status&quot;: &quot;INSUFFICIENT_DATA&quot;,
-        &quot;total_videos&quot;: total_videos,
-        &quot;strategy&quot;: None,
-    }
+    prompt = f&quot;&quot;&quot;
+Sen Creator Engine isimli otomatik YouTube Shorts
+üretim sisteminin strateji motorusun.
 
-# ========================================================
-# PERFORMANS KONTROLÜ
-# ========================================================
+Aşağıdaki Analytics verilerini analiz et.
 
-if not analysis[
-    &quot;performance_available&quot;
-]:
+AMAÇ:
 
-    print()
-    print(
-        &quot;🟡 Henüz performans verisi yok.&quot;
-    )
+Creator Engine&#x27;in bundan sonra üreteceği Shorts
+videolarının daha başarılı olması.
 
-    print(
-        &quot;AI strateji analizi yapılmayacak.&quot;
-    )
+Özellikle şunları belirle:
 
-    return {
-        &quot;status&quot;: &quot;NO_PERFORMANCE_DATA&quot;,
-        &quot;total_videos&quot;: total_videos,
-        &quot;strategy&quot;: None,
-    }
+1. En başarılı içerik konuları
+2. En başarılı süre aralıkları
+3. En başarılı hook özellikleri
+4. Başlık stratejisi
+5. Kaçınılması gereken içerikler
+6. Yeni test edilmesi gereken konu fikirleri
+7. İçerik üretiminde uygulanacak kurallar
+8. Önümüzdeki videolar için genel strateji
 
-# ========================================================
-# AI&#x27;YA GÖNDERİLECEK ÖZET
-# ========================================================
+ÖNEMLİ:
 
-analytics_summary = {
+- Verideki sonuçları uydurma.
+- İzlenme verisi olmayan içerikleri başarısız
+  olarak değerlendirme.
+- Gerçek performans verisi bulunan videolara
+  daha fazla ağırlık ver.
+- Tek bir videodan kesin sonuç çıkarma.
+- Birden fazla videodaki ortak eğilimleri bul.
+- Süre performansını özellikle analiz et.
+- Yüksek performanslı videoların ortak özelliklerini çıkar.
+- Düşük performanslı videolardaki ortak sorunları bul.
+- Stratejiyi Creator Engine&#x27;in sonraki içerik
+  üretiminde doğrudan kullanılabilecek şekilde yaz.
 
-    &quot;total_videos&quot;:
-        analysis[&quot;total_videos&quot;],
-
-    &quot;average_duration&quot;:
-        analysis[&quot;average_duration&quot;],
-
-    &quot;average_images&quot;:
-        analysis[&quot;average_images&quot;],
-
-    &quot;total_views&quot;:
-        analysis[&quot;total_views&quot;],
-
-    &quot;total_likes&quot;:
-        analysis[&quot;total_likes&quot;],
-
-    &quot;total_comments&quot;:
-        analysis[&quot;total_comments&quot;],
-
-    &quot;average_views&quot;:
-        analysis[&quot;average_views&quot;],
-
-    &quot;average_likes&quot;:
-        analysis[&quot;average_likes&quot;],
-
-    &quot;average_comments&quot;:
-        analysis[&quot;average_comments&quot;],
-
-    &quot;top_topics&quot;:
-        analysis[&quot;top_topics&quot;],
-
-    &quot;best_video&quot;:
-        analysis[&quot;best_video&quot;],
-}
-
-# ========================================================
-# AI PROMPT
-# ========================================================
-
-prompt = f&quot;&quot;&quot;
-```
-
-Sen bir YouTube Shorts strateji analistisin.
-
-Sana bir kanalın performans verilerinin
-özetini veriyorum.
-
-Bu verileri analiz et ve gelecekteki
-Shorts üretimi için uygulanabilir bir
-strateji oluştur.
-
-ÖNEMLİ KURALLAR:
-
-* Veride olmayan bilgileri uydurma.
-* Kesin olmayan sonuçları kesin gerçek gibi sunma.
-* Küçük veri miktarlarında dikkatli yorum yap.
-* İzlenme verisi varsa performansa göre yorum yap.
-* Konu performansını dikkate al.
-* Video süresini dikkate al.
-* Görsel yoğunluğunu dikkate al.
-* İzlenme, beğeni ve yorum ilişkisini değerlendir.
-* Başarılı olan özellikleri tespit etmeye çalış.
-* Gelecekte test edilmesi gereken fikirler öner.
-* Aynı konuyu sürekli tekrar etmeyi önerme.
-* Kanalın çeşitliliğini koru.
-* Stratejiyi Content Engine&#x27;in kullanabileceği
-  şekilde yaz.
-
-SADECE JSON DÖNDÜR.
-
-FORMAT:
-
-{{
-&quot;summary&quot;: &quot;Kanalın genel durumu&quot;,
-&quot;winning_topics&quot;: [
-&quot;başarılı konu 1&quot;,
-&quot;başarılı konu 2&quot;
-],
-&quot;recommended_topics&quot;: [
-&quot;önerilen konu 1&quot;,
-&quot;önerilen konu 2&quot;,
-&quot;önerilen konu 3&quot;
-],
-&quot;duration_strategy&quot;: &quot;Video süre stratejisi&quot;,
-&quot;visual_strategy&quot;: &quot;Görsel stratejisi&quot;,
-&quot;hook_strategy&quot;: &quot;Hook stratejisi&quot;,
-&quot;content_strategy&quot;: &quot;Genel içerik stratejisi&quot;,
-&quot;tests&quot;: [
-&quot;test edilmesi gereken şey 1&quot;,
-&quot;test edilmesi gereken şey 2&quot;
-],
-&quot;confidence&quot;: &quot;LOW&quot;
-}}
-
-KANAL ANALİZ VERİSİ:
+ANALYTICS:
 
 {json.dumps(
-analytics_summary,
-ensure_ascii=False,
-indent=2
+    analytics,
+    ensure_ascii=False,
+    indent=2
 )}
+
+SADECE GEÇERLİ JSON DÖNDÜR.
+
+JSON ŞU YAPIYA SAHİP OLSUN:
+
+{{
+    &quot;strategy_summary&quot;: &quot;...&quot;,
+
+    &quot;content_direction&quot;: {{
+        &quot;successful_content_types&quot;: [],
+        &quot;successful_topic_characteristics&quot;: [],
+        &quot;audience_fit&quot;: []
+    }},
+
+    &quot;hook_strategy&quot;: {{
+        &quot;approach&quot;: [],
+        &quot;hook_templates&quot;: [],
+        &quot;best_hook_rules&quot;: []
+    }},
+
+    &quot;title_strategy&quot;: {{
+        &quot;approach&quot;: [],
+        &quot;effective_patterns&quot;: [],
+        &quot;title_do_not&quot;: []
+    }},
+
+    &quot;duration_strategy&quot;: {{
+        &quot;best_range&quot;: &quot;...&quot;,
+        &quot;rationale&quot;: [],
+        &quot;structure&quot;: [],
+        &quot;recommendations&quot;: []
+    }},
+
+    &quot;publishing_strategy&quot;: {{
+        &quot;cadence&quot;: &quot;...&quot;,
+        &quot;structure&quot;: [],
+        &quot;priorities&quot;: [],
+        &quot;testing_method&quot;: []
+    }},
+
+    &quot;things_to_avoid&quot;: [],
+
+    &quot;recommended_topics&quot;: [],
+
+    &quot;next_test_ideas&quot;: []
+}}
 &quot;&quot;&quot;
 
-````
-# ========================================================
-# AI ÇAĞRISI
-# ========================================================
 
-print()
-print(
-    &quot;🤖 AI kanal stratejisini analiz ediyor...&quot;
-)
+    # ========================================================
+    # OPENAI İSTEĞİ
+    # ========================================================
 
-response = client.responses.create(
-    model=&quot;gpt-5.4-mini&quot;,
-    input=prompt,
-)
+    try:
 
-raw = response.output_text.strip()
+        response = client.responses.create(
 
-# ========================================================
-# MARKDOWN TEMİZLE
-# ========================================================
+            model=&quot;gpt-5.4-mini&quot;,
 
-if raw.startswith(&quot;```json&quot;):
+            input=prompt,
 
-    raw = raw[
-        len(&quot;```json&quot;):
-    ].strip()
+        )
 
-if raw.endswith(&quot;```&quot;):
 
-    raw = raw[
-        :-3
-    ].strip()
+        raw_output = response.output_text.strip()
 
-# ========================================================
-# JSON OKU
-# ========================================================
 
-try:
+        print(&quot;🤖 AI yanıtı alındı.&quot;)
 
-    strategy = json.loads(raw)
+        print()
 
-except json.JSONDecodeError as error:
 
-    print()
-    print(
-        &quot;❌ AI JSON çıktısı okunamadı.&quot;
-    )
+        # ----------------------------------------------------
+        # JSON temizliği
+        # ----------------------------------------------------
 
-    print()
-    print(&quot;AI çıktısı:&quot;)
-    print(raw)
+        if raw_output.startswith(&quot;```&quot;):
 
-    raise ValueError(
-        &quot;AI strateji çıktısı geçerli JSON değil.&quot;
-    ) from error
+            raw_output = (
+                raw_output
+                .replace(&quot;```json&quot;, &quot;&quot;)
+                .replace(&quot;```&quot;, &quot;&quot;)
+                .strip()
+            )
 
-# ========================================================
-# STRATEJİYİ KAYDET
-# ========================================================
 
-save_strategy(
-    strategy
-)
+        strategy = json.loads(
+            raw_output
+        )
 
-print()
-print(
-    &quot;💾 AI stratejisi kaydedildi:&quot;
-)
 
-print(
-    f&quot;📁 {STRATEGY_FILE}&quot;
-)
+        # ====================================================
+        # KAYDET
+        # ====================================================
 
-# ========================================================
-# SONUÇ
-# ========================================================
+        DATA_DIR.mkdir(
+            parents=True,
+            exist_ok=True
+        )
 
-print()
-print(&quot;========================================&quot;)
-print(&quot;🎯 AI STRATEJİSİ&quot;)
-print(&quot;========================================&quot;)
 
-print()
-print(
-    f&quot;📌 Özet:\n&quot;
-    f&quot;{strategy.get(&#x27;summary&#x27;, &#x27;&#x27;)}&quot;
-)
+        with open(
+            STRATEGY_FILE,
+            &quot;w&quot;,
+            encoding=&quot;utf-8&quot;
+        ) as file:
 
-print()
-print(&quot;🏆 BAŞARILI KONULAR&quot;)
+            json.dump(
+                strategy,
+                file,
+                ensure_ascii=False,
+                indent=4
+            )
 
-for topic in strategy.get(
-    &quot;winning_topics&quot;,
-    []
-):
 
-    print(
-        f&quot;• {topic}&quot;
-    )
+        print(
+            &quot;✅ Yeni AI stratejisi oluşturuldu.&quot;
+        )
 
-print()
-print(&quot;💡 ÖNERİLEN KONULAR&quot;)
+        print(
+            f&quot;💾 Kaydedildi: &quot;
+            f&quot;{STRATEGY_FILE}&quot;
+        )
 
-for topic in strategy.get(
-    &quot;recommended_topics&quot;,
-    []
-):
+        print()
 
-    print(
-        f&quot;• {topic}&quot;
-    )
 
-print()
-print(&quot;⏱️ SÜRE STRATEJİSİ&quot;)
+        return strategy
 
-print(
-    strategy.get(
-        &quot;duration_strategy&quot;,
-        &quot;&quot;
-    )
-)
 
-print()
-print(&quot;🖼️ GÖRSEL STRATEJİSİ&quot;)
+    # ========================================================
+    # JSON HATASI
+    # ========================================================
 
-print(
-    strategy.get(
-        &quot;visual_strategy&quot;,
-        &quot;&quot;
-    )
-)
+    except json.JSONDecodeError as error:
 
-print()
-print(&quot;🎣 HOOK STRATEJİSİ&quot;)
+        print()
 
-print(
-    strategy.get(
-        &quot;hook_strategy&quot;,
-        &quot;&quot;
-    )
-)
+        print(
+            f&quot;❌ AI çıktısı geçerli JSON değil: &quot;
+            f&quot;{error}&quot;
+        )
 
-print()
-print(&quot;🎯 İÇERİK STRATEJİSİ&quot;)
+        print()
 
-print(
-    strategy.get(
-        &quot;content_strategy&quot;,
-        &quot;&quot;
-    )
-)
+        return None
 
-print()
-print(&quot;🧪 TESTLER&quot;)
 
-for test in strategy.get(
-    &quot;tests&quot;,
-    []
-):
+    # ========================================================
+    # GENEL HATA
+    # ========================================================
 
-    print(
-        f&quot;• {test}&quot;
-    )
+    except Exception as error:
 
-print()
-print(
-    &quot;📈 Güven seviyesi: &quot;
-    f&quot;{strategy.get(&#x27;confidence&#x27;, &#x27;LOW&#x27;)}&quot;
-)
+        print()
 
-print()
-print(&quot;========================================&quot;)
-print(&quot;✅ AI STRATEJİ ANALİZİ TAMAMLANDI&quot;)
-print(&quot;========================================&quot;)
+        print(
+            f&quot;❌ AI stratejisi oluşturulamadı: &quot;
+            f&quot;{error}&quot;
+        )
 
-return {
-    &quot;status&quot;: &quot;OK&quot;,
-    &quot;total_videos&quot;: total_videos,
-    &quot;strategy&quot;: strategy,
-}
-````
+        print()
+
+        return None
+
 
 # ============================================================
+# STRATEJİYİ OKU
+# ============================================================
 
+def load_strategy():
+
+    if not STRATEGY_FILE.exists():
+
+        return None
+
+
+    try:
+
+        with open(
+            STRATEGY_FILE,
+            &quot;r&quot;,
+            encoding=&quot;utf-8&quot;
+        ) as file:
+
+            return json.load(file)
+
+
+    except Exception as error:
+
+        print(
+            f&quot;❌ Strateji okunamadı: {error}&quot;
+        )
+
+        return None
+
+
+# ============================================================
 # TEST
-
 # ============================================================
 
-if **name** == &quot;**main**&quot;:
+if __name__ == &quot;__main__&quot;:
 
-```
-build_ai_strategy()</code></pre>
+    strategy = build_ai_strategy()
+
+    if strategy:
+
+        print()
+
+        print(
+            &quot;========================================&quot;
+        )
+
+        print(
+            &quot;🚀 AI STRATEJİ HAZIR&quot;
+        )
+
+        print(
+            &quot;========================================&quot;
+        )
+
+        print()
+
+        print(
+            strategy.get(
+                &quot;strategy_summary&quot;,
+                &quot;Özet bulunamadı.&quot;
+            )
+        )</code></pre>
 
 </section>
 
@@ -4440,7 +4467,307 @@ if __name__ == &quot;__main__&quot;:
 📄 app/analytics/analysis_scheduler.py
 </div>
 
-<pre><code class="language-python"></code></pre>
+<pre><code class="language-python">from datetime import datetime
+from pathlib import Path
+import json
+
+from app.analytics.database import get_all_videos
+
+
+BASE_DIR = Path(__file__).resolve().parents[2]
+
+STATE_FILE = (
+    BASE_DIR
+    / &quot;data&quot;
+    / &quot;analysis_state.json&quot;
+)
+
+MINIMUM_NEW_VIDEOS = 10
+MINIMUM_DAYS = 7
+
+
+def load_analysis_state():
+
+    if not STATE_FILE.exists():
+
+        return {
+            &quot;last_analysis_at&quot;: None,
+            &quot;last_analyzed_video_count&quot;: 0
+        }
+
+    try:
+
+        with open(
+            STATE_FILE,
+            &quot;r&quot;,
+            encoding=&quot;utf-8&quot;
+        ) as file:
+
+            return json.load(file)
+
+    except Exception as error:
+
+        print(
+            f&quot;⚠️ Analiz durumu okunamadı: {error}&quot;
+        )
+
+        return {
+            &quot;last_analysis_at&quot;: None,
+            &quot;last_analyzed_video_count&quot;: 0
+        }
+
+
+def save_analysis_state(
+    last_analysis_at,
+    last_analyzed_video_count
+):
+
+    STATE_FILE.parent.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    state = {
+        &quot;last_analysis_at&quot;: last_analysis_at,
+        &quot;last_analyzed_video_count&quot;:
+            last_analyzed_video_count
+    }
+
+    with open(
+        STATE_FILE,
+        &quot;w&quot;,
+        encoding=&quot;utf-8&quot;
+    ) as file:
+
+        json.dump(
+            state,
+            file,
+            ensure_ascii=False,
+            indent=4
+        )
+
+
+def get_total_video_count():
+
+    videos = get_all_videos()
+
+    if videos is None:
+        return 0
+
+    try:
+        return len(videos)
+
+    except TypeError:
+        return 0
+
+
+def get_new_video_count(
+    total_video_count,
+    last_analyzed_video_count
+):
+
+    return max(
+        0,
+        total_video_count
+        - last_analyzed_video_count
+    )
+
+
+def get_days_since_analysis(
+    last_analysis_at
+):
+
+    if not last_analysis_at:
+        return None
+
+    try:
+
+        last_date = datetime.fromisoformat(
+            last_analysis_at
+        )
+
+        elapsed = (
+            datetime.now()
+            - last_date
+        )
+
+        return (
+            elapsed.total_seconds()
+            / 86400
+        )
+
+    except Exception:
+
+        return None
+
+
+def check_analysis_status():
+
+    total_videos = get_total_video_count()
+
+    state = load_analysis_state()
+
+    last_analysis_at = (
+        state.get(&quot;last_analysis_at&quot;)
+    )
+
+    last_analyzed_video_count = (
+        state.get(
+            &quot;last_analyzed_video_count&quot;,
+            0
+        )
+    )
+
+    new_videos = get_new_video_count(
+        total_videos,
+        last_analyzed_video_count
+    )
+
+    days_since_analysis = (
+        get_days_since_analysis(
+            last_analysis_at
+        )
+    )
+
+    print()
+    print(&quot;========================================&quot;)
+    print(&quot;🧠 CREATOR ENGINE ANALİZ ZAMANLAYICI&quot;)
+    print(&quot;========================================&quot;)
+    print()
+
+    print(
+        f&quot;🎬 Toplam video       : {total_videos}&quot;
+    )
+
+    print(
+        f&quot;🆕 Son analizden yeni : {new_videos}&quot;
+    )
+
+    if days_since_analysis is None:
+
+        print(
+            &quot;📅 Son analiz         : Henüz yok&quot;
+        )
+
+    else:
+
+        print(
+            f&quot;📅 Son analizden geçen: &quot;
+            f&quot;{days_since_analysis:.2f} gün&quot;
+        )
+
+    print()
+
+    if last_analysis_at is None:
+
+        if total_videos &gt;= MINIMUM_NEW_VIDEOS:
+
+            print(
+                &quot;🟢 İLK ANALİZ HAZIR.&quot;
+            )
+
+            print(
+                f&quot;   Video şartı: &quot;
+                f&quot;{total_videos}/{MINIMUM_NEW_VIDEOS}&quot;
+            )
+
+            return True
+
+        print(
+            &quot;🟡 İlk analiz için yeterli video yok.&quot;
+        )
+
+        print(
+            f&quot;   {total_videos}/{MINIMUM_NEW_VIDEOS}&quot;
+        )
+
+        return False
+
+    enough_videos = (
+        new_videos
+        &gt;= MINIMUM_NEW_VIDEOS
+    )
+
+    enough_days = (
+        days_since_analysis is not None
+        and days_since_analysis
+        &gt;= MINIMUM_DAYS
+    )
+
+    print(
+        f&quot;📊 10 yeni video şartı: &quot;
+        f&quot;{&#x27;OK&#x27; if enough_videos else &#x27;BEKLENİYOR&#x27;}&quot;
+    )
+
+    print(
+        f&quot;📅 7 gün şartı        : &quot;
+        f&quot;{&#x27;OK&#x27; if enough_days else &#x27;BEKLENİYOR&#x27;}&quot;
+    )
+
+    print()
+
+    if enough_videos and enough_days:
+
+        print(
+            &quot;🟢 YENİ AI ANALİZİ HAZIR!&quot;
+        )
+
+        print(
+            &quot;   7 gün + 10 yeni video şartı sağlandı.&quot;
+        )
+
+        return True
+
+    print(
+        &quot;🟡 Yeni analiz henüz başlamayacak.&quot;
+    )
+
+    return False
+
+
+def run_analysis_if_needed():
+
+    analysis_ready = check_analysis_status()
+
+    if not analysis_ready:
+
+        return False
+
+    from app.analytics.strategy_store import build_ai_strategy
+
+    print()
+    print(&quot;🧠 AI ANALİZİ BAŞLATILIYOR...&quot;)
+    print()
+
+    result = build_ai_strategy()
+
+    if not result:
+
+        print()
+        print(&quot;❌ AI stratejisi oluşturulamadı.&quot;)
+
+        return False
+
+    total_videos = get_total_video_count()
+
+    save_analysis_state(
+        datetime.now().isoformat(),
+        total_videos
+    )
+
+    print()
+    print(&quot;✅ AI ANALİZİ TAMAMLANDI.&quot;)
+
+    print(
+        f&quot;💾 Son analiz video sayısı: {total_videos}&quot;
+    )
+
+    return True
+
+
+if __name__ == &quot;__main__&quot;:
+
+    check_analysis_status()</code></pre>
 
 </section>
 
@@ -5158,7 +5485,6 @@ if __name__ == &quot;__main__&quot;:
 <pre><code class="language-python">from openai import OpenAI
 from pathlib import Path
 from datetime import datetime
-import subprocess
 import json
 
 from config.settings import OPENAI_API_KEY
@@ -5170,23 +5496,26 @@ from app.content.video_creator import create_video
 from app.content.transcriber import transcribe_audio
 from app.content.subtitle_engine import create_subtitle
 from app.content.video_pipeline import add_subtitles
+
 from app.analytics.database import add_video
-
-
-client = OpenAI(
-    api_key=OPENAI_API_KEY
+from app.analytics.analysis_scheduler import (
+    run_analysis_if_needed
 )
 
-STRATEGY_FILE = Path(&quot;data&quot;) / &quot;current_strategy.json&quot;
 
+BASE_DIR = Path(__file__).resolve().parents[2]
 
-# ============================================================
-# STRATEJİYİ YÜKLE
-# ============================================================
+STRATEGY_FILE = (
+    BASE_DIR
+    / &quot;data&quot;
+    / &quot;current_strategy.json&quot;
+)
+
 
 def load_strategy():
 
     if not STRATEGY_FILE.exists():
+
         return None
 
     try:
@@ -5201,7 +5530,6 @@ def load_strategy():
 
     except Exception as error:
 
-        print()
         print(
             f&quot;⚠️ Strateji okunamadı: {error}&quot;
         )
@@ -5209,764 +5537,520 @@ def load_strategy():
         return None
 
 
-# ============================================================
-# SHORTS OLUŞTUR
-# ============================================================
-
 def create_short(topic):
 
     print()
-    print(&quot;=== KANAL STRATEJİSİ ===&quot;)
+    print(&quot;========================================&quot;)
+    print(&quot;🚀 CREATOR ENGINE&quot;)
+    print(&quot;========================================&quot;)
+    print()
+
+
+    # ========================================================
+    # ANALİZ ZAMANINI KONTROL ET
+    # ========================================================
+
+    analysis_ready = run_analysis_if_needed()
+
+
+    # ========================================================
+    # MEVCUT STRATEJİYİ AL
+    # ========================================================
 
     strategy = load_strategy()
 
-    strategy_context = &quot;&quot;
+
+    if strategy is None:
+
+        print()
+        print(
+            &quot;⚠️ Kayıtlı strateji bulunamadı.&quot;
+        )
+
+    else:
+
+        print()
+        print(
+            &quot;♻️ Mevcut AI stratejisi kullanılacak.&quot;
+        )
+
+
+    # ========================================================
+    # OPENAI
+    # ========================================================
+
+    client = OpenAI(
+        api_key=OPENAI_API_KEY
+    )
+
+
+    # ========================================================
+    # STRATEJİ BİLGİSİ
+    # ========================================================
 
     if strategy:
 
-        print()
-        print(
-            &quot;🧠 Kayıtlı AI stratejisi bulundu.&quot;
+        strategy_text = json.dumps(
+            strategy,
+            ensure_ascii=False,
+            indent=2
         )
-
-        print(
-            f&quot;📁 {STRATEGY_FILE}&quot;
-        )
-
-        strategy_context = f&quot;&quot;&quot;
-
-KANALIN MEVCUT AI STRATEJİSİ:
-
-Genel analiz:
-{strategy.get(&quot;summary&quot;, &quot;&quot;)}
-
-Başarılı konular:
-{&quot;, &quot;.join(
-    strategy.get(&quot;winning_topics&quot;, [])
-)}
-
-Önerilen konular:
-{&quot;, &quot;.join(
-    strategy.get(&quot;recommended_topics&quot;, [])
-)}
-
-Süre stratejisi:
-{strategy.get(&quot;duration_strategy&quot;, &quot;&quot;)}
-
-Görsel stratejisi:
-{strategy.get(&quot;visual_strategy&quot;, &quot;&quot;)}
-
-Hook stratejisi:
-{strategy.get(&quot;hook_strategy&quot;, &quot;&quot;)}
-
-İçerik stratejisi:
-{strategy.get(&quot;content_strategy&quot;, &quot;&quot;)}
-
-Test önerileri:
-{&quot;, &quot;.join(
-    strategy.get(&quot;tests&quot;, [])
-)}
-
-Bu stratejiyi yeni içerik üretirken dikkate al.
-
-Stratejiyi körü körüne uygulama.
-Verilen konuya uygun olan önerileri kullan.
-
-Aynı konuları gereksiz yere tekrar etme.
-Yeni fikirler üret.
-&quot;&quot;&quot;
 
     else:
 
-        print()
-        print(
-            &quot;📦 Kayıtlı AI stratejisi bulunamadı.&quot;
+        strategy_text = (
+            &quot;Henüz kayıtlı bir strateji yok.&quot;
         )
 
-        print(
-            &quot;🎬 Standart içerik üretimi kullanılacak.&quot;
-        )
 
     # ========================================================
-    # AI İÇERİK ÜRETİMİ
+    # SENARYO OLUŞTUR
     # ========================================================
 
-    print()
-    print(&quot;=== AI İÇERİK ÜRETİMİ ===&quot;)
+    prompt = f&quot;&quot;&quot;
+Sen Creator Engine&#x27;in profesyonel YouTube Shorts
+senaryo motorusun.
 
-    response = client.responses.create(
+Verilen KONU için, aşağıdaki güncel AI stratejisini
+uygulayarak yüksek retention hedefleyen bir Shorts
+senaryosu oluştur.
 
-        model=&quot;gpt-5.4-mini&quot;,
-
-        input=f&quot;&quot;&quot;
-
-Sen profesyonel bir YouTube Shorts içerik üreticisisin.
-
-Konu:
+========================================================
+KONU
+========================================================
 
 {topic}
 
-{strategy_context}
 
-Bu konu için bir Shorts içerik paketi hazırla.
+========================================================
+GÜNCEL AI STRATEJİSİ
+========================================================
 
-Aşağıdaki bölümleri TAM OLARAK bu başlıklarla oluştur:
+{strategy_text}
 
-[SENARYO]
-30-60 saniyelik, akıcı ve merak uyandırıcı Shorts senaryosu.
-İlk cümle güçlü bir hook olsun.
-Gereksiz giriş yapma.
-İzleyicinin dikkatini ilk saniyelerde yakala.
-Sonunda izleyiciye bir soru sor.
 
-[BASLIK]
-Merak uyandıran, tıklanabilir ama yanıltıcı olmayan bir YouTube Shorts başlığı.
+========================================================
+SENARYO KURALLARI
+========================================================
 
-[ACIKLAMA]
-Kısa ve doğal bir YouTube açıklaması.
+1. TEK FİKİR KURALI
 
-[HASHTAG]
-Konuyla alakalı 5-8 hashtag.
+Videoda yalnızca tek bir ana fikir anlat.
 
-[GÖRSEL_PROMPT]
-Bu Shorts için kullanılabilecek 5 farklı görsel üretim promptu.
-Her prompt ayrı satırda olsun.
-Görseller konuyla doğrudan alakalı olsun.
-Her görsel farklı bir sahneyi anlatsın.
-Görseller senaryodaki anlatımla uyumlu olsun.
+Konuyu gereksiz yan bilgilere bölme.
 
-Sadece bu bölümleri oluştur.
-&quot;&quot;&quot;,
-    )
 
-    content = response.output_text
+2. SÜRE KURALI
 
-    # ========================================================
-    # AI EDİTÖR KONTROLÜ
-    # ========================================================
+Varsayılan hedef:
 
-    print()
-    print(&quot;=== AI EDİTÖR KONTROLÜ ===&quot;)
+21-30 saniye.
 
-    editor_result, decision = evaluate_content(
-        content
-    )
+Senaryo bu süreye uygun uzunlukta olmalı.
 
-    if decision != &quot;ONAY&quot;:
+31 saniyeyi ancak konunun anlaşılması gerçekten
+mümkün değilse aş.
 
-        print()
-        print(&quot;❌ İÇERİK REDDEDİLDİ&quot;)
-        print(&quot;Dosya kaydedilmeyecek.&quot;)
+60 saniyeyi kesinlikle hedefleme.
 
-        return
 
-    print()
-    print(&quot;✅ İÇERİK ONAYLANDI&quot;)
+3. HOOK KURALI
 
-    print()
-    print(&quot;=== AI SHORTS İÇERİK PAKETİ ===&quot;)
-    print(content)
+İlk 1-2 saniyede doğrudan güçlü bir merak
+veya şaşırtıcı bilgi oluştur.
 
-    # ========================================================
-    # KALİTE KONTROL
-    # ========================================================
+Uzun giriş yapma.
 
-    required_sections = [
-        &quot;[SENARYO]&quot;,
-        &quot;[BASLIK]&quot;,
-        &quot;[ACIKLAMA]&quot;,
-        &quot;[HASHTAG]&quot;,
-        &quot;[GÖRSEL_PROMPT]&quot;,
-    ]
+&quot;Merhaba arkadaşlar&quot;
+&quot;Bugün sizlere...&quot;
+&quot;Bu videoda...&quot;
+gibi girişler kullanma.
 
-    missing_sections = [
-        section
-        for section in required_sections
-        if section not in content
-    ]
+Mümkünse cevabın küçük bir bölümünü ilk cümlede
+ver fakat izleyicinin devamını merak etmesini sağla.
 
-    if missing_sections:
+
+4. ANLATIM
+
+Kısa cümleler kullan.
+
+Doğal Türkçe kullan.
+
+Gereksiz tekrar yapma.
+
+Teknik terim gerekiyorsa sade şekilde açıkla.
+
+Her cümle bir sonraki cümleyi merak ettirmeli.
+
+
+5. RETENTION
+
+Videonun ortasında yeni bir bilgi,
+karşılaştırma, şaşırtıcı sayı veya ters köşe
+kullan.
+
+Son bölümde güçlü bir sonuç ver.
+
+Gereksiz uzun kapanış yapma.
+
+
+6. KAPANIŞ
+
+Videonun sonunda ana fikri net şekilde tamamla.
+
+&quot;Abone olmayı unutmayın&quot;
+&quot;Like atmayı unutmayın&quot;
+gibi standart kapanışlar kullanma.
+
+
+7. STRATEJİYE UYUM
+
+AI STRATEJİSİNDE bulunan:
+
+- başarılı konu türlerini
+- başarılı hook özelliklerini
+- başarılı başlık yaklaşımını
+- başarılı süre aralığını
+- kaçınılması gereken içerikleri
+
+mümkün olduğunca uygula.
+
+Ancak strateji ile verilen KONU arasında çelişki
+varsa KONU&#x27;yu değiştirme.
+
+KONU&#x27;yu stratejiye uygun şekilde işle.
+
+
+========================================================
+ÇIKTI FORMATI
+========================================================
+
+Tam olarak şu formatı kullan:
+
+HOOK:
+...
+
+GİRİŞ:
+...
+
+GELİŞME:
+...
+
+KAPANIŞ:
+...
+
+
+========================================================
+SON KONTROL
+========================================================
+
+Senaryoyu oluşturmadan önce kendi içinde kontrol et:
+
+- İlk 2 saniyede güçlü hook var mı?
+- Tek bir ana fikir var mı?
+- 21-30 saniyeye uygun mu?
+- Gereksiz giriş var mı?
+- Gereksiz cümle var mı?
+- İzleyicide &quot;sonra ne olacak?&quot; merakı oluşuyor mu?
+- Sonunda güçlü bir sonuç var mı?
+- Güncel AI stratejisine uyuyor mu?
+
+Eksikse düzelt.
+
+SADECE SENARYOYU ÜRET.
+
+Türkçe yaz.
+&quot;&quot;&quot;
+
+    try:
+
+        response = client.responses.create(
+            model=&quot;gpt-5.4-mini&quot;,
+            input=prompt
+        )
+
+        content = response.output_text.strip()
+
+
+    except Exception as error:
 
         print()
         print(
-            &quot;⚠️ KALİTE KONTROL BAŞARISIZ&quot;
+            f&quot;❌ Senaryo oluşturulamadı: {error}&quot;
         )
 
-        print(&quot;Eksik bölümler:&quot;)
+        return None
 
-        for section in missing_sections:
 
-            print(
-                f&quot;- {section}&quot;
-            )
+    # ========================================================
+    # İÇERİK DEĞERLENDİRME
+    # ========================================================
 
-        print()
+    try:
+
+        evaluation = evaluate_content(
+            content
+        )
+
+    except Exception as error:
+
         print(
-            &quot;Dosya kaydedilmedi.&quot;
+            f&quot;⚠️ İçerik değerlendirme hatası: {error}&quot;
         )
 
-        return
+        evaluation = None
+
 
     # ========================================================
-    # SHORTS KLASÖRÜ
+    # ÇIKTI KLASÖRÜ
     # ========================================================
 
-    shorts_folder = Path(&quot;shorts&quot;)
+    timestamp = datetime.now().strftime(
+        &quot;%Y%m%d_%H%M%S&quot;
+    )
 
-    shorts_folder.mkdir(
+    output_folder = (
+        BASE_DIR
+        / &quot;output&quot;
+        / f&quot;short_{timestamp}&quot;
+    )
+
+    output_folder.mkdir(
+        parents=True,
         exist_ok=True
     )
 
-    # ========================================================
-    # SIRADAKİ VİDEO NUMARASI
-    # ========================================================
-
-    existing_folders = [
-
-        folder
-
-        for folder in shorts_folder.iterdir()
-
-        if folder.is_dir()
-        and folder.name.isdigit()
-
-    ]
-
-    if existing_folders:
-
-        next_number = (
-            max(
-                int(folder.name)
-                for folder in existing_folders
-            )
-            + 1
-        )
-
-    else:
-
-        next_number = 1
-
-    video_folder = (
-        shorts_folder
-        / f&quot;{next_number:03d}&quot;
-    )
-
-    video_folder.mkdir()
 
     # ========================================================
-    # BÖLÜMLERİ AYIR
+    # SENARYOYU KAYDET
     # ========================================================
 
-    sections = {
-
-        &quot;SENARYO&quot;: &quot;&quot;,
-        &quot;BASLIK&quot;: &quot;&quot;,
-        &quot;ACIKLAMA&quot;: &quot;&quot;,
-        &quot;HASHTAG&quot;: &quot;&quot;,
-        &quot;GÖRSEL_PROMPT&quot;: &quot;&quot;,
-
-    }
-
-    current_section = None
-
-    for line in content.splitlines():
-
-        line = line.strip()
-
-        if line == &quot;[SENARYO]&quot;:
-
-            current_section = &quot;SENARYO&quot;
-
-        elif line == &quot;[BASLIK]&quot;:
-
-            current_section = &quot;BASLIK&quot;
-
-        elif line == &quot;[ACIKLAMA]&quot;:
-
-            current_section = &quot;ACIKLAMA&quot;
-
-        elif line == &quot;[HASHTAG]&quot;:
-
-            current_section = &quot;HASHTAG&quot;
-
-        elif line == &quot;[GÖRSEL_PROMPT]&quot;:
-
-            current_section = &quot;GÖRSEL_PROMPT&quot;
-
-        elif current_section:
-
-            sections[
-                current_section
-            ] += line + &quot;\n&quot;
-
-    # ========================================================
-    # BOŞ BÖLÜMLERİ KONTROL ET
-    # ========================================================
-
-    empty_sections = [
-
-        section
-
-        for section, text in sections.items()
-
-        if not text.strip()
-
-    ]
-
-    if empty_sections:
-
-        print()
-        print(
-            &quot;⚠️ KALİTE KONTROL BAŞARISIZ&quot;
-        )
-
-        print(
-            &quot;Boş bölümler:&quot;
-        )
-
-        for section in empty_sections:
-
-            print(
-                f&quot;- {section}&quot;
-            )
-
-        video_folder.rmdir()
-
-        return
-
-    # ========================================================
-    # DOSYALARI KAYDET
-    # ========================================================
-
-    files = {
-
-        &quot;SENARYO&quot;:
-            &quot;senaryo.txt&quot;,
-
-        &quot;BASLIK&quot;:
-            &quot;baslik.txt&quot;,
-
-        &quot;ACIKLAMA&quot;:
-            &quot;aciklama.txt&quot;,
-
-        &quot;HASHTAG&quot;:
-            &quot;hashtag.txt&quot;,
-
-        &quot;GÖRSEL_PROMPT&quot;:
-            &quot;gorsel_prompt.txt&quot;,
-
-    }
-
-    for section, filename in files.items():
-
-        file_path = (
-            video_folder
-            / filename
-        )
-
-        with open(
-            file_path,
-            &quot;w&quot;,
-            encoding=&quot;utf-8&quot;
-        ) as file:
-
-            file.write(
-                sections[
-                    section
-                ].strip()
-            )
-
-    print()
-    print(
-        &quot;✅ KALİTE KONTROL BAŞARILI&quot;
+    script_file = (
+        output_folder
+        / &quot;script.txt&quot;
     )
 
-    print(
-        f&quot;İçerik paketi kaydedildi: &quot;
-        f&quot;{video_folder}&quot;
-    )
-
-    # ========================================================
-    # AI GÖRSEL ÜRETİMİ
-    # ========================================================
-
-    prompt_file = (
-        video_folder
-        / &quot;gorsel_prompt.txt&quot;
-    )
-
-    image_folder = (
-        video_folder
-        / &quot;gorseller&quot;
-    )
-
-    print()
-    print(
-        &quot;=== AI GÖRSEL ÜRETİMİ ===&quot;
-    )
-
-    generate_images_from_prompt_file(
-        prompt_file,
-        image_folder
-    )
-
-    # ========================================================
-    # AI SES ÜRETİMİ
-    # ========================================================
-
-    audio_file = (
-        video_folder
-        / &quot;ses.mp3&quot;
-    )
-
-    print()
-    print(
-        &quot;=== AI SES ÜRETİMİ ===&quot;
-    )
-
-    generate_voice(
-        text=sections[&quot;SENARYO&quot;],
-        output_file=audio_file,
-    )
-
-    if not audio_file.exists():
-
-        print()
-        print(
-            &quot;❌ SES OLUŞTURULAMADI&quot;
-        )
-
-        return
-
-    print()
-    print(
-        f&quot;✅ Ses hazır: {audio_file}&quot;
-    )
-
-    # ========================================================
-    # GÖRSELLER + SES → VİDEO
-    # ========================================================
-
-    video_file = (
-        video_folder
-        / &quot;video.mp4&quot;
-    )
-
-    print()
-    print(
-        &quot;=== VİDEO OLUŞTURMA ===&quot;
-    )
-
-    create_video(
-        image_folder=image_folder,
-        audio_file=audio_file,
-        output_file=video_file,
-    )
-
-    if not video_file.exists():
-
-        print()
-        print(
-            &quot;❌ VİDEO OLUŞTURULAMADI&quot;
-        )
-
-        return
-
-    # ========================================================
-    # AI TRANSKRİPT
-    # ========================================================
-
-    transcript_file = (
-        video_folder
-        / &quot;transkript.txt&quot;
-    )
-
-    print()
-    print(
-        &quot;=== AI TRANSCRIBE ===&quot;
-    )
-
-    print(
-        &quot;🎙️ Ses yazıya çevriliyor...&quot;
-    )
-
-    transcript_result = transcribe_audio(
-        audio_file
-    )
-
-    transcript_text = (
-        transcript_result.text
-    )
-
-    transcript_file.write_text(
-        transcript_text,
+    script_file.write_text(
+        content,
         encoding=&quot;utf-8&quot;
     )
 
-    print()
-    print(
-        &quot;=== TRANSKRİPT ===&quot;
-    )
-
-    print(
-        transcript_text
-    )
-
-    print()
-    print(
-        &quot;✅ TRANSKRİPT TAMAMLANDI&quot;
-    )
 
     # ========================================================
-    # AI ALTYAZI
+    # GÖRSEL PROMPTLARI
+    # ========================================================
+
+    prompt_file = (
+        output_folder
+        / &quot;image_prompts.txt&quot;
+    )
+
+    try:
+
+        image_prompt_response = client.responses.create(
+            model=&quot;gpt-5.4-mini&quot;,
+            input=f&quot;&quot;&quot;
+Aşağıdaki Shorts senaryosu için
+görsel üretim promptları oluştur.
+
+Senaryo:
+
+{content}
+
+Her sahne için ayrı bir prompt yaz.
+Sadece promptları yaz.
+&quot;&quot;&quot;
+        )
+
+        prompt_file.write_text(
+            image_prompt_response.output_text.strip(),
+            encoding=&quot;utf-8&quot;
+        )
+
+    except Exception as error:
+
+        print(
+            f&quot;⚠️ Görsel promptları oluşturulamadı: {error}&quot;
+        )
+
+
+    # ========================================================
+    # GÖRSELLER
+    # ========================================================
+
+    images_folder = (
+        output_folder
+        / &quot;images&quot;
+    )
+
+    try:
+
+        generate_images_from_prompt_file(
+            prompt_file,
+            images_folder
+        )
+
+    except Exception as error:
+
+        print(
+            f&quot;⚠️ Görsel üretim hatası: {error}&quot;
+        )
+
+
+    # ========================================================
+    # SES
+    # ========================================================
+
+    audio_file = (
+        output_folder
+        / &quot;voice.mp3&quot;
+    )
+
+    try:
+
+        generate_voice(
+            content,
+            audio_file
+        )
+
+    except Exception as error:
+
+        print(
+            f&quot;⚠️ Ses üretim hatası: {error}&quot;
+        )
+
+
+    # ========================================================
+    # VİDEO
+    # ========================================================
+
+    video_file = (
+        output_folder
+        / &quot;video.mp4&quot;
+    )
+
+    try:
+
+        create_video(
+            images_folder,
+            audio_file,
+            video_file
+        )
+
+    except Exception as error:
+
+        print(
+            f&quot;⚠️ Video oluşturma hatası: {error}&quot;
+        )
+
+
+    # ========================================================
+    # TRANSKRİPT
+    # ========================================================
+
+    try:
+
+        transcribe_audio(
+            audio_file
+        )
+
+    except Exception as error:
+
+        print(
+            f&quot;⚠️ Transkript hatası: {error}&quot;
+        )
+
+
+    # ========================================================
+    # ALTYAZI
     # ========================================================
 
     subtitle_file = (
-        video_folder
-        / &quot;altyazi_ai.srt&quot;
+        output_folder
+        / &quot;subtitles.srt&quot;
     )
 
-    print()
-    print(
-        &quot;=== AI ALTYAZI OLUŞTURMA ===&quot;
-    )
+    try:
 
-    create_subtitle(
-        transcript_file=transcript_file,
-        audio_file=audio_file,
-        output_file=subtitle_file,
-    )
-
-    if not subtitle_file.exists():
-
-        print()
-        print(
-            &quot;❌ ALTYAZI OLUŞTURULAMADI&quot;
+        create_subtitle(
+            content,
+            audio_file,
+            subtitle_file
         )
 
-        return
+    except Exception as error:
+
+        print(
+            f&quot;⚠️ Altyazı oluşturma hatası: {error}&quot;
+        )
+
 
     # ========================================================
-    # ALTYAZIYI VİDEOYA GÖM
+    # ALTYAZIYI VİDEOYA EKLE
     # ========================================================
 
     final_video = (
-        video_folder
-        / &quot;video_final.mp4&quot;
+        output_folder
+        / &quot;final.mp4&quot;
     )
-
-    print()
-    print(
-        &quot;=== FİNAL VİDEO ===&quot;
-    )
-
-    add_subtitles(
-        video_file=video_file,
-        subtitle_file=subtitle_file,
-        output_file=final_video,
-    )
-
-    if not final_video.exists():
-
-        print()
-        print(
-            &quot;❌ FİNAL VİDEO OLUŞTURULAMADI&quot;
-        )
-
-        return
-
-    # ========================================================
-    # ANALYTICS KAYDI
-    # ========================================================
-
-    print()
-    print(
-        &quot;=== ANALYTICS KAYDI ===&quot;
-    )
-
-    image_count = len([
-
-        file
-
-        for file in image_folder.iterdir()
-
-        if file.is_file()
-
-        and file.suffix.lower()
-        in [
-            &quot;.png&quot;,
-            &quot;.jpg&quot;,
-            &quot;.jpeg&quot;,
-            &quot;.webp&quot;,
-        ]
-
-    ])
-
-    # ========================================================
-    # SES / VİDEO SÜRESİ
-    # ========================================================
-
-    video_duration = 0.0
 
     try:
 
-        result = subprocess.run(
-
-            [
-                &quot;ffprobe&quot;,
-                &quot;-v&quot;,
-                &quot;error&quot;,
-                &quot;-show_entries&quot;,
-                &quot;format=duration&quot;,
-                &quot;-of&quot;,
-                &quot;default=noprint_wrappers=1:nokey=1&quot;,
-                str(audio_file),
-            ],
-
-            capture_output=True,
-            text=True,
-            check=True,
-
-        )
-
-        video_duration = float(
-            result.stdout.strip()
+        add_subtitles(
+            video_file,
+            subtitle_file,
+            final_video
         )
 
     except Exception as error:
 
-        print()
         print(
-            f&quot;⚠️ Video süresi alınamadı: &quot;
-            f&quot;{error}&quot;
+            f&quot;⚠️ Altyazı ekleme hatası: {error}&quot;
         )
 
-    # ========================================================
-    # HOOK
-    # ========================================================
-
-    script_lines = [
-
-        line.strip()
-
-        for line
-        in sections[&quot;SENARYO&quot;].splitlines()
-
-        if line.strip()
-
-    ]
-
-    hook = (
-
-        script_lines[0]
-
-        if script_lines
-
-        else &quot;&quot;
-
-    )
 
     # ========================================================
-    # VERİTABANINA KAYDET
+    # DATABASE
     # ========================================================
 
     try:
 
-        analytics_id = add_video(
-
-            video_number=next_number,
-
+        add_video(
+            video_number=None,
             topic=topic,
-
-            category=None,
-
-            hook=hook,
-
-            duration=video_duration,
-
-            image_count=image_count,
-
-            created_at=datetime.now().isoformat(
-                timespec=&quot;seconds&quot;
-            ),
-
-        )
-
-        print()
-        print(
-            &quot;✅ ANALYTICS KAYDI TAMAMLANDI&quot;
-        )
-
-        print(
-            f&quot;🧠 Video ID: &quot;
-            f&quot;{analytics_id}&quot;
-        )
-
-        print(
-            f&quot;📹 Video numarası: &quot;
-            f&quot;{next_number:03d}&quot;
-        )
-
-        print(
-            f&quot;📊 Görsel sayısı: &quot;
-            f&quot;{image_count}&quot;
-        )
-
-        print(
-            f&quot;⏱️ Süre: &quot;
-            f&quot;{video_duration:.2f} saniye&quot;
+            script_file=str(script_file),
+            video_file=str(final_video)
         )
 
     except Exception as error:
 
-        print()
         print(
-            f&quot;⚠️ ANALYTICS KAYDI BAŞARISIZ: &quot;
-            f&quot;{error}&quot;
+            f&quot;⚠️ Video veritabanına eklenemedi: {error}&quot;
         )
 
+
     # ========================================================
-    # TAMAMLANDI
+    # SONUÇ
     # ========================================================
 
     print()
-    print(
-        &quot;========================================&quot;
-    )
+    print(&quot;========================================&quot;)
+    print(&quot;✅ SHORTS OLUŞTURULDU&quot;)
+    print(&quot;========================================&quot;)
+    print()
 
     print(
-        &quot;🎉 SHORTS TAMAMEN OLUŞTURULDU&quot;
-    )
-
-    print(
-        &quot;========================================&quot;
+        f&quot;📁 Klasör: {output_folder}&quot;
     )
 
     print()
 
-    print(
-        f&quot;📁 Klasör: {video_folder}&quot;
-    )
-
-    print(
-        f&quot;🎙️ Ses: {audio_file}&quot;
-    )
-
-    print(
-        f&quot;📝 Transkript: {transcript_file}&quot;
-    )
-
-    print(
-        f&quot;💬 Altyazı: {subtitle_file}&quot;
-    )
-
-    print(
-        f&quot;🎬 Video: {video_file}&quot;
-    )
-
-    print(
-        f&quot;🎬 Final: {final_video}&quot;
-    )</code></pre>
+    return {
+        &quot;topic&quot;: topic,
+        &quot;script&quot;: content,
+        &quot;folder&quot;: str(output_folder),
+        &quot;evaluation&quot;: evaluation
+    }</code></pre>
 
 </section>
 
