@@ -147,13 +147,13 @@ pre code {
 </h1>
 
 <div class="update">
-GÜNCELLEME #002
+GÜNCELLEME #003
 </div>
 
 <p>
 Gerçek proje dosyaları tarandı.
 Toplam Python dosyası:
-<strong>37</strong>
+<strong>47</strong>
 </p>
 
 <input
@@ -1531,49 +1531,384 @@ if __name__ == &quot;__main__&quot;:
 <section class="file-card">
 
 <div class="file-title">
-📄 app/content/image_generator.py
+📄 app/automation/production_scheduler.py
 </div>
 
-<pre><code class="language-python">import base64
-from pathlib import Path
+<pre><code class="language-python">from pathlib import Path
+import json
+from datetime import datetime
 
-from openai import OpenAI
-
-from config.settings import OPENAI_API_KEY
-
-
-client = OpenAI(api_key=OPENAI_API_KEY)
+from app.automation.auto_creator import run_auto_creator
 
 
-def generate_image(prompt, output_path):
-    result = client.images.generate(
-        model=&quot;gpt-image-2&quot;,
-        prompt=prompt,
-        size=&quot;1024x1024&quot;,
-        quality=&quot;low&quot;,
+BASE_DIR = Path(__file__).resolve().parents[2]
+
+STATE_FILE = BASE_DIR / &quot;data&quot; / &quot;production_state.json&quot;
+
+
+def load_state():
+
+    if not STATE_FILE.exists():
+        return {}
+
+    try:
+
+        return json.loads(
+            STATE_FILE.read_text(
+                encoding=&quot;utf-8&quot;
+            )
+        )
+
+    except Exception as error:
+
+        print(f&quot;⚠️ Üretim durumu okunamadı: {error}&quot;)
+
+        return {}
+
+
+def save_state(state):
+
+    STATE_FILE.write_text(
+        json.dumps(
+            state,
+            ensure_ascii=False,
+            indent=2
+        ),
+        encoding=&quot;utf-8&quot;
     )
 
-    image_data = result.data[0].b64_json
 
-    output_path = Path(output_path)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
+def already_produced_today():
 
-    with open(output_path, &quot;wb&quot;) as f:
-        f.write(base64.b64decode(image_data))
+    state = load_state()
 
-    return output_path</code></pre>
+    last_date = state.get(
+        &quot;last_production_date&quot;
+    )
+
+    today = datetime.now().strftime(
+        &quot;%Y-%m-%d&quot;
+    )
+
+    return last_date == today
+
+
+def mark_produced():
+
+    state = load_state()
+
+    state[&quot;last_production_date&quot;] = (
+        datetime.now().strftime(&quot;%Y-%m-%d&quot;)
+    )
+
+    save_state(state)
+
+
+def run_production_scheduler():
+
+    print()
+    print(&quot;========================================&quot;)
+    print(&quot;⏰ CREATOR ENGINE — ÜRETİM ZAMANLAYICI&quot;)
+    print(&quot;========================================&quot;)
+    print()
+
+    today = datetime.now().strftime(
+        &quot;%Y-%m-%d&quot;
+    )
+
+    print(f&quot;📅 Bugün: {today}&quot;)
+    print()
+
+    if already_produced_today():
+
+        print(&quot;✅ Bugünün videosu zaten üretildi.&quot;)
+        print(&quot;🛑 Yeni üretim yapılmayacak.&quot;)
+        return None
+
+    print(&quot;🎬 Bugünün videosu henüz üretilmedi.&quot;)
+    print(&quot;🚀 Otomatik üretim başlatılıyor...&quot;)
+    print()
+
+    result = run_auto_creator()
+
+    if result:
+
+        mark_produced()
+
+        print()
+        print(&quot;========================================&quot;)
+        print(&quot;✅ BUGÜNÜN ÜRETİMİ TAMAMLANDI&quot;)
+        print(&quot;========================================&quot;)
+        print()
+
+        return result
+
+    print()
+    print(&quot;========================================&quot;)
+    print(&quot;⚠️ BUGÜN VİDEO ÜRETİLEMEDİ&quot;)
+    print(&quot;========================================&quot;)
+    print()
+
+    return None
+
+
+if __name__ == &quot;__main__&quot;:
+
+    run_production_scheduler()</code></pre>
 
 </section>
 
 <section class="file-card">
 
 <div class="file-title">
-📄 app/content/transcriber.py
+📄 app/content/content_editor.py
+</div>
+
+<pre><code class="language-python">from openai import OpenAI
+
+from config.settings import OPENAI_API_KEY
+
+
+client = OpenAI(
+    api_key=OPENAI_API_KEY
+)
+
+
+def evaluate_content(content):
+
+    response = client.responses.create(
+        model=&quot;gpt-5.4-mini&quot;,
+        input=f&quot;&quot;&quot;
+Sen profesyonel bir YouTube Shorts editörüsün.
+
+Aşağıdaki Shorts SENARYOSUNU değerlendir.
+
+İÇERİK:
+{content}
+
+Her kriteri 20 üzerinden puanla:
+
+HOOK
+AKICILIK
+MERAK
+SHORTS_UYGUNLUK
+BİLGİ_DEĞERİ
+
+Toplam puan 100 üzerinden olsun.
+
+ÖNEMLİ:
+
+- BAŞLIK değerlendirmesi YAPMA.
+- Çünkü bu aşamada yalnızca senaryo değerlendirilmektedir.
+- Senaryonun ilk 1-2 saniyesindeki hook çok önemlidir.
+- Senaryo 21-30 saniyelik Shorts formatına uygun olmalıdır.
+- Tek ana fikir içermelidir.
+- Gereksiz giriş ve tekrar olmamalıdır.
+- Doğal Türkçe kullanılmalıdır.
+- İzleyicide merak oluşturmalıdır.
+- İçerik gerçek, anlaşılır ve izleyiciye değer sağlayan bir bilgi vermelidir.
+- Standart &quot;abone ol&quot;, &quot;like at&quot; gibi kapanışlar aranmayacaktır.
+
+DEĞERLENDİRME:
+
+[PUAN]
+Toplam puan: X/100
+
+[DEGERLENDIRME]
+HOOK: X/20 — kısa değerlendirme
+AKICILIK: X/20 — kısa değerlendirme
+MERAK: X/20 — kısa değerlendirme
+SHORTS_UYGUNLUK: X/20 — kısa değerlendirme
+BİLGİ_DEĞERİ: X/20 — kısa değerlendirme
+
+[SONUC]
+ONAY veya RED
+
+KARAR KURALI:
+
+Toplam puan 85 veya üzerindeyse:
+ONAY
+
+Toplam puan 85&#x27;in altındaysa:
+RED
+
+Sadece bu formatı kullan.
+Türkçe yaz.
+&quot;&quot;&quot;,
+    )
+
+    editor_result = response.output_text.strip()
+
+    print()
+    print(&quot;========================================&quot;)
+    print(&quot;🎯 AI EDİTÖR&quot;)
+    print(&quot;========================================&quot;)
+    print()
+    print(editor_result)
+
+    # ========================================================
+    # OTOMATİK KARAR
+    # ========================================================
+
+    decision = &quot;RED&quot;
+
+    for line in editor_result.splitlines():
+
+        clean_line = line.strip()
+
+        if &quot;Toplam puan:&quot; in clean_line:
+
+            try:
+
+                score_text = (
+                    clean_line
+                    .split(&quot;:&quot;, 1)[1]
+                )
+
+                score = int(
+                    score_text
+                    .split(&quot;/&quot;)[0]
+                    .strip()
+                )
+
+                if score &gt;= 85:
+
+                    decision = &quot;ONAY&quot;
+
+                else:
+
+                    decision = &quot;RED&quot;
+
+            except (
+                ValueError,
+                IndexError
+            ):
+
+                decision = &quot;RED&quot;
+
+    print()
+    print(
+        &quot;🎯 OTOMATİK KARAR:&quot;,
+        decision
+    )
+
+    return editor_result, decision</code></pre>
+
+</section>
+
+<section class="file-card">
+
+<div class="file-title">
+📄 app/content/image_pipeline.py
 </div>
 
 <pre><code class="language-python">from pathlib import Path
 
-from openai import OpenAI
+from app.content.image_generator import generate_image
+
+
+MAX_IMAGES = 5
+
+
+def generate_images_from_prompt_file(
+    prompt_file,
+    output_folder
+):
+
+    prompt_file = Path(prompt_file)
+    output_folder = Path(output_folder)
+
+    if not prompt_file.exists():
+
+        raise FileNotFoundError(
+            f&quot;Görsel prompt dosyası bulunamadı: {prompt_file}&quot;
+        )
+
+    output_folder.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    text = prompt_file.read_text(
+        encoding=&quot;utf-8&quot;
+    )
+
+    prompts = [
+        prompt.strip()
+        for prompt in text.splitlines()
+        if prompt.strip()
+    ]
+
+    if not prompts:
+
+        raise ValueError(
+            &quot;Görsel promptu bulunamadı.&quot;
+        )
+
+    original_count = len(prompts)
+
+    prompts = prompts[:MAX_IMAGES]
+
+    if original_count &gt; MAX_IMAGES:
+
+        print()
+        print(
+            f&quot;⚠️ {original_count} prompt bulundu.&quot;
+        )
+
+        print(
+            f&quot;⚠️ Maksimum {MAX_IMAGES} görsel işlenecek.&quot;
+        )
+
+    print()
+    print(
+        f&quot;🎨 Toplam {len(prompts)} görsel üretilecek.&quot;
+    )
+
+    generated_files = []
+
+    for index, prompt in enumerate(
+        prompts,
+        start=1
+    ):
+
+        print()
+        print(
+            f&quot;🎨 Görsel {index}/{len(prompts)} oluşturuluyor...&quot;
+        )
+
+        output_path = (
+            output_folder
+            / f&quot;{index:02d}.png&quot;
+        )
+
+        generate_image(
+            prompt,
+            output_path
+        )
+
+        print(
+            f&quot;✅ Kaydedildi: {output_path}&quot;
+        )
+
+        generated_files.append(
+            output_path
+        )
+
+    print()
+    print(&quot;🎉 GÖRSELLER TAMAMLANDI!&quot;)
+
+    return generated_files</code></pre>
+
+</section>
+
+<section class="file-card">
+
+<div class="file-title">
+📄 app/content/tts_generator.py
+</div>
+
+<pre><code class="language-python">from openai import OpenAI
 
 from config.settings import OPENAI_API_KEY
 
@@ -1581,29 +1916,214 @@ from config.settings import OPENAI_API_KEY
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 
-def transcribe_audio(audio_path):
-    audio_path = Path(audio_path)
+def generate_voice(text, output_file):
 
-    if not audio_path.exists():
-        raise FileNotFoundError(
-            f&quot;Ses dosyası bulunamadı: {audio_path}&quot;
-        )
+    print()
+    print(&quot;🎙️ AI SES ÜRETİMİ&quot;)
+    print(&quot;🔊 Ses oluşturuluyor...&quot;)
 
-    with open(audio_path, &quot;rb&quot;) as audio_file:
-        result = client.audio.transcriptions.create(
-            model=&quot;gpt-4o-mini-transcribe&quot;,
-            file=audio_file,
-            response_format=&quot;json&quot;,
-        )
+    response = client.audio.speech.create(
+        model=&quot;gpt-4o-mini-tts&quot;,
+        voice=&quot;alloy&quot;,
+        input=text,
+        response_format=&quot;mp3&quot;,
+    )
 
-    return result</code></pre>
+    response.write_to_file(output_file)
+
+    print()
+    print(f&quot;✅ SES OLUŞTURULDU&quot;)
+    print(f&quot;Dosya: {output_file}&quot;)</code></pre>
 
 </section>
 
 <section class="file-card">
 
 <div class="file-title">
-📄 app/content/video_pipeline.py
+📄 app/core/batch_engine.py
+</div>
+
+<pre><code class="language-python">from app.content.content_engine import create_short
+
+
+# ============================================================
+# CREATOR ENGINE — ÇOKLU SHORTS ÜRETİMİ
+# ============================================================
+
+def main():
+
+    print()
+    print(&quot;========================================&quot;)
+    print(&quot;🎬 CREATOR ENGINE — ÇOKLU ÜRETİM&quot;)
+    print(&quot;========================================&quot;)
+    print()
+
+    try:
+
+        count = int(
+            input(
+                &quot;Kaç video üretilecek: &quot;
+            ).strip()
+        )
+
+    except ValueError:
+
+        print()
+        print(&quot;❌ Geçerli bir sayı girilmedi.&quot;)
+        return
+
+    if count &lt;= 0:
+
+        print()
+        print(&quot;❌ Video sayısı 0&#x27;dan büyük olmalı.&quot;)
+        return
+
+    print()
+    print(
+        f&quot;📦 {count} video için konu girilecek.&quot;
+    )
+    print()
+
+    topics = []
+
+    for number in range(1, count + 1):
+
+        while True:
+
+            topic = input(
+                f&quot;{number}. Konu: &quot;
+            ).strip()
+
+            if topic:
+
+                topics.append(topic)
+                break
+
+            print(
+                &quot;⚠️ Konu boş bırakılamaz.&quot;
+            )
+
+    print()
+    print(&quot;========================================&quot;)
+    print(&quot;🚀 ÇOKLU ÜRETİM BAŞLIYOR&quot;)
+    print(&quot;========================================&quot;)
+    print()
+
+    success_count = 0
+    failed_count = 0
+
+    for index, topic in enumerate(
+        topics,
+        start=1
+    ):
+
+        print()
+        print(&quot;========================================&quot;)
+        print(
+            f&quot;🎬 VİDEO {index}/{count}&quot;
+        )
+        print(
+            f&quot;📌 KONU: {topic}&quot;
+        )
+        print(&quot;========================================&quot;)
+        print()
+
+        try:
+
+            result = create_short(
+                topic
+            )
+
+            if result is False:
+
+                failed_count += 1
+
+                print()
+                print(
+                    &quot;❌ Bu video oluşturulamadı.&quot;
+                )
+
+            else:
+
+                success_count += 1
+
+                print()
+                print(
+                    &quot;✅ Bu video tamamlandı.&quot;
+                )
+
+        except Exception as error:
+
+            failed_count += 1
+
+            print()
+            print(
+                &quot;❌ VİDEO ÜRETİM HATASI&quot;
+            )
+
+            print(
+                f&quot;Hata: {error}&quot;
+            )
+
+            print()
+            print(
+                &quot;➡️ Sonraki videoya geçiliyor...&quot;
+            )
+
+    print()
+    print(&quot;========================================&quot;)
+    print(&quot;📊 ÇOKLU ÜRETİM TAMAMLANDI&quot;)
+    print(&quot;========================================&quot;)
+    print()
+
+    print(
+        f&quot;✅ Başarılı: {success_count}&quot;
+    )
+
+    print(
+        f&quot;❌ Başarısız: {failed_count}&quot;
+    )
+
+    print(
+        f&quot;📦 Toplam: {count}&quot;
+    )
+
+    print()
+    print(&quot;🧠 Analytics kayıtları güncellendi.&quot;)
+    print()
+
+
+if __name__ == &quot;__main__&quot;:
+
+    main()</code></pre>
+
+</section>
+
+<section class="file-card">
+
+<div class="file-title">
+📄 app/core/image_pipeline_test.py
+</div>
+
+<pre><code class="language-python">from app.content.image_pipeline import generate_images_from_prompt_file
+
+
+prompt_file = &quot;shorts/004/gorsel_prompt.txt&quot;
+
+output_folder = &quot;shorts/004/gorseller&quot;
+
+
+generate_images_from_prompt_file(
+    prompt_file,
+    output_folder
+)</code></pre>
+
+</section>
+
+<section class="file-card">
+
+<div class="file-title">
+📄 app/core/subtitle_test.py
 </div>
 
 <pre><code class="language-python">from pathlib import Path
@@ -1611,234 +2131,203 @@ import subprocess
 
 
 # ============================================================
-# VİDEOYA ALTYAZI GÖMME
+# AYARLAR
 # ============================================================
 
-def add_subtitles(
-    video_file,
-    subtitle_file,
-    output_file,
-):
+VIDEO_FOLDER = Path(&quot;shorts/007&quot;)
 
-    video_file = Path(video_file)
-    subtitle_file = Path(subtitle_file)
-    output_file = Path(output_file)
+VIDEO_FILE = VIDEO_FOLDER / &quot;video.mp4&quot;
+SRT_FILE = VIDEO_FOLDER / &quot;altyazi_ai.srt&quot;
 
-    # --------------------------------------------------------
-    # DOSYA KONTROLLERİ
-    # --------------------------------------------------------
+OUTPUT_VIDEO = VIDEO_FOLDER / &quot;video_final.mp4&quot;
 
-    if not video_file.exists():
-        raise FileNotFoundError(
-            f&quot;Video bulunamadı: {video_file}&quot;
-        )
 
-    if not subtitle_file.exists():
-        raise FileNotFoundError(
-            f&quot;Altyazı bulunamadı: {subtitle_file}&quot;
-        )
+# ============================================================
+# DOSYA KONTROLLERİ
+# ============================================================
 
-    output_file.parent.mkdir(
-        parents=True,
-        exist_ok=True
+print()
+print(&quot;=== PROFESYONEL ALTYAZI TESTİ ===&quot;)
+
+if not VIDEO_FILE.exists():
+    raise FileNotFoundError(
+        f&quot;Video bulunamadı: {VIDEO_FILE}&quot;
     )
 
-    print()
-    print(&quot;=== VİDEO MOTORU ===&quot;)
-    print(&quot;🎬 Video hazırlanıyor...&quot;)
-    print(&quot;📝 Altyazı videoya gömülüyor...&quot;)
-
-    # --------------------------------------------------------
-    # WINDOWS YOLU
-    # --------------------------------------------------------
-
-    subtitle_path = str(
-        subtitle_file.resolve()
-    ).replace(&quot;\\&quot;, &quot;/&quot;)
-
-    # FFmpeg filter için Windows sürücüsündeki : karakterini kaçır
-    subtitle_path = subtitle_path.replace(
-        &quot;:&quot;,
-        &quot;\\:&quot;
+if not SRT_FILE.exists():
+    raise FileNotFoundError(
+        f&quot;Altyazı bulunamadı: {SRT_FILE}&quot;
     )
 
+
+print()
+print(&quot;🎬 Video bulundu:&quot;)
+print(VIDEO_FILE)
+
+print()
+print(&quot;📝 AI altyazı bulundu:&quot;)
+print(SRT_FILE)
+
+
+# ============================================================
+# SRT YOLUNU WINDOWS / FFMPEG FORMATINA ÇEVİR
+# ============================================================
+
+srt_path = SRT_FILE.resolve()
+
+# Windows yolunu FFmpeg subtitles filtresi için düzenle
+srt_filter_path = str(srt_path).replace(&quot;\\&quot;, &quot;/&quot;)
+
+# C: -&gt; C\:
+if &quot;:&quot; in srt_filter_path:
+    srt_filter_path = srt_filter_path.replace(&quot;:&quot;, &quot;\\:&quot;)
+
+
+# ============================================================
+# ALTYAZI STİLİ
+# ============================================================
+
+subtitle_style = (
+    &quot;FontName=Arial,&quot;
+    &quot;FontSize=10,&quot;
+    &quot;Bold=1,&quot;
+    &quot;PrimaryColour=&amp;H00FFFFFF,&quot;
+    &quot;OutlineColour=&amp;H00000000,&quot;
+    &quot;BorderStyle=1,&quot;
+    &quot;Outline=2,&quot;
+    &quot;Shadow=1,&quot;
+    &quot;Alignment=8,&quot;
+    &quot;MarginV=220&quot;
+)
+
+# ============================================================
+# FFMPEG KOMUTU
+# ============================================================
+
+subtitle_filter = (
+    f&quot;subtitles=&#x27;{srt_filter_path}&#x27;&quot;
+    f&quot;:force_style=&#x27;{subtitle_style}&#x27;&quot;
+)
+
+
+command = [
+    &quot;ffmpeg&quot;,
+    &quot;-y&quot;,
+
+    &quot;-i&quot;,
+    str(VIDEO_FILE),
+
+    &quot;-vf&quot;,
+    subtitle_filter,
+
     # --------------------------------------------------------
-    # ALTYAZI STİLİ
+    # VİDEO
     # --------------------------------------------------------
 
-    subtitle_style = (
-        &quot;FontName=Arial,&quot;
-        &quot;FontSize=10,&quot;
-        &quot;Bold=1,&quot;
-        &quot;PrimaryColour=&amp;H00FFFFFF,&quot;
-        &quot;OutlineColour=&amp;H00000000,&quot;
-        &quot;BorderStyle=1,&quot;
-        &quot;Outline=2,&quot;
-        &quot;Shadow=1,&quot;
-        &quot;Alignment=8,&quot;
-        &quot;MarginV=220&quot;
-    )
+    &quot;-c:v&quot;,
+    &quot;libx264&quot;,
 
-    subtitle_filter = (
-        f&quot;subtitles=&#x27;{subtitle_path}&#x27;&quot;
-        f&quot;:force_style=&#x27;{subtitle_style}&#x27;&quot;
-    )
+    &quot;-preset&quot;,
+    &quot;medium&quot;,
+
+    &quot;-crf&quot;,
+    &quot;20&quot;,
 
     # --------------------------------------------------------
-    # FFMPEG
+    # SES
     # --------------------------------------------------------
 
-    command = [
-        &quot;ffmpeg&quot;,
-        &quot;-y&quot;,
-
-        &quot;-i&quot;,
-        str(video_file),
-
-        &quot;-vf&quot;,
-        subtitle_filter,
-
-        &quot;-c:v&quot;,
-        &quot;libx264&quot;,
-
-        &quot;-preset&quot;,
-        &quot;medium&quot;,
-
-        &quot;-crf&quot;,
-        &quot;20&quot;,
-
-        &quot;-c:a&quot;,
-        &quot;copy&quot;,
-
-        str(output_file),
-    ]
+    &quot;-c:a&quot;,
+    &quot;copy&quot;,
 
     # --------------------------------------------------------
-    # ÇALIŞTIR
+    # ÇIKIŞ
     # --------------------------------------------------------
 
-    subprocess.run(
-        command,
-        check=True
-    )
+    str(OUTPUT_VIDEO),
+]
 
-    # --------------------------------------------------------
-    # SONUÇ
-    # --------------------------------------------------------
 
-    if not output_file.exists():
-        raise RuntimeError(
-            &quot;FFmpeg çalıştı ancak çıktı videosu oluşmadı.&quot;
-        )
+# ============================================================
+# ÇALIŞTIR
+# ============================================================
 
-    print()
-    print(&quot;========================================&quot;)
-    print(&quot;✅ FİNAL VİDEO OLUŞTURULDU&quot;)
-    print(&quot;========================================&quot;)
-    print()
-    print(f&quot;Dosya: {output_file}&quot;)
+print()
+print(&quot;🎨 Altyazı videoya gömülüyor...&quot;)
+print()
+print(&quot;📍 Konum: Üst-Orta&quot;)
+print(&quot;🔠 Boyut: Küçük&quot;)
+print(&quot;⚪ Yazı: Beyaz&quot;)
+print(&quot;⬛ Kenarlık: Siyah&quot;)
+print()
 
-    return output_file</code></pre>
+
+subprocess.run(
+    command,
+    check=True
+)
+
+
+# ============================================================
+# SONUÇ
+# ============================================================
+
+print()
+print(&quot;========================================&quot;)
+print(&quot;✅ FİNAL VİDEO OLUŞTURULDU&quot;)
+print(&quot;========================================&quot;)
+print()
+print(f&quot;Dosya: {OUTPUT_VIDEO}&quot;)
+print()</code></pre>
 
 </section>
 
 <section class="file-card">
 
 <div class="file-title">
-📄 app/core/engine.py
-</div>
-
-<pre><code class="language-python">from config.settings import APP_NAME, VERSION, LANGUAGE
-from app.content.content_engine import create_short
-
-
-print(APP_NAME)
-print(&quot;Sürüm:&quot;, VERSION)
-print(&quot;Dil:&quot;, LANGUAGE)
-print(&quot;--------------------&quot;)
-
-topic = input(&quot;Konu gir: &quot;)
-
-create_short(topic)</code></pre>
-
-</section>
-
-<section class="file-card">
-
-<div class="file-title">
-📄 app/core/srt_test.py
+📄 app/core/video_test.py
 </div>
 
 <pre><code class="language-python">from pathlib import Path
 
-from app.content.subtitle_engine import create_subtitle
+from app.content.video_pipeline import add_subtitles
 
 
 VIDEO_FOLDER = Path(&quot;shorts/007&quot;)
 
-TRANSCRIPT_FILE = VIDEO_FOLDER / &quot;transkript.txt&quot;
-AUDIO_FILE = VIDEO_FOLDER / &quot;ses.mp3&quot;
+VIDEO_FILE = VIDEO_FOLDER / &quot;video.mp4&quot;
 SRT_FILE = VIDEO_FOLDER / &quot;altyazi_ai.srt&quot;
+OUTPUT_FILE = VIDEO_FOLDER / &quot;video_final.mp4&quot;
 
 
 print()
-print(&quot;=== SRT TEST ===&quot;)
+print(&quot;=== VİDEO PIPELINE TEST ===&quot;)
 
-
-create_subtitle(
-    transcript_file=TRANSCRIPT_FILE,
-    audio_file=AUDIO_FILE,
-    output_file=SRT_FILE,
+add_subtitles(
+    video_file=VIDEO_FILE,
+    subtitle_file=SRT_FILE,
+    output_file=OUTPUT_FILE,
 )
 
-
 print()
-print(&quot;🎉 SRT TEST BAŞARILI&quot;)</code></pre>
+print(&quot;🎉 VİDEO TEST BAŞARILI&quot;)
+print(f&quot;Dosya: {OUTPUT_FILE}&quot;)</code></pre>
 
 </section>
 
 <section class="file-card">
 
 <div class="file-title">
-📄 app/core/tts_test.py
+📄 app/upload/upload_config.py
 </div>
 
-<pre><code class="language-python">from pathlib import Path
+<pre><code class="language-python">UPLOAD_ENABLED = True
 
-from app.content.tts_generator import generate_speech
+# Videonun YouTube&#x27;a yükleneceği saat
+UPLOAD_TIME = &quot;17:00&quot;
 
-
-script_file = Path(&quot;shorts/007/senaryo.txt&quot;)
-output_file = Path(&quot;shorts/007/ses.mp3&quot;)
-
-
-if not script_file.exists():
-    raise FileNotFoundError(
-        f&quot;Senaryo bulunamadı: {script_file}&quot;
-    )
-
-
-text = script_file.read_text(encoding=&quot;utf-8&quot;).strip()
-
-
-if not text:
-    raise ValueError(&quot;Senaryo dosyası boş.&quot;)
-
-
-print()
-print(&quot;=== AI TTS ===&quot;)
-print(&quot;🎙️ Ses oluşturuluyor...&quot;)
-
-
-generate_speech(
-    text,
-    output_file
-)
-
-
-print()
-print(&quot;✅ SES OLUŞTURULDU&quot;)
-print(f&quot;Dosya: {output_file}&quot;)</code></pre>
+# YouTube&#x27;da yayınlanacağı saat
+PUBLISH_TIME = &quot;18:00&quot;</code></pre>
 
 </section>
 
@@ -2651,18 +3140,10 @@ if __name__ == &quot;__main__&quot;:
 <section class="file-card">
 
 <div class="file-title">
-📄 config/settings.py
+📄 config/__init__.py
 </div>
 
-<pre><code class="language-python">APP_NAME = &quot;Creator Engine&quot;
-VERSION = &quot;0.1.0&quot;
-LANGUAGE = &quot;tr&quot;
-from dotenv import load_dotenv
-import os
-
-load_dotenv()
-
-OPENAI_API_KEY = os.getenv(&quot;OPENAI_API_KEY&quot;)</code></pre>
+<pre><code class="language-python"></code></pre>
 
 </section>
 
@@ -3619,208 +4100,1076 @@ if __name__ == &quot;__main__&quot;:
 <section class="file-card">
 
 <div class="file-title">
-📄 app/content/content_editor.py
+📄 app/automation/__init__.py
 </div>
 
-<pre><code class="language-python">from openai import OpenAI
-
-from config.settings import OPENAI_API_KEY
-
-
-client = OpenAI(api_key=OPENAI_API_KEY)
-
-
-def evaluate_content(content):
-    response = client.responses.create(
-        model=&quot;gpt-5.4-mini&quot;,
-        input=f&quot;&quot;&quot;
-Sen profesyonel bir YouTube Shorts editörüsün.
-
-Aşağıdaki içeriği değerlendir.
-
-İÇERİK:
-{content}
-
-Her kriteri 20 üzerinden puanla:
-
-HOOK
-AKICILIK
-MERAK
-BAŞLIK
-SHORTS_UYGUNLUK
-
-Toplam puan 100 üzerinden olsun.
-
-Değerlendirmeyi şu formatta yap:
-
-[PUAN]
-Toplam puan: X/100
-
-[DEGERLENDIRME]
-HOOK: X/20 — kısa değerlendirme
-AKICILIK: X/20 — kısa değerlendirme
-MERAK: X/20 — kısa değerlendirme
-BAŞLIK: X/20 — kısa değerlendirme
-SHORTS_UYGUNLUK: X/20 — kısa değerlendirme
-
-[SONUC]
-ONAY veya RED
-
-ÖNEMLİ:
-Toplam puan 85 veya üzerindeyse SONUC ONAY olmalı.
-Toplam puan 85&#x27;in altındaysa SONUC RED olmalı.
-
-Sadece bu formatı kullan.
-&quot;&quot;&quot;,
-    )
-
-    editor_result = response.output_text
-
-    print()
-    print(&quot;=== AI EDITÖR ===&quot;)
-    print(editor_result)
-
-    # -----------------------------
-    # OTOMATİK KARAR
-    # -----------------------------
-
-    decision = &quot;RED&quot;
-
-    for line in editor_result.splitlines():
-
-        if &quot;Toplam puan:&quot; in line:
-            try:
-                score_text = line.split(&quot;:&quot;, 1)[1]
-                score = int(score_text.split(&quot;/&quot;)[0].strip())
-
-                if score &gt;= 85:
-                    decision = &quot;ONAY&quot;
-                else:
-                    decision = &quot;RED&quot;
-
-            except (ValueError, IndexError):
-                decision = &quot;RED&quot;
-
-    print()
-    print(&quot;🎯 OTOMATİK KARAR:&quot;, decision)
-
-    return editor_result, decision</code></pre>
+<pre><code class="language-python"></code></pre>
 
 </section>
 
 <section class="file-card">
 
 <div class="file-title">
-📄 app/content/image_pipeline.py
+📄 app/automation/topic_generator.py
 </div>
 
 <pre><code class="language-python">from pathlib import Path
+import json
+from openai import OpenAI
 
-from app.content.image_generator import generate_image
+from config.settings import OPENAI_API_KEY
 
 
-MAX_IMAGES = 5
+BASE_DIR = Path(__file__).resolve().parents[2]
+
+STRATEGY_FILE = BASE_DIR / &quot;data&quot; / &quot;current_strategy.json&quot;
+HISTORY_FILE = BASE_DIR / &quot;data&quot; / &quot;topic_history.json&quot;
+
+client = OpenAI(
+    api_key=OPENAI_API_KEY
+)
 
 
-def generate_images_from_prompt_file(
-    prompt_file,
-    output_folder
-):
+def load_strategy():
 
-    prompt_file = Path(prompt_file)
-    output_folder = Path(output_folder)
+    if not STRATEGY_FILE.exists():
+        return None
 
-    if not prompt_file.exists():
+    try:
 
-        raise FileNotFoundError(
-            f&quot;Görsel prompt dosyası bulunamadı: {prompt_file}&quot;
+        return json.loads(
+            STRATEGY_FILE.read_text(
+                encoding=&quot;utf-8&quot;
+            )
         )
+
+    except Exception as error:
+
+        print(f&quot;⚠️ Strateji okunamadı: {error}&quot;)
+
+        return None
+
+
+def load_history():
+
+    if not HISTORY_FILE.exists():
+        return []
+
+    try:
+
+        data = json.loads(
+            HISTORY_FILE.read_text(
+                encoding=&quot;utf-8&quot;
+            )
+        )
+
+        if isinstance(data, list):
+            return data
+
+        return []
+
+    except Exception as error:
+
+        print(f&quot;⚠️ Konu geçmişi okunamadı: {error}&quot;)
+
+        return []
+
+
+def save_topic(topic):
+
+    history = load_history()
+
+    if topic not in history:
+
+        history.append(topic)
+
+        HISTORY_FILE.write_text(
+            json.dumps(
+                history,
+                ensure_ascii=False,
+                indent=2
+            ),
+            encoding=&quot;utf-8&quot;
+        )
+
+
+def generate_topics(count=5):
+
+    strategy = load_strategy()
+
+    if not strategy:
+
+        print(&quot;❌ Kayıtlı AI stratejisi bulunamadı.&quot;)
+        return []
+
+    history = load_history()
+
+    strategy_text = json.dumps(
+        strategy,
+        ensure_ascii=False,
+        indent=2
+    )
+
+    history_text = &quot;\n&quot;.join(
+        f&quot;- {topic}&quot;
+        for topic in history[-100:]
+    )
+
+    prompt = f&quot;&quot;&quot;
+Creator Engine için YouTube Shorts konuları üret.
+
+MEVCUT AI STRATEJİSİ:
+
+{strategy_text}
+
+DAHA ÖNCE ÜRETİLEN KONULAR:
+
+{history_text if history_text else &quot;Henüz konu geçmişi yok.&quot;}
+
+Kurallar:
+
+- Tam olarak {count} farklı konu üret.
+- Daha önce üretilen hiçbir konuyu tekrar etme.
+- Aynı konuyu farklı cümleyle yeniden yazma.
+- Birbirinden farklı konular seç.
+- Merak uyandırsın.
+- Şaşırtıcı veya güçlü bir bilgi içersin.
+- 20-30 saniyelik Shorts formatına uygun olsun.
+- Türkçe yaz.
+
+SADECE konuları yaz.
+
+Her konu ayrı satırda olsun.
+Numara veya açıklama ekleme.
+&quot;&quot;&quot;
+
+    try:
+
+        response = client.responses.create(
+            model=&quot;gpt-5.4-mini&quot;,
+            input=prompt
+        )
+
+        text = response.output_text.strip()
+
+    except Exception as error:
+
+        print(f&quot;❌ Konu üretilemedi: {error}&quot;)
+        return []
+
+    topics = [
+        line.strip()
+        for line in text.splitlines()
+        if line.strip()
+    ]
+
+    unique_topics = []
+
+    for topic in topics:
+
+        if topic in history:
+            continue
+
+        if topic in unique_topics:
+            continue
+
+        unique_topics.append(topic)
+
+        if len(unique_topics) &gt;= count:
+            break
+
+    return unique_topics
+
+
+if __name__ == &quot;__main__&quot;:
+
+    topics = generate_topics()
+
+    print()
+    print(&quot;========================================&quot;)
+    print(&quot;💡 OTOMATİK KONU ÜRETİCİ&quot;)
+    print(&quot;========================================&quot;)
+    print()
+
+    for index, topic in enumerate(topics, 1):
+
+        print(f&quot;{index}. {topic}&quot;)</code></pre>
+
+</section>
+
+<section class="file-card">
+
+<div class="file-title">
+📄 app/content/content_engine.py
+</div>
+
+<pre><code class="language-python">from openai import OpenAI
+from pathlib import Path
+import json
+import re
+
+from config.settings import OPENAI_API_KEY
+
+from app.content.content_editor import evaluate_content
+from app.content.image_pipeline import generate_images_from_prompt_file
+from app.content.tts_generator import generate_voice
+from app.content.video_creator import create_video
+from app.content.transcriber import transcribe_audio
+from app.content.subtitle_engine import create_subtitle
+from app.content.video_pipeline import add_subtitles
+
+from app.analytics.database import add_video
+from app.analytics.analysis_scheduler import (
+    run_analysis_if_needed
+)
+
+
+BASE_DIR = Path(__file__).resolve().parents[2]
+
+STRATEGY_FILE = (
+    BASE_DIR
+    / &quot;data&quot;
+    / &quot;current_strategy.json&quot;
+)
+
+SHORTS_DIR = BASE_DIR / &quot;shorts&quot;
+
+
+def load_strategy():
+
+    if not STRATEGY_FILE.exists():
+        return None
+
+    try:
+
+        with open(
+            STRATEGY_FILE,
+            &quot;r&quot;,
+            encoding=&quot;utf-8&quot;
+        ) as file:
+
+            return json.load(file)
+
+    except Exception as error:
+
+        print(
+            f&quot;⚠️ Strateji okunamadı: {error}&quot;
+        )
+
+        return None
+
+
+def get_next_video_number():
+
+    SHORTS_DIR.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    numbers = []
+
+    for path in SHORTS_DIR.iterdir():
+
+        if not path.is_dir():
+            continue
+
+        match = re.fullmatch(
+            r&quot;(\d+)&quot;,
+            path.name
+        )
+
+        if match:
+
+            numbers.append(
+                int(match.group(1))
+            )
+
+    if not numbers:
+        return 1
+
+    return max(numbers) + 1
+
+
+def extract_voice_text(content):
+
+    lines = content.splitlines()
+
+    sections = {
+        &quot;HOOK:&quot;,
+        &quot;GİRİŞ:&quot;,
+        &quot;GELİŞME:&quot;,
+        &quot;KAPANIŞ:&quot;
+    }
+
+    voice_lines = []
+
+    for line in lines:
+
+        clean = line.strip()
+
+        if not clean:
+            continue
+
+        if clean.upper() in sections:
+            continue
+
+        voice_lines.append(clean)
+
+    return &quot;\n&quot;.join(voice_lines).strip()
+
+
+def create_short(topic):
+
+    print()
+    print(&quot;========================================&quot;)
+    print(&quot;🚀 CREATOR ENGINE&quot;)
+    print(&quot;========================================&quot;)
+    print()
+
+    # ========================================================
+    # ANALİZ ZAMANINI KONTROL ET
+    # ========================================================
+
+    run_analysis_if_needed()
+
+    # ========================================================
+    # MEVCUT STRATEJİ
+    # ========================================================
+
+    strategy = load_strategy()
+
+    if strategy is None:
+
+        print()
+        print(
+            &quot;⚠️ Kayıtlı strateji bulunamadı.&quot;
+        )
+
+    else:
+
+        print()
+        print(
+            &quot;♻️ Mevcut AI stratejisi kullanılacak.&quot;
+        )
+
+    # ========================================================
+    # OPENAI
+    # ========================================================
+
+    client = OpenAI(
+        api_key=OPENAI_API_KEY
+    )
+
+    # ========================================================
+    # STRATEJİ METNİ
+    # ========================================================
+
+    if strategy:
+
+        strategy_text = json.dumps(
+            strategy,
+            ensure_ascii=False,
+            indent=2
+        )
+
+    else:
+
+        strategy_text = (
+            &quot;Henüz kayıtlı bir strateji yok.&quot;
+        )
+
+    # ========================================================
+    # SENARYO
+    # ========================================================
+
+    prompt = f&quot;&quot;&quot;
+Sen Creator Engine&#x27;in profesyonel YouTube Shorts
+senaryo motorusun.
+
+KONU:
+{topic}
+
+GÜNCEL AI STRATEJİSİ:
+{strategy_text}
+
+KURALLAR:
+
+- Tek ana fikir anlat.
+- Hedef süre 21-30 saniye.
+- İlk 1-2 saniyede güçlü hook kullan.
+- Uzun giriş yapma.
+- Doğal Türkçe kullan.
+- Kısa ve akıcı cümleler kullan.
+- Gereksiz tekrar yapma.
+- Videonun ortasında şaşırtıcı veya güçlü bir bilgi ver.
+- Sonunda güçlü ve net bir sonuç ver.
+- &quot;Merhaba arkadaşlar&quot;, &quot;bugün sizlere&quot; gibi girişler kullanma.
+- &quot;Abone ol&quot;, &quot;like at&quot; gibi standart kapanışlar kullanma.
+
+ÇIKTI FORMATI:
+
+HOOK:
+...
+
+GİRİŞ:
+...
+
+GELİŞME:
+...
+
+KAPANIŞ:
+...
+
+SADECE SENARYOYU ÜRET.
+Türkçe yaz.
+&quot;&quot;&quot;
+
+    try:
+
+        response = client.responses.create(
+            model=&quot;gpt-5.4-mini&quot;,
+            input=prompt
+        )
+
+        content = response.output_text.strip()
+
+    except Exception as error:
+
+        print()
+        print(
+            f&quot;❌ Senaryo oluşturulamadı: {error}&quot;
+        )
+
+        return None
+
+    # ========================================================
+    # İÇERİK DEĞERLENDİRME
+    # ========================================================
+
+    try:
+
+        evaluation = evaluate_content(
+            content
+        )
+
+    except Exception as error:
+
+        print(
+            f&quot;⚠️ İçerik değerlendirme hatası: {error}&quot;
+        )
+
+        return False
+
+    # ========================================================
+    # AI EDİTÖR KARARI
+    # ========================================================
+
+    editor_result, decision = evaluation
+
+    if decision != &quot;ONAY&quot;:
+
+        print()
+        print(&quot;========================================&quot;)
+        print(&quot;🛑 VİDEO ÜRETİMİ DURDURULDU&quot;)
+        print(&quot;========================================&quot;)
+        print()
+
+        print(
+            &quot;🎯 AI Editör Kararı:&quot;,
+            decision
+        )
+
+        print(
+            &quot;❌ İçerik üretim kriterlerini geçemedi.&quot;
+        )
+
+        print(
+            &quot;➡️ Görsel, ses, video ve altyazı üretimi yapılmayacak.&quot;
+        )
+
+        print()
+
+        return False
+
+    print()
+    print(
+        &quot;🎯 AI Editör Kararı: ONAY&quot;
+    )
+
+    # ========================================================
+    # SESLENDİRME METNİ
+    # ========================================================
+
+    voice_text = extract_voice_text(
+        content
+    )
+
+    if not voice_text:
+
+        print(
+            &quot;❌ Seslendirme metni oluşturulamadı.&quot;
+        )
+
+        return None
+
+    # ========================================================
+    # SHORTS KLASÖRÜ
+    # ========================================================
+
+    video_number = get_next_video_number()
+
+    output_folder = (
+        SHORTS_DIR
+        / f&quot;{video_number:03d}&quot;
+    )
 
     output_folder.mkdir(
         parents=True,
         exist_ok=True
     )
 
-    text = prompt_file.read_text(
+    print()
+    print(
+        f&quot;📁 Shorts klasörü: {output_folder}&quot;
+    )
+
+    # ========================================================
+    # YOUTUBE METADATA
+    # ========================================================
+
+    print()
+    print(&quot;=== YOUTUBE METADATA OLUŞTURMA ===&quot;)
+
+    metadata_prompt = f&quot;&quot;&quot;
+Sen profesyonel bir YouTube Shorts metadata uzmanısın.
+
+Aşağıdaki Shorts senaryosunu analiz et.
+
+SENARYO:
+
+{content}
+
+Aşağıdaki bölümleri TAM OLARAK oluştur:
+
+[BASLIK]
+Merak uyandıran, tıklanabilir fakat yanıltıcı olmayan
+bir YouTube Shorts başlığı.
+Kısa ve doğal Türkçe kullan.
+Başlık tek satır olsun.
+
+[ACIKLAMA]
+Videonun içeriğini doğal şekilde açıklayan kısa bir
+YouTube açıklaması oluştur.
+Abartılı veya yanıltıcı ifadeler kullanma.
+
+[HASHTAG]
+Konuyla doğrudan alakalı 5-8 hashtag oluştur.
+Hashtagleri tek satırda yaz.
+
+SADECE bu üç bölümü oluştur.
+&quot;&quot;&quot;
+
+    try:
+
+        metadata_response = client.responses.create(
+            model=&quot;gpt-5.4-mini&quot;,
+            input=metadata_prompt
+        )
+
+        metadata_content = (
+            metadata_response
+            .output_text
+            .strip()
+        )
+
+        metadata_sections = {
+            &quot;BASLIK&quot;: &quot;&quot;,
+            &quot;ACIKLAMA&quot;: &quot;&quot;,
+            &quot;HASHTAG&quot;: &quot;&quot;,
+        }
+
+        current_metadata_section = None
+
+        for line in metadata_content.splitlines():
+
+            line = line.strip()
+
+            if line == &quot;[BASLIK]&quot;:
+
+                current_metadata_section = &quot;BASLIK&quot;
+
+            elif line == &quot;[ACIKLAMA]&quot;:
+
+                current_metadata_section = &quot;ACIKLAMA&quot;
+
+            elif line == &quot;[HASHTAG]&quot;:
+
+                current_metadata_section = &quot;HASHTAG&quot;
+
+            elif current_metadata_section and line:
+
+                metadata_sections[
+                    current_metadata_section
+                ] += line + &quot;\n&quot;
+
+        empty_metadata = [
+            section
+            for section, text
+            in metadata_sections.items()
+            if not text.strip()
+        ]
+
+        if empty_metadata:
+
+            raise ValueError(
+                &quot;Eksik metadata bölümleri: &quot;
+                + &quot;, &quot;.join(empty_metadata)
+            )
+
+        metadata_files = {
+            &quot;BASLIK&quot;: &quot;baslik.txt&quot;,
+            &quot;ACIKLAMA&quot;: &quot;aciklama.txt&quot;,
+            &quot;HASHTAG&quot;: &quot;hashtag.txt&quot;,
+        }
+
+        for section, filename in metadata_files.items():
+
+            metadata_file = (
+                output_folder
+                / filename
+            )
+
+            metadata_file.write_text(
+                metadata_sections[section].strip(),
+                encoding=&quot;utf-8&quot;
+            )
+
+        print()
+        print(
+            &quot;✅ YouTube metadata hazır.&quot;
+        )
+
+        print(
+            f&quot;📝 Başlık: &quot;
+            f&quot;{metadata_sections[&#x27;BASLIK&#x27;].strip()}&quot;
+        )
+
+        print(
+            f&quot;📄 Açıklama kaydedildi: &quot;
+            f&quot;{output_folder / &#x27;aciklama.txt&#x27;}&quot;
+        )
+
+        print(
+            f&quot;#️⃣ Hashtag kaydedildi: &quot;
+            f&quot;{output_folder / &#x27;hashtag.txt&#x27;}&quot;
+        )
+
+    except Exception as error:
+
+        print()
+        print(
+            f&quot;⚠️ YouTube metadata oluşturulamadı: {error}&quot;
+        )
+
+        return None
+
+    # ========================================================
+    # SENARYO
+    # ========================================================
+
+    script_file = (
+        output_folder
+        / &quot;senaryo.txt&quot;
+    )
+
+    script_file.write_text(
+        content,
         encoding=&quot;utf-8&quot;
     )
 
-    prompts = [
-        prompt.strip()
-        for prompt in text.splitlines()
-        if prompt.strip()
-    ]
+    # ========================================================
+    # SES METNİ
+    # ========================================================
 
-    if not prompts:
-
-        raise ValueError(
-            &quot;Görsel promptu bulunamadı.&quot;
-        )
-
-    original_count = len(prompts)
-
-    prompts = prompts[:MAX_IMAGES]
-
-    if original_count &gt; MAX_IMAGES:
-
-        print()
-        print(
-            f&quot;⚠️ {original_count} prompt bulundu.&quot;
-        )
-
-        print(
-            f&quot;⚠️ Maksimum {MAX_IMAGES} görsel işlenecek.&quot;
-        )
-
-    print()
-    print(
-        f&quot;🎨 Toplam {len(prompts)} görsel üretilecek.&quot;
+    voice_text_file = (
+        output_folder
+        / &quot;ses_metni.txt&quot;
     )
 
-    generated_files = []
+    voice_text_file.write_text(
+        voice_text,
+        encoding=&quot;utf-8&quot;
+    )
 
-    for index, prompt in enumerate(
-        prompts,
-        start=1
-    ):
+    # ========================================================
+    # GÖRSEL PROMPTLARI
+    # ========================================================
+
+    prompt_file = (
+        output_folder
+        / &quot;gorsel_prompt.txt&quot;
+    )
+
+    try:
+
+        image_prompt_response = client.responses.create(
+            model=&quot;gpt-5.4-mini&quot;,
+            input=f&quot;&quot;&quot;
+Aşağıdaki YouTube Shorts senaryosu için
+TAM OLARAK 5 adet görsel üretim promptu oluştur.
+
+ÇOK ÖNEMLİ:
+
+- Tam olarak 5 prompt yaz.
+- 5&#x27;ten fazla yazma.
+- Her prompt bir sahneyi temsil etmeli.
+- Her prompt tek satırda olmalı.
+- Numaralandırma kullanma.
+- Açıklama yazma.
+- Sadece 5 görsel promptu döndür.
+
+Görsel stil:
+- Gerçekçi
+- Sinematik
+- Belgesel kalitesinde
+- Dikey Shorts videosuna uygun kompozisyon
+- Güçlü görsel anlatım
+- Metin, logo veya watermark kullanma
+
+SENARYO:
+
+{voice_text}
+&quot;&quot;&quot;
+        )
+
+        image_prompts = (
+            image_prompt_response
+            .output_text
+            .strip()
+        )
+
+        prompt_lines = [
+            line.strip()
+            for line in image_prompts.splitlines()
+            if line.strip()
+        ]
+
+        prompt_lines = [
+            re.sub(
+                r&quot;^\s*(?:\d+[\.\)\-:]|\-)\s*&quot;,
+                &quot;&quot;,
+                line
+            ).strip()
+            for line in prompt_lines
+        ]
+
+        prompt_lines = [
+            line
+            for line in prompt_lines
+            if line
+        ]
+
+        prompt_lines = prompt_lines[:5]
+
+        if len(prompt_lines) != 5:
+
+            raise ValueError(
+                f&quot;AI tam olarak 5 görsel promptu üretmedi. &quot;
+                f&quot;Alınan: {len(prompt_lines)}&quot;
+            )
+
+        prompt_file.write_text(
+            &quot;\n&quot;.join(prompt_lines),
+            encoding=&quot;utf-8&quot;
+        )
 
         print()
         print(
-            f&quot;🎨 Görsel {index}/{len(prompts)} oluşturuluyor...&quot;
+            &quot;🎨 Tam 5 görsel promptu hazır.&quot;
         )
 
-        output_path = (
-            output_folder
-            / f&quot;{index:02d}.png&quot;
-        )
-
-        generate_image(
-            prompt,
-            output_path
-        )
+    except Exception as error:
 
         print(
-            f&quot;✅ Kaydedildi: {output_path}&quot;
+            f&quot;⚠️ Görsel promptları oluşturulamadı: {error}&quot;
         )
 
-        generated_files.append(
-            output_path
+        return None
+
+    # ========================================================
+    # GÖRSELLER
+    # ========================================================
+
+    images_folder = (
+        output_folder
+        / &quot;gorseller&quot;
+    )
+
+    try:
+
+        generate_images_from_prompt_file(
+            prompt_file,
+            images_folder
         )
+
+    except Exception as error:
+
+        print(
+            f&quot;⚠️ Görsel üretim hatası: {error}&quot;
+        )
+
+        return None
+
+    # ========================================================
+    # SES
+    # ========================================================
+
+    audio_file = (
+        output_folder
+        / &quot;ses.mp3&quot;
+    )
+
+    try:
+
+        generate_voice(
+            voice_text,
+            audio_file
+        )
+
+    except Exception as error:
+
+        print(
+            f&quot;⚠️ Ses üretim hatası: {error}&quot;
+        )
+
+        return None
+
+    # ========================================================
+    # VİDEO
+    # ========================================================
+
+    video_file = (
+        output_folder
+        / &quot;video.mp4&quot;
+    )
+
+    try:
+
+        create_video(
+            images_folder,
+            audio_file,
+            video_file
+        )
+
+    except Exception as error:
+
+        print(
+            f&quot;⚠️ Video oluşturma hatası: {error}&quot;
+        )
+
+        return None
+
+    # ========================================================
+    # TRANSKRİPT
+    # ========================================================
+
+    transcript_file = (
+        output_folder
+        / &quot;transkript.txt&quot;
+    )
+
+    try:
+
+        transcript_result = transcribe_audio(
+            audio_file
+        )
+
+        transcript_text = getattr(
+            transcript_result,
+            &quot;text&quot;,
+            &quot;&quot;
+        )
+
+        if not transcript_text:
+
+            raise ValueError(
+                &quot;Transkript metni boş.&quot;
+            )
+
+        transcript_file.write_text(
+            transcript_text.strip(),
+            encoding=&quot;utf-8&quot;
+        )
+
+        print()
+        print(
+            f&quot;✅ Transkript kaydedildi: &quot;
+            f&quot;{transcript_file}&quot;
+        )
+
+    except Exception as error:
+
+        print(
+            f&quot;⚠️ Transkript hatası: {error}&quot;
+        )
+
+        return None
+
+    # ========================================================
+    # ALTYAZI
+    # ========================================================
+
+    subtitle_file = (
+        output_folder
+        / &quot;altyazi_ai.srt&quot;
+    )
+
+    try:
+
+        create_subtitle(
+            transcript_file=transcript_file,
+            audio_file=audio_file,
+            output_file=subtitle_file
+        )
+
+    except Exception as error:
+
+        print(
+            f&quot;⚠️ Altyazı oluşturma hatası: {error}&quot;
+        )
+
+        return None
+
+    # ========================================================
+    # ALTYAZIYI VİDEOYA EKLE
+    # ========================================================
+
+    final_video = (
+        output_folder
+        / &quot;video_final.mp4&quot;
+    )
+
+    try:
+
+        add_subtitles(
+            video_file=video_file,
+            subtitle_file=subtitle_file,
+            output_file=final_video
+        )
+
+    except Exception as error:
+
+        print(
+            f&quot;⚠️ Altyazı videoya eklenemedi: {error}&quot;
+        )
+
+        return None
+
+    # ========================================================
+    # DATABASE
+    # ========================================================
+
+    try:
+
+        add_video(
+            video_number=video_number,
+            topic=topic,
+        )
+
+    except Exception as error:
+
+        print(
+            f&quot;⚠️ Video veritabanına eklenemedi: {error}&quot;
+        )
+
+    # ========================================================
+    # SONUÇ
+    # ========================================================
 
     print()
-    print(&quot;🎉 GÖRSELLER TAMAMLANDI!&quot;)
+    print(&quot;========================================&quot;)
+    print(&quot;✅ SHORTS OLUŞTURULDU&quot;)
+    print(&quot;========================================&quot;)
+    print()
 
-    return generated_files</code></pre>
+    print(
+        f&quot;🎬 Video No: #{video_number:03d}&quot;
+    )
+
+    print(
+        f&quot;📁 Klasör: {output_folder}&quot;
+    )
+
+    print(
+        f&quot;📝 Başlık: &quot;
+        f&quot;{output_folder / &#x27;baslik.txt&#x27;}&quot;
+    )
+
+    print(
+        f&quot;📄 Açıklama: &quot;
+        f&quot;{output_folder / &#x27;aciklama.txt&#x27;}&quot;
+    )
+
+    print(
+        f&quot;#️⃣ Hashtag: &quot;
+        f&quot;{output_folder / &#x27;hashtag.txt&#x27;}&quot;
+    )
+
+    print(
+        f&quot;🎨 Görseller: {images_folder}&quot;
+    )
+
+    print(
+        f&quot;🎙️ Ses: {audio_file}&quot;
+    )
+
+    print(
+        f&quot;📝 Transkript: {transcript_file}&quot;
+    )
+
+    print(
+        f&quot;💬 Altyazı: {subtitle_file}&quot;
+    )
+
+    print(
+        f&quot;🎥 Final: {final_video}&quot;
+    )
+
+    print()
+
+    return {
+        &quot;video_number&quot;: video_number,
+        &quot;topic&quot;: topic,
+        &quot;script&quot;: content,
+        &quot;voice_text&quot;: voice_text,
+        &quot;folder&quot;: str(output_folder),
+        &quot;evaluation&quot;: evaluation,
+        &quot;title_file&quot;: str(
+            output_folder / &quot;baslik.txt&quot;
+        ),
+        &quot;description_file&quot;: str(
+            output_folder / &quot;aciklama.txt&quot;
+        ),
+        &quot;hashtag_file&quot;: str(
+            output_folder / &quot;hashtag.txt&quot;
+        ),
+        &quot;final_video&quot;: str(final_video)
+    }</code></pre>
 
 </section>
 
 <section class="file-card">
 
 <div class="file-title">
-📄 app/content/tts_generator.py
+📄 app/content/subtitle_engine.py
 </div>
 
-<pre><code class="language-python">from openai import OpenAI
+<pre><code class="language-python">from pathlib import Path
+import json
+import re
+import subprocess
+
+from openai import OpenAI
 
 from config.settings import OPENAI_API_KEY
 
@@ -3828,214 +5177,288 @@ from config.settings import OPENAI_API_KEY
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 
-def generate_voice(text, output_file):
+# ============================================================
+# AI ALTYAZI PARÇALARINI OLUŞTUR
+# ============================================================
 
-    print()
-    print(&quot;🎙️ AI SES ÜRETİMİ&quot;)
-    print(&quot;🔊 Ses oluşturuluyor...&quot;)
+def create_ai_captions(text):
 
-    response = client.audio.speech.create(
-        model=&quot;gpt-4o-mini-tts&quot;,
-        voice=&quot;alloy&quot;,
-        input=text,
-        response_format=&quot;mp3&quot;,
+    response = client.responses.create(
+        model=&quot;gpt-5.4-mini&quot;,
+        input=f&quot;&quot;&quot;
+Aşağıdaki Türkçe konuşma metnini YouTube Shorts altyazıları için
+doğal ve okunabilir kısa parçalara böl.
+
+KURALLAR:
+
+- Metni yaklaşık 14-18 anlamlı altyazı bloğuna böl.
+- Her blok yaklaşık 4-9 kelime olabilir.
+- Kelime sayısından çok anlam bütünlüğünü önemse.
+- Doğal konuşma ritmini koru.
+- Birbirine bağlı kelimeleri ayırma.
+- &quot;mi?&quot;, &quot;mı?&quot;, &quot;mu?&quot;, &quot;mü?&quot; gibi soru eklerini asla tek başına bırakma.
+- &quot;ve&quot;, &quot;ama&quot;, &quot;fakat&quot;, &quot;ancak&quot;, &quot;çünkü&quot;, &quot;ile&quot; gibi bağlaçları
+  anlamsız şekilde ayırma.
+- Çok kısa anlamsız parçalar oluşturma.
+- Çok uzun parçalar oluşturma.
+- Noktalama işaretlerini koru.
+- Metindeki hiçbir kelimeyi değiştirme.
+- Hiçbir kelimeyi silme.
+- Yeni kelime ekleme.
+- Kelimelerin sırasını değiştirme.
+
+ÖNCELİK:
+
+1. Anlam bütünlüğü
+2. Doğal konuşma ritmi
+3. Okunabilirlik
+4. Yaklaşık 14-18 blok
+
+SADECE JSON DÖNDÜR.
+
+FORMAT:
+
+{{
+    &quot;captions&quot;: [
+        &quot;parça 1&quot;,
+        &quot;parça 2&quot;,
+        &quot;parça 3&quot;
+    ]
+}}
+
+METİN:
+
+{text}
+&quot;&quot;&quot;,
     )
 
-    response.write_to_file(output_file)
+    raw = response.output_text.strip()
 
-    print()
-    print(f&quot;✅ SES OLUŞTURULDU&quot;)
-    print(f&quot;Dosya: {output_file}&quot;)</code></pre>
+    raw = re.sub(
+        r&quot;^```json\s*&quot;,
+        &quot;&quot;,
+        raw,
+        flags=re.IGNORECASE
+    )
 
-</section>
+    raw = re.sub(
+        r&quot;\s*```$&quot;,
+        &quot;&quot;,
+        raw
+    )
 
-<section class="file-card">
+    data = json.loads(raw)
 
-<div class="file-title">
-📄 app/core/batch_engine.py
-</div>
+    captions = data.get(&quot;captions&quot;, [])
 
-<pre><code class="language-python">from app.content.content_engine import create_short
-
-
-# ============================================================
-# CREATOR ENGINE — ÇOKLU SHORTS ÜRETİMİ
-# ============================================================
-
-def main():
-
-    print()
-    print(&quot;========================================&quot;)
-    print(&quot;🎬 CREATOR ENGINE — ÇOKLU ÜRETİM&quot;)
-    print(&quot;========================================&quot;)
-    print()
-
-    try:
-
-        count = int(
-            input(
-                &quot;Kaç video üretilecek: &quot;
-            ).strip()
+    if not captions:
+        raise ValueError(
+            &quot;AI altyazı parçaları oluşturamadı.&quot;
         )
 
-    except ValueError:
+    return captions
 
-        print()
-        print(&quot;❌ Geçerli bir sayı girilmedi.&quot;)
-        return
 
-    if count &lt;= 0:
+# ============================================================
+# SES SÜRESİ
+# ============================================================
 
-        print()
-        print(&quot;❌ Video sayısı 0&#x27;dan büyük olmalı.&quot;)
-        return
+def get_audio_duration(audio_file):
 
-    print()
-    print(
-        f&quot;📦 {count} video için konu girilecek.&quot;
+    result = subprocess.run(
+        [
+            &quot;ffprobe&quot;,
+            &quot;-v&quot;,
+            &quot;error&quot;,
+            &quot;-show_entries&quot;,
+            &quot;format=duration&quot;,
+            &quot;-of&quot;,
+            &quot;default=noprint_wrappers=1:nokey=1&quot;,
+            str(audio_file),
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
     )
+
+    return float(result.stdout.strip())
+
+
+# ============================================================
+# SRT ZAMAN FORMATI
+# ============================================================
+
+def format_srt_time(seconds):
+
+    milliseconds = int(round(seconds * 1000))
+
+    hours = milliseconds // 3_600_000
+    milliseconds %= 3_600_000
+
+    minutes = milliseconds // 60_000
+    milliseconds %= 60_000
+
+    seconds = milliseconds // 1000
+    milliseconds %= 1000
+
+    return (
+        f&quot;{hours:02d}:&quot;
+        f&quot;{minutes:02d}:&quot;
+        f&quot;{seconds:02d},&quot;
+        f&quot;{milliseconds:03d}&quot;
+    )
+
+
+# ============================================================
+# SRT OLUŞTUR
+# ============================================================
+
+def create_subtitle(
+    transcript_file,
+    audio_file,
+    output_file,
+):
+
+    transcript_file = Path(transcript_file)
+    audio_file = Path(audio_file)
+    output_file = Path(output_file)
+
+    if not transcript_file.exists():
+        raise FileNotFoundError(
+            f&quot;Transkript bulunamadı: {transcript_file}&quot;
+        )
+
+    if not audio_file.exists():
+        raise FileNotFoundError(
+            f&quot;Ses dosyası bulunamadı: {audio_file}&quot;
+        )
+
+    text = transcript_file.read_text(
+        encoding=&quot;utf-8&quot;
+    ).strip()
+
+    if not text:
+        raise ValueError(
+            &quot;Transkript boş.&quot;
+        )
+
+    duration = get_audio_duration(
+        audio_file
+    )
+
     print()
+    print(&quot;=== AI ALTYAZI MOTORU ===&quot;)
+    print(
+        f&quot;🎙️ Ses süresi: {duration:.2f} saniye&quot;
+    )
 
-    topics = []
+    print(
+        &quot;🤖 AI doğal altyazı bloklarını oluşturuyor...&quot;
+    )
 
-    for number in range(1, count + 1):
+    captions = create_ai_captions(
+        text
+    )
 
-        while True:
+    print(
+        f&quot;📝 {len(captions)} altyazı bloğu oluşturuldu.&quot;
+    )
 
-            topic = input(
-                f&quot;{number}. Konu: &quot;
-            ).strip()
+    # --------------------------------------------------------
+    # KARAKTER TOPLAMI
+    # --------------------------------------------------------
 
-            if topic:
+    total_characters = sum(
+        len(caption)
+        for caption in captions
+    )
 
-                topics.append(topic)
-                break
+    if total_characters &lt;= 0:
+        raise ValueError(
+            &quot;Altyazı karakter sayısı geçersiz.&quot;
+        )
 
-            print(
-                &quot;⚠️ Konu boş bırakılamaz.&quot;
-            )
+    # --------------------------------------------------------
+    # ZAMANLAMA
+    # --------------------------------------------------------
 
-    print()
-    print(&quot;========================================&quot;)
-    print(&quot;🚀 ÇOKLU ÜRETİM BAŞLIYOR&quot;)
-    print(&quot;========================================&quot;)
-    print()
+    current_time = 0.0
 
-    success_count = 0
-    failed_count = 0
+    srt_blocks = []
 
-    for index, topic in enumerate(
-        topics,
+    for index, caption in enumerate(
+        captions,
         start=1
     ):
 
-        print()
-        print(&quot;========================================&quot;)
-        print(
-            f&quot;🎬 VİDEO {index}/{count}&quot;
+        ratio = (
+            len(caption)
+            / total_characters
         )
-        print(
-            f&quot;📌 KONU: {topic}&quot;
+
+        segment_duration = (
+            duration * ratio
         )
-        print(&quot;========================================&quot;)
-        print()
 
-        try:
+        start_time = current_time
 
-            result = create_short(
-                topic
+        if index == len(captions):
+
+            end_time = duration
+
+        else:
+
+            end_time = (
+                current_time
+                + segment_duration
             )
 
-            if result is False:
+        srt_blocks.append(
+            f&quot;{index}\n&quot;
+            f&quot;{format_srt_time(start_time)} --&gt; &quot;
+            f&quot;{format_srt_time(end_time)}\n&quot;
+            f&quot;{caption}\n&quot;
+        )
 
-                failed_count += 1
+        current_time = end_time
 
-                print()
-                print(
-                    &quot;❌ Bu video oluşturulamadı.&quot;
-                )
+    # --------------------------------------------------------
+    # KAYDET
+    # --------------------------------------------------------
 
-            else:
-
-                success_count += 1
-
-                print()
-                print(
-                    &quot;✅ Bu video tamamlandı.&quot;
-                )
-
-        except Exception as error:
-
-            failed_count += 1
-
-            print()
-            print(
-                &quot;❌ VİDEO ÜRETİM HATASI&quot;
-            )
-
-            print(
-                f&quot;Hata: {error}&quot;
-            )
-
-            print()
-            print(
-                &quot;➡️ Sonraki videoya geçiliyor...&quot;
-            )
-
-    print()
-    print(&quot;========================================&quot;)
-    print(&quot;📊 ÇOKLU ÜRETİM TAMAMLANDI&quot;)
-    print(&quot;========================================&quot;)
-    print()
-
-    print(
-        f&quot;✅ Başarılı: {success_count}&quot;
+    output_file.parent.mkdir(
+        parents=True,
+        exist_ok=True
     )
 
-    print(
-        f&quot;❌ Başarısız: {failed_count}&quot;
-    )
-
-    print(
-        f&quot;📦 Toplam: {count}&quot;
+    output_file.write_text(
+        &quot;\n&quot;.join(srt_blocks),
+        encoding=&quot;utf-8&quot;
     )
 
     print()
-    print(&quot;🧠 Analytics kayıtları güncellendi.&quot;)
+    print(&quot;=== ALTYAZI BLOKLARI ===&quot;)
+
+    for index, caption in enumerate(
+        captions,
+        start=1
+    ):
+        print(
+            f&quot;{index:02d}: {caption}&quot;
+        )
+
     print()
+    print(&quot;✅ AI ALTYAZI OLUŞTURULDU&quot;)
+    print(f&quot;Dosya: {output_file}&quot;)
 
-
-if __name__ == &quot;__main__&quot;:
-
-    main()</code></pre>
+    return output_file</code></pre>
 
 </section>
 
 <section class="file-card">
 
 <div class="file-title">
-📄 app/core/image_pipeline_test.py
-</div>
-
-<pre><code class="language-python">from app.content.image_pipeline import generate_images_from_prompt_file
-
-
-prompt_file = &quot;shorts/004/gorsel_prompt.txt&quot;
-
-output_folder = &quot;shorts/004/gorseller&quot;
-
-
-generate_images_from_prompt_file(
-    prompt_file,
-    output_folder
-)</code></pre>
-
-</section>
-
-<section class="file-card">
-
-<div class="file-title">
-📄 app/core/subtitle_test.py
+📄 app/content/video_creator.py
 </div>
 
 <pre><code class="language-python">from pathlib import Path
@@ -4043,187 +5466,923 @@ import subprocess
 
 
 # ============================================================
-# AYARLAR
+# SES SÜRESİ
 # ============================================================
 
-VIDEO_FOLDER = Path(&quot;shorts/007&quot;)
+def get_audio_duration(audio_file):
 
-VIDEO_FILE = VIDEO_FOLDER / &quot;video.mp4&quot;
-SRT_FILE = VIDEO_FOLDER / &quot;altyazi_ai.srt&quot;
-
-OUTPUT_VIDEO = VIDEO_FOLDER / &quot;video_final.mp4&quot;
-
-
-# ============================================================
-# DOSYA KONTROLLERİ
-# ============================================================
-
-print()
-print(&quot;=== PROFESYONEL ALTYAZI TESTİ ===&quot;)
-
-if not VIDEO_FILE.exists():
-    raise FileNotFoundError(
-        f&quot;Video bulunamadı: {VIDEO_FILE}&quot;
+    result = subprocess.run(
+        [
+            &quot;ffprobe&quot;,
+            &quot;-v&quot;,
+            &quot;error&quot;,
+            &quot;-show_entries&quot;,
+            &quot;format=duration&quot;,
+            &quot;-of&quot;,
+            &quot;default=noprint_wrappers=1:nokey=1&quot;,
+            str(audio_file),
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
     )
 
-if not SRT_FILE.exists():
-    raise FileNotFoundError(
-        f&quot;Altyazı bulunamadı: {SRT_FILE}&quot;
+    return float(result.stdout.strip())
+
+
+# ============================================================
+# GÖRSELLER + SES → VİDEO
+# ============================================================
+
+def create_video(
+    image_folder,
+    audio_file,
+    output_file,
+):
+
+    image_folder = Path(image_folder)
+    audio_file = Path(audio_file)
+    output_file = Path(output_file)
+
+    # --------------------------------------------------------
+    # DOSYA KONTROLLERİ
+    # --------------------------------------------------------
+
+    if not image_folder.exists():
+        raise FileNotFoundError(
+            f&quot;Görsel klasörü bulunamadı: {image_folder}&quot;
+        )
+
+    if not audio_file.exists():
+        raise FileNotFoundError(
+            f&quot;Ses dosyası bulunamadı: {audio_file}&quot;
+        )
+
+    images = sorted(
+        image_folder.glob(&quot;*.png&quot;)
     )
 
-
-print()
-print(&quot;🎬 Video bulundu:&quot;)
-print(VIDEO_FILE)
-
-print()
-print(&quot;📝 AI altyazı bulundu:&quot;)
-print(SRT_FILE)
-
-
-# ============================================================
-# SRT YOLUNU WINDOWS / FFMPEG FORMATINA ÇEVİR
-# ============================================================
-
-srt_path = SRT_FILE.resolve()
-
-# Windows yolunu FFmpeg subtitles filtresi için düzenle
-srt_filter_path = str(srt_path).replace(&quot;\\&quot;, &quot;/&quot;)
-
-# C: -&gt; C\:
-if &quot;:&quot; in srt_filter_path:
-    srt_filter_path = srt_filter_path.replace(&quot;:&quot;, &quot;\\:&quot;)
-
-
-# ============================================================
-# ALTYAZI STİLİ
-# ============================================================
-
-subtitle_style = (
-    &quot;FontName=Arial,&quot;
-    &quot;FontSize=10,&quot;
-    &quot;Bold=1,&quot;
-    &quot;PrimaryColour=&amp;H00FFFFFF,&quot;
-    &quot;OutlineColour=&amp;H00000000,&quot;
-    &quot;BorderStyle=1,&quot;
-    &quot;Outline=2,&quot;
-    &quot;Shadow=1,&quot;
-    &quot;Alignment=8,&quot;
-    &quot;MarginV=220&quot;
-)
-
-# ============================================================
-# FFMPEG KOMUTU
-# ============================================================
-
-subtitle_filter = (
-    f&quot;subtitles=&#x27;{srt_filter_path}&#x27;&quot;
-    f&quot;:force_style=&#x27;{subtitle_style}&#x27;&quot;
-)
-
-
-command = [
-    &quot;ffmpeg&quot;,
-    &quot;-y&quot;,
-
-    &quot;-i&quot;,
-    str(VIDEO_FILE),
-
-    &quot;-vf&quot;,
-    subtitle_filter,
+    if not images:
+        raise FileNotFoundError(
+            f&quot;Görsel bulunamadı: {image_folder}&quot;
+        )
 
     # --------------------------------------------------------
-    # VİDEO
+    # SES SÜRESİNİ ÖLÇ
     # --------------------------------------------------------
 
-    &quot;-c:v&quot;,
-    &quot;libx264&quot;,
-
-    &quot;-preset&quot;,
-    &quot;medium&quot;,
-
-    &quot;-crf&quot;,
-    &quot;20&quot;,
+    audio_duration = get_audio_duration(
+        audio_file
+    )
 
     # --------------------------------------------------------
-    # SES
+    # GÖRSELLERİN SÜRESİNİ HESAPLA
     # --------------------------------------------------------
 
-    &quot;-c:a&quot;,
-    &quot;copy&quot;,
+    image_duration = (
+        audio_duration / len(images)
+    )
+
+    print()
+    print(&quot;=== VİDEO OLUŞTURMA ===&quot;)
+    print(
+        f&quot;🎨 Görsel sayısı: {len(images)}&quot;
+    )
+    print(
+        f&quot;🎙️ Ses süresi: {audio_duration:.2f} saniye&quot;
+    )
+    print(
+        f&quot;⏱️ Görsel başına süre: &quot;
+        f&quot;{image_duration:.2f} saniye&quot;
+    )
+    print(
+        &quot;🎬 Video oluşturuluyor...&quot;
+    )
 
     # --------------------------------------------------------
-    # ÇIKIŞ
+    # GEÇİCİ GÖRSEL LİSTESİ
     # --------------------------------------------------------
 
-    str(OUTPUT_VIDEO),
-]
+    concat_file = (
+        image_folder.parent
+        / &quot;image_list.txt&quot;
+    )
 
+    with open(
+        concat_file,
+        &quot;w&quot;,
+        encoding=&quot;utf-8&quot;
+    ) as file:
 
-# ============================================================
-# ÇALIŞTIR
-# ============================================================
+        for image in images:
 
-print()
-print(&quot;🎨 Altyazı videoya gömülüyor...&quot;)
-print()
-print(&quot;📍 Konum: Üst-Orta&quot;)
-print(&quot;🔠 Boyut: Küçük&quot;)
-print(&quot;⚪ Yazı: Beyaz&quot;)
-print(&quot;⬛ Kenarlık: Siyah&quot;)
-print()
+            file.write(
+                f&quot;file &#x27;{image.resolve()}&#x27;\n&quot;
+            )
 
+            file.write(
+                f&quot;duration {image_duration:.6f}\n&quot;
+            )
 
-subprocess.run(
-    command,
-    check=True
-)
+        # FFmpeg concat demuxer&#x27;da son görselin
+        # duration değerinin uygulanması için
+        # son dosyayı tekrar ekliyoruz.
 
+        file.write(
+            f&quot;file &#x27;{images[-1].resolve()}&#x27;\n&quot;
+        )
 
-# ============================================================
-# SONUÇ
-# ============================================================
+    # --------------------------------------------------------
+    # FFMPEG
+    # --------------------------------------------------------
 
-print()
-print(&quot;========================================&quot;)
-print(&quot;✅ FİNAL VİDEO OLUŞTURULDU&quot;)
-print(&quot;========================================&quot;)
-print()
-print(f&quot;Dosya: {OUTPUT_VIDEO}&quot;)
-print()</code></pre>
+    command = [
+        &quot;ffmpeg&quot;,
+        &quot;-y&quot;,
+
+        &quot;-f&quot;,
+        &quot;concat&quot;,
+
+        &quot;-safe&quot;,
+        &quot;0&quot;,
+
+        &quot;-i&quot;,
+        str(concat_file),
+
+        &quot;-i&quot;,
+        str(audio_file),
+
+        # ----------------------------------------------------
+        # SHORTS FORMAT
+        # ----------------------------------------------------
+
+        &quot;-vf&quot;,
+        (
+            &quot;scale=1080:1920:&quot;
+            &quot;force_original_aspect_ratio=increase,&quot;
+            &quot;crop=1080:1920&quot;
+        ),
+
+        &quot;-r&quot;,
+        &quot;25&quot;,
+
+        # ----------------------------------------------------
+        # VİDEO
+        # ----------------------------------------------------
+
+        &quot;-c:v&quot;,
+        &quot;libx264&quot;,
+
+        &quot;-preset&quot;,
+        &quot;medium&quot;,
+
+        &quot;-crf&quot;,
+        &quot;20&quot;,
+
+        &quot;-pix_fmt&quot;,
+        &quot;yuv420p&quot;,
+
+        # ----------------------------------------------------
+        # SES
+        # ----------------------------------------------------
+
+        &quot;-c:a&quot;,
+        &quot;aac&quot;,
+
+        &quot;-b:a&quot;,
+        &quot;128k&quot;,
+
+        # ----------------------------------------------------
+        # SESİ KESME
+        # ----------------------------------------------------
+
+        &quot;-t&quot;,
+        f&quot;{audio_duration:.3f}&quot;,
+
+        str(output_file),
+    ]
+
+    # --------------------------------------------------------
+    # ÇALIŞTIR
+    # --------------------------------------------------------
+
+    subprocess.run(
+        command,
+        check=True
+    )
+
+    # --------------------------------------------------------
+    # GEÇİCİ DOSYAYI SİL
+    # --------------------------------------------------------
+
+    if concat_file.exists():
+        concat_file.unlink()
+
+    # --------------------------------------------------------
+    # SONUÇ
+    # --------------------------------------------------------
+
+    if not output_file.exists():
+        raise RuntimeError(
+            &quot;FFmpeg çalıştı ancak video oluşmadı.&quot;
+        )
+
+    print()
+    print(&quot;========================================&quot;)
+    print(&quot;✅ VIDEO OLUŞTURULDU&quot;)
+    print(&quot;========================================&quot;)
+    print()
+    print(
+        f&quot;Dosya: {output_file}&quot;
+    )
+
+    return output_file
+</code></pre>
 
 </section>
 
 <section class="file-card">
 
 <div class="file-title">
-📄 app/core/video_test.py
+📄 app/core/editor_test.py
+</div>
+
+<pre><code class="language-python">from app.content.content_editor import evaluate_content
+
+
+test_content = &quot;&quot;&quot;
+Uzayda yaşamak kulağa harika geliyor ama gerçek çok daha tuhaf!
+
+Bir bardak suyu masaya koyuyorsun ama su aşağıya akmıyor.
+Yemek yerken kırıntılar havada uçuşuyor.
+
+Astronotlar uyumak için özel uyku tulumları kullanıyor.
+Uzun süre uzayda kalmak ise kasların ve kemiklerin güç kaybetmesine neden oluyor.
+
+Peki sen uzayda yaşamaya bir hafta dayanabilir miydin?
+&quot;&quot;&quot;
+
+
+result, decision = evaluate_content(test_content)
+
+print()
+print(&quot;=== TEST SONUCU ===&quot;)
+print(f&quot;Karar: {decision}&quot;)</code></pre>
+
+</section>
+
+<section class="file-card">
+
+<div class="file-title">
+📄 app/core/image_test.py
 </div>
 
 <pre><code class="language-python">from pathlib import Path
 
-from app.content.video_pipeline import add_subtitles
+from app.content.image_generator import generate_image
 
 
-VIDEO_FOLDER = Path(&quot;shorts/007&quot;)
+prompts = [
+    &quot;&quot;&quot;
+    Cinematic realistic visualization of the early universe,
+    expanding space, forming galaxies and stars,
+    deep space background, dramatic lighting,
+    scientific documentary style.
+    &quot;&quot;&quot;,
 
-VIDEO_FILE = VIDEO_FOLDER / &quot;video.mp4&quot;
-SRT_FILE = VIDEO_FOLDER / &quot;altyazi_ai.srt&quot;
-OUTPUT_FILE = VIDEO_FOLDER / &quot;video_final.mp4&quot;
+    &quot;&quot;&quot;
+    A mysterious cosmic energy point expanding into the universe,
+    forming particles and galaxies,
+    cinematic realistic space scene,
+    scientific documentary style.
+    &quot;&quot;&quot;,
+
+    &quot;&quot;&quot;
+    Early galaxies forming in the young universe,
+    clouds of cosmic dust, newborn stars,
+    deep space, ultra realistic, cinematic lighting.
+    &quot;&quot;&quot;,
+
+    &quot;&quot;&quot;
+    The evolution of the universe from a hot dense state
+    toward galaxies and stars,
+    scientific visualization, realistic, highly detailed.
+    &quot;&quot;&quot;,
+
+    &quot;&quot;&quot;
+    Epic view of the expanding universe,
+    countless galaxies appearing across deep space,
+    cinematic documentary photography style,
+    realistic and highly detailed.
+    &quot;&quot;&quot;
+]
+
+
+output_folder = Path(&quot;shorts&quot;) / &quot;image_test&quot;
+
+output_folder.mkdir(parents=True, exist_ok=True)
+
+
+for index, prompt in enumerate(prompts, start=1):
+
+    print()
+    print(f&quot;🎨 Görsel {index}/5 oluşturuluyor...&quot;)
+
+    output_path = output_folder / f&quot;{index:02d}.png&quot;
+
+    generate_image(prompt, output_path)
+
+    print(f&quot;✅ Kaydedildi: {output_path}&quot;)
 
 
 print()
-print(&quot;=== VİDEO PIPELINE TEST ===&quot;)
+print(&quot;🎉 5 GÖRSEL TAMAMLANDI!&quot;)</code></pre>
 
-add_subtitles(
-    video_file=VIDEO_FILE,
-    subtitle_file=SRT_FILE,
-    output_file=OUTPUT_FILE,
+</section>
+
+<section class="file-card">
+
+<div class="file-title">
+📄 app/core/transcribe_test.py
+</div>
+
+<pre><code class="language-python">from pathlib import Path
+
+from app.content.transcriber import transcribe_audio
+
+
+audio_file = Path(&quot;shorts/007/ses.mp3&quot;)
+output_file = Path(&quot;shorts/007/transkript.txt&quot;)
+
+
+print()
+print(&quot;=== AI TRANSCRIBE ===&quot;)
+print(&quot;🎙️ Ses yazıya çevriliyor...&quot;)
+
+
+result = transcribe_audio(audio_file)
+
+
+print()
+print(&quot;=== TRANSKRİPT ===&quot;)
+print(result.text)
+
+
+output_file.write_text(
+    result.text,
+    encoding=&quot;utf-8&quot;
 )
 
+
 print()
-print(&quot;🎉 VİDEO TEST BAŞARILI&quot;)
-print(f&quot;Dosya: {OUTPUT_FILE}&quot;)</code></pre>
+print(&quot;✅ TRANSKRİPT TAMAMLANDI&quot;)
+print(f&quot;Dosya: {output_file}&quot;)</code></pre>
+
+</section>
+
+<section class="file-card">
+
+<div class="file-title">
+📄 app/core/word_timestamp_test.py
+</div>
+
+<pre><code class="language-python">from pathlib import Path
+
+from app.content.transcriber import transcribe_audio
+
+
+audio_file = Path(&quot;shorts/007/ses.mp3&quot;)
+
+
+print()
+print(&quot;=== GERÇEK KELİME ZAMANLARI TESTİ ===&quot;)
+print(&quot;🎙️ Ses analiz ediliyor...&quot;)
+
+
+result = transcribe_audio(audio_file)
+
+
+print()
+print(&quot;=== TRANSKRİPT ===&quot;)
+print(result.text)
+
+print()
+print(&quot;=== KELİME ZAMANLARI ===&quot;)
+
+
+if hasattr(result, &quot;words&quot;) and result.words:
+
+    for word in result.words[:20]:
+
+        print(
+            f&quot;{word.word}  &quot;
+            f&quot;{word.start:.2f}s → &quot;
+            f&quot;{word.end:.2f}s&quot;
+        )
+
+else:
+
+    print(&quot;⚠️ Kelime zamanları döndürülmedi.&quot;)
+
+
+print()
+print(&quot;✅ TEST TAMAMLANDI&quot;)</code></pre>
+
+</section>
+
+<section class="file-card">
+
+<div class="file-title">
+📄 app/upload/upload_scheduler.py
+</div>
+
+<pre><code class="language-python">from pathlib import Path
+from datetime import datetime
+import re
+
+from app.upload.upload_state import (
+    get_video_state,
+    set_video_state,
+)
+
+from app.youtube.youtube_uploader import upload_video
+
+from app.upload.upload_config import (
+    UPLOAD_ENABLED,
+    UPLOAD_TIME,
+    PUBLISH_TIME,
+)
+
+
+BASE_DIR = Path(__file__).resolve().parents[2]
+
+SHORTS_DIR = BASE_DIR / &quot;shorts&quot;
+
+
+# ============================================================
+# VIDEO BUL
+# ============================================================
+
+def find_video(video_number):
+
+    video_dir = (
+        SHORTS_DIR
+        / f&quot;{int(video_number):03d}&quot;
+    )
+
+    video_file = (
+        video_dir
+        / &quot;video_final.mp4&quot;
+    )
+
+    if not video_file.exists():
+        return None
+
+    return video_file
+
+
+# ============================================================
+# METADATA OKU
+# ============================================================
+
+def read_metadata(video_number):
+
+    video_dir = (
+        SHORTS_DIR
+        / f&quot;{int(video_number):03d}&quot;
+    )
+
+    title_file = video_dir / &quot;baslik.txt&quot;
+    description_file = video_dir / &quot;aciklama.txt&quot;
+    hashtag_file = video_dir / &quot;hashtag.txt&quot;
+
+    if not title_file.exists():
+        raise FileNotFoundError(
+            f&quot;Başlık dosyası bulunamadı: {title_file}&quot;
+        )
+
+    if not description_file.exists():
+        raise FileNotFoundError(
+            f&quot;Açıklama dosyası bulunamadı: {description_file}&quot;
+        )
+
+    if not hashtag_file.exists():
+        raise FileNotFoundError(
+            f&quot;Hashtag dosyası bulunamadı: {hashtag_file}&quot;
+        )
+
+    title = title_file.read_text(
+        encoding=&quot;utf-8&quot;
+    ).strip()
+
+    description = description_file.read_text(
+        encoding=&quot;utf-8&quot;
+    ).strip()
+
+    hashtag_text = hashtag_file.read_text(
+        encoding=&quot;utf-8&quot;
+    ).strip()
+
+    tags = [
+        tag.strip().lstrip(&quot;#&quot;)
+        for tag in hashtag_text.split()
+        if tag.strip()
+    ]
+
+    if not title:
+        raise ValueError(
+            f&quot;Başlık boş: {title_file}&quot;
+        )
+
+    if not description:
+        raise ValueError(
+            f&quot;Açıklama boş: {description_file}&quot;
+        )
+
+    if not tags:
+        raise ValueError(
+            f&quot;Hashtag bulunamadı: {hashtag_file}&quot;
+        )
+
+    return title, description, tags
+
+
+# ============================================================
+# UPLOAD ZAMANI
+# ============================================================
+
+def is_upload_time():
+
+    now = datetime.now()
+
+    current_time = now.strftime(
+        &quot;%H:%M&quot;
+    )
+
+    return current_time &gt;= UPLOAD_TIME
+
+
+# ============================================================
+# YAYIN ZAMANI
+# ============================================================
+
+def get_publish_time():
+
+    today = datetime.now().strftime(
+        &quot;%Y-%m-%d&quot;
+    )
+
+    return (
+        f&quot;{today}T{PUBLISH_TIME}:00&quot;
+    )
+
+
+# ============================================================
+# NUMARALI SHORTS KLASÖRLERİNİ BUL
+# ============================================================
+
+def get_video_numbers():
+
+    SHORTS_DIR.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    numbers = []
+
+    for path in SHORTS_DIR.iterdir():
+
+        if not path.is_dir():
+            continue
+
+        if not re.fullmatch(
+            r&quot;\d+&quot;,
+            path.name
+        ):
+            continue
+
+        numbers.append(
+            int(path.name)
+        )
+
+    return sorted(numbers)
+
+
+# ============================================================
+# SIRADAKİ YÜKLENMEMİŞ VIDEO
+# ============================================================
+
+def find_next_upload():
+
+    video_numbers = get_video_numbers()
+
+    for video_number in video_numbers:
+
+        state = get_video_state(
+            video_number
+        )
+
+        if state:
+
+            status = state.get(
+                &quot;status&quot;
+            )
+
+            if status in {
+                &quot;uploaded&quot;,
+                &quot;published&quot;
+            }:
+
+                continue
+
+        video_file = find_video(
+            video_number
+        )
+
+        if video_file is None:
+            continue
+
+        return video_number
+
+    return None
+
+
+# ============================================================
+# VIDEO UPLOAD
+# ============================================================
+
+def upload_short(
+    video_number=None,
+):
+
+    print()
+    print(&quot;========================================&quot;)
+    print(&quot;📤 CREATOR ENGINE — UPLOAD SCHEDULER&quot;)
+    print(&quot;========================================&quot;)
+    print()
+
+    if not UPLOAD_ENABLED:
+
+        print(
+            &quot;🛑 Upload sistemi devre dışı.&quot;
+        )
+
+        return None
+
+    # --------------------------------------------------------
+    # SIRADAKİ VIDEOYU BUL
+    # --------------------------------------------------------
+
+    if video_number is None:
+
+        video_number = find_next_upload()
+
+        if video_number is None:
+
+            print(
+                &quot;ℹ️ Yüklenecek hazır video bulunamadı.&quot;
+            )
+
+            return None
+
+    print(
+        f&quot;🎬 Kontrol edilen video: #{video_number:03d}&quot;
+    )
+
+    # --------------------------------------------------------
+    # STATE KONTROL
+    # --------------------------------------------------------
+
+    existing_state = get_video_state(
+        video_number
+    )
+
+    if existing_state:
+
+        status = existing_state.get(
+            &quot;status&quot;
+        )
+
+        if status in {
+            &quot;uploaded&quot;,
+            &quot;published&quot;
+        }:
+
+            print(
+                f&quot;✅ Video #{video_number:03d} &quot;
+                &quot;zaten yüklendi.&quot;
+            )
+
+            print(
+                f&quot;🆔 YouTube ID: &quot;
+                f&quot;{existing_state.get(&#x27;youtube_id&#x27;)}&quot;
+            )
+
+            return existing_state
+
+    # --------------------------------------------------------
+    # UPLOAD SAATİ
+    # --------------------------------------------------------
+
+    if not is_upload_time():
+
+        print(
+            &quot;⏰ Henüz upload saati gelmedi.&quot;
+        )
+
+        print(
+            f&quot;📅 Upload saati: {UPLOAD_TIME}&quot;
+        )
+
+        return None
+
+    # --------------------------------------------------------
+    # VIDEO
+    # --------------------------------------------------------
+
+    video_file = find_video(
+        video_number
+    )
+
+    if video_file is None:
+
+        raise FileNotFoundError(
+            f&quot;Video #{video_number:03d} bulunamadı.&quot;
+        )
+
+    # --------------------------------------------------------
+    # METADATA
+    # --------------------------------------------------------
+
+    title, description, tags = read_metadata(
+        video_number
+    )
+
+    print()
+    print(&quot;=== YOUTUBE METADATA ===&quot;)
+    print()
+
+    print(
+        f&quot;📝 Başlık    : {title}&quot;
+    )
+
+    print(
+        f&quot;📄 Açıklama  : {description}&quot;
+    )
+
+    print(
+        f&quot;#️⃣ Etiketler : {&#x27;, &#x27;.join(tags)}&quot;
+    )
+
+    # --------------------------------------------------------
+    # YAYIN ZAMANI
+    # --------------------------------------------------------
+
+    publish_at = get_publish_time()
+
+    print()
+    print(
+        f&quot;📺 Yayın zamanı: {publish_at}&quot;
+    )
+
+    upload_time = (
+        datetime.now().isoformat()
+    )
+
+    # --------------------------------------------------------
+    # STATE — UPLOADING
+    # --------------------------------------------------------
+
+    set_video_state(
+        video_number=video_number,
+        status=&quot;uploading&quot;,
+        upload_time=upload_time,
+        publish_at=publish_at,
+    )
+
+    # --------------------------------------------------------
+    # YOUTUBE UPLOAD
+    # --------------------------------------------------------
+
+    try:
+
+        youtube_id = upload_video(
+            video_file=video_file,
+            title=title,
+            description=description,
+            tags=tags,
+            publish_at=publish_at,
+        )
+
+        # ----------------------------------------------------
+        # STATE — UPLOADED
+        # ----------------------------------------------------
+
+        result = set_video_state(
+            video_number=video_number,
+            status=&quot;uploaded&quot;,
+            youtube_id=youtube_id,
+            upload_time=upload_time,
+            publish_at=publish_at,
+        )
+
+        print()
+        print(&quot;========================================&quot;)
+        print(&quot;✅ VIDEO BAŞARIYLA YÜKLENDİ&quot;)
+        print(&quot;========================================&quot;)
+        print()
+
+        print(
+            f&quot;🎬 Video: #{video_number:03d}&quot;
+        )
+
+        print(
+            f&quot;🆔 YouTube ID: {youtube_id}&quot;
+        )
+
+        return result
+
+    except Exception as error:
+
+        result = set_video_state(
+            video_number=video_number,
+            status=&quot;error&quot;,
+            upload_time=upload_time,
+            publish_at=publish_at,
+            error=str(error),
+        )
+
+        print()
+        print(
+            f&quot;❌ Video #{video_number:03d} &quot;
+            &quot;yüklenemedi.&quot;
+        )
+
+        print(
+            f&quot;Hata: {error}&quot;
+        )
+
+        return result
+
+
+# ============================================================
+# TEST / ÇALIŞTIRMA
+# ============================================================
+
+if __name__ == &quot;__main__&quot;:
+
+    print()
+    print(&quot;========================================&quot;)
+    print(&quot;⏰ UPLOAD SCHEDULER&quot;)
+    print(&quot;========================================&quot;)
+    print()
+
+    print(
+        f&quot;📤 Upload saati : {UPLOAD_TIME}&quot;
+    )
+
+    print(
+        f&quot;📺 Yayın saati  : {PUBLISH_TIME}&quot;
+    )
+
+    print(
+        f&quot;🕐 Şu an        : &quot;
+        f&quot;{datetime.now().strftime(&#x27;%H:%M&#x27;)}&quot;
+    )
+
+    print()
+
+    next_video = find_next_upload()
+
+    if next_video is None:
+
+        print(
+            &quot;ℹ️ Yüklenecek hazır video bulunamadı.&quot;
+        )
+
+    else:
+
+        print(
+            f&quot;🎯 Sıradaki video: #{next_video:03d}&quot;
+        )
+
+        if is_upload_time():
+
+            print(
+                &quot;✅ Upload zamanı geldi.&quot;
+            )
+
+            print()
+
+            upload_short(
+                next_video
+            )
+
+        else:
+
+            print(
+                &quot;⏳ Upload zamanı henüz gelmedi.&quot;
+            )</code></pre>
 
 </section>
 
@@ -4517,6 +6676,24 @@ def test_channel():
 if __name__ == &quot;__main__&quot;:
 
     test_channel()</code></pre>
+
+</section>
+
+<section class="file-card">
+
+<div class="file-title">
+📄 config/settings.py
+</div>
+
+<pre><code class="language-python">APP_NAME = &quot;Creator Engine&quot;
+VERSION = &quot;0.1.0&quot;
+LANGUAGE = &quot;tr&quot;
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+OPENAI_API_KEY = os.getenv(&quot;OPENAI_API_KEY&quot;)</code></pre>
 
 </section>
 
@@ -5544,715 +7721,279 @@ if __name__ == &quot;__main__&quot;:
 <section class="file-card">
 
 <div class="file-title">
-📄 app/content/content_engine.py
+📄 app/automation/auto_creator.py
 </div>
 
-<pre><code class="language-python">from openai import OpenAI
-from pathlib import Path
-import json
-import re
-
-from config.settings import OPENAI_API_KEY
-
-from app.content.content_editor import evaluate_content
-from app.content.image_pipeline import generate_images_from_prompt_file
-from app.content.tts_generator import generate_voice
-from app.content.video_creator import create_video
-from app.content.transcriber import transcribe_audio
-from app.content.subtitle_engine import create_subtitle
-from app.content.video_pipeline import add_subtitles
-
-from app.analytics.database import add_video
-from app.analytics.analysis_scheduler import (
-    run_analysis_if_needed
-)
+<pre><code class="language-python">from app.content.content_engine import create_short
+from app.automation.topic_generator import generate_topics, save_topic
 
 
-BASE_DIR = Path(__file__).resolve().parents[2]
-
-STRATEGY_FILE = (
-    BASE_DIR
-    / &quot;data&quot;
-    / &quot;current_strategy.json&quot;
-)
-
-SHORTS_DIR = BASE_DIR / &quot;shorts&quot;
+MAX_ATTEMPTS = 5
 
 
-def load_strategy():
-
-    if not STRATEGY_FILE.exists():
-        return None
-
-    try:
-
-        with open(
-            STRATEGY_FILE,
-            &quot;r&quot;,
-            encoding=&quot;utf-8&quot;
-        ) as file:
-
-            return json.load(file)
-
-    except Exception as error:
-
-        print(
-            f&quot;⚠️ Strateji okunamadı: {error}&quot;
-        )
-
-        return None
-
-
-def get_next_video_number():
-
-    SHORTS_DIR.mkdir(
-        parents=True,
-        exist_ok=True
-    )
-
-    numbers = []
-
-    for path in SHORTS_DIR.iterdir():
-
-        if not path.is_dir():
-            continue
-
-        match = re.fullmatch(
-            r&quot;(\d+)&quot;,
-            path.name
-        )
-
-        if match:
-
-            numbers.append(
-                int(match.group(1))
-            )
-
-    if not numbers:
-        return 1
-
-    return max(numbers) + 1
-
-
-def extract_voice_text(content):
-
-    lines = content.splitlines()
-
-    sections = {
-        &quot;HOOK:&quot;,
-        &quot;GİRİŞ:&quot;,
-        &quot;GELİŞME:&quot;,
-        &quot;KAPANIŞ:&quot;
-    }
-
-    voice_lines = []
-
-    for line in lines:
-
-        clean = line.strip()
-
-        if not clean:
-            continue
-
-        if clean.upper() in sections:
-            continue
-
-        voice_lines.append(clean)
-
-    return &quot;\n&quot;.join(voice_lines).strip()
-
-
-def create_short(topic):
+def run_auto_creator():
 
     print()
     print(&quot;========================================&quot;)
-    print(&quot;🚀 CREATOR ENGINE&quot;)
+    print(&quot;🤖 CREATOR ENGINE — OTOMATİK ÜRETİM&quot;)
     print(&quot;========================================&quot;)
     print()
 
-    # ========================================================
-    # ANALİZ ZAMANINI KONTROL ET
-    # ========================================================
-
-    run_analysis_if_needed()
-
-    # ========================================================
-    # MEVCUT STRATEJİ
-    # ========================================================
-
-    strategy = load_strategy()
-
-    if strategy is None:
-
-        print()
-        print(
-            &quot;⚠️ Kayıtlı strateji bulunamadı.&quot;
-        )
-
-    else:
-
-        print()
-        print(
-            &quot;♻️ Mevcut AI stratejisi kullanılacak.&quot;
-        )
-
-    # ========================================================
-    # OPENAI
-    # ========================================================
-
-    client = OpenAI(
-        api_key=OPENAI_API_KEY
+    topics = generate_topics(
+        count=MAX_ATTEMPTS
     )
 
-    # ========================================================
-    # STRATEJİ METNİ
-    # ========================================================
+    if not topics:
 
-    if strategy:
-
-        strategy_text = json.dumps(
-            strategy,
-            ensure_ascii=False,
-            indent=2
-        )
-
-    else:
-
-        strategy_text = (
-            &quot;Henüz kayıtlı bir strateji yok.&quot;
-        )
-
-    # ========================================================
-    # SENARYO
-    # ========================================================
-
-    prompt = f&quot;&quot;&quot;
-Sen Creator Engine&#x27;in profesyonel YouTube Shorts
-senaryo motorusun.
-
-KONU:
-{topic}
-
-GÜNCEL AI STRATEJİSİ:
-{strategy_text}
-
-KURALLAR:
-
-- Tek ana fikir anlat.
-- Hedef süre 21-30 saniye.
-- İlk 1-2 saniyede güçlü hook kullan.
-- Uzun giriş yapma.
-- Doğal Türkçe kullan.
-- Kısa ve akıcı cümleler kullan.
-- Gereksiz tekrar yapma.
-- Videonun ortasında şaşırtıcı veya güçlü bir bilgi ver.
-- Sonunda güçlü ve net bir sonuç ver.
-- &quot;Merhaba arkadaşlar&quot;, &quot;bugün sizlere&quot; gibi girişler kullanma.
-- &quot;Abone ol&quot;, &quot;like at&quot; gibi standart kapanışlar kullanma.
-
-ÇIKTI FORMATI:
-
-HOOK:
-...
-
-GİRİŞ:
-...
-
-GELİŞME:
-...
-
-KAPANIŞ:
-...
-
-SADECE SENARYOYU ÜRET.
-Türkçe yaz.
-&quot;&quot;&quot;
-
-    try:
-
-        response = client.responses.create(
-            model=&quot;gpt-5.4-mini&quot;,
-            input=prompt
-        )
-
-        content = response.output_text.strip()
-
-    except Exception as error:
-
-        print()
-        print(
-            f&quot;❌ Senaryo oluşturulamadı: {error}&quot;
-        )
-
+        print(&quot;❌ Otomatik konu üretilemedi.&quot;)
         return None
-
-       # ========================================================
-    # İÇERİK DEĞERLENDİRME
-    # ========================================================
-
-    try:
-
-        evaluation = evaluate_content(
-            content
-        )
-
-    except Exception as error:
-
-        print(
-            f&quot;⚠️ İçerik değerlendirme hatası: {error}&quot;
-        )
-
-        return False
-
-
-    # ========================================================
-    # AI EDİTÖR KARARI
-    # ========================================================
-
-    editor_result, decision = evaluation
-
-
-    if decision != &quot;ONAY&quot;:
-
-        print()
-        print(&quot;========================================&quot;)
-        print(&quot;🛑 VİDEO ÜRETİMİ DURDURULDU&quot;)
-        print(&quot;========================================&quot;)
-        print()
-
-        print(
-            &quot;🎯 AI Editör Kararı:&quot;,
-            decision
-        )
-
-        print(
-            &quot;❌ İçerik üretim kriterlerini geçemedi.&quot;
-        )
-
-        print(
-            &quot;➡️ Görsel, ses, video ve altyazı üretimi yapılmayacak.&quot;
-        )
-
-        print()
-
-        return False
-
 
     print()
-    print(
-        &quot;🎯 AI Editör Kararı: ONAY&quot;
-    )
-
-    # ========================================================
-    # SESLENDİRME METNİ
-    # ========================================================
-
-    voice_text = extract_voice_text(
-        content
-    )
-
-    if not voice_text:
-
-        print(
-            &quot;❌ Seslendirme metni oluşturulamadı.&quot;
-        )
-
-        return None
-
-    # ========================================================
-    # SHORTS KLASÖRÜ
-    # ========================================================
-
-    video_number = get_next_video_number()
-
-    output_folder = (
-        SHORTS_DIR
-        / f&quot;{video_number:03d}&quot;
-    )
-
-    output_folder.mkdir(
-        parents=True,
-        exist_ok=True
-    )
-
+    print(f&quot;💡 {len(topics)} konu hazır.&quot;)
     print()
-    print(
-        f&quot;📁 Shorts klasörü: {output_folder}&quot;
-    )
 
-    # ========================================================
-    # SENARYO
-    # ========================================================
+    attempts = 0
 
-    script_file = (
-        output_folder
-        / &quot;senaryo.txt&quot;
-    )
+    for topic in topics:
 
-    script_file.write_text(
-        content,
-        encoding=&quot;utf-8&quot;
-    )
-
-    # ========================================================
-    # SES METNİ
-    # ========================================================
-
-    voice_text_file = (
-        output_folder
-        / &quot;ses_metni.txt&quot;
-    )
-
-    voice_text_file.write_text(
-        voice_text,
-        encoding=&quot;utf-8&quot;
-    )
-
-    # ========================================================
-    # GÖRSEL PROMPTLARI
-    # ========================================================
-
-    prompt_file = (
-        output_folder
-        / &quot;gorsel_prompt.txt&quot;
-    )
-
-    try:
-
-        image_prompt_response = client.responses.create(
-            model=&quot;gpt-5.4-mini&quot;,
-            input=f&quot;&quot;&quot;
-Aşağıdaki YouTube Shorts senaryosu için
-TAM OLARAK 5 adet görsel üretim promptu oluştur.
-
-ÇOK ÖNEMLİ:
-
-- Tam olarak 5 prompt yaz.
-- 5&#x27;ten fazla yazma.
-- Her prompt bir sahneyi temsil etmeli.
-- Her prompt tek satırda olmalı.
-- Numaralandırma kullanma.
-- Açıklama yazma.
-- Sadece 5 görsel promptu döndür.
-
-Görsel stil:
-- Gerçekçi
-- Sinematik
-- Belgesel kalitesinde
-- Dikey Shorts videosuna uygun kompozisyon
-- Güçlü görsel anlatım
-- Metin, logo veya watermark kullanma
-
-SENARYO:
-
-{voice_text}
-&quot;&quot;&quot;
-        )
-
-        image_prompts = (
-            image_prompt_response
-            .output_text
-            .strip()
-        )
-
-        prompt_lines = [
-            line.strip()
-            for line in image_prompts.splitlines()
-            if line.strip()
-        ]
-
-        prompt_lines = [
-            re.sub(
-                r&quot;^\s*(?:\d+[\.\)\-:]|\-)\s*&quot;,
-                &quot;&quot;,
-                line
-            ).strip()
-            for line in prompt_lines
-        ]
-
-        prompt_lines = [
-            line
-            for line in prompt_lines
-            if line
-        ]
-
-        prompt_lines = prompt_lines[:5]
-
-        if len(prompt_lines) != 5:
-
-            raise ValueError(
-                f&quot;AI tam olarak 5 görsel promptu üretmedi. &quot;
-                f&quot;Alınan: {len(prompt_lines)}&quot;
-            )
-
-        prompt_file.write_text(
-            &quot;\n&quot;.join(prompt_lines),
-            encoding=&quot;utf-8&quot;
-        )
+        attempts += 1
 
         print()
+        print(&quot;----------------------------------------&quot;)
         print(
-            &quot;🎨 Tam 5 görsel promptu hazır.&quot;
+            f&quot;🎯 DENEME {attempts}/{MAX_ATTEMPTS}&quot;
         )
-
-    except Exception as error:
-
         print(
-            f&quot;⚠️ Görsel promptları oluşturulamadı: {error}&quot;
+            f&quot;💡 KONU: {topic}&quot;
+        )
+        print(&quot;----------------------------------------&quot;)
+        print()
+
+        result = create_short(
+            topic
         )
 
-        return None
+        if result:
 
-    # ========================================================
-    # GÖRSELLER
-    # ========================================================
+            save_topic(topic)
 
-    images_folder = (
-        output_folder
-        / &quot;gorseller&quot;
-    )
+            print()
+            print(&quot;🧠 Konu geçmişine kaydedildi.&quot;)
 
-    try:
+            print()
+            print(&quot;========================================&quot;)
+            print(&quot;🎉 OTOMATİK ÜRETİM BAŞARILI&quot;)
+            print(&quot;========================================&quot;)
+            print()
 
-        generate_images_from_prompt_file(
-            prompt_file,
-            images_folder
-        )
-
-    except Exception as error:
-
-        print(
-            f&quot;⚠️ Görsel üretim hatası: {error}&quot;
-        )
-
-        return None
-
-    # ========================================================
-    # SES
-    # ========================================================
-
-    audio_file = (
-        output_folder
-        / &quot;ses.mp3&quot;
-    )
-
-    try:
-
-        generate_voice(
-            voice_text,
-            audio_file
-        )
-
-    except Exception as error:
-
-        print(
-            f&quot;⚠️ Ses üretim hatası: {error}&quot;
-        )
-
-        return None
-
-    # ========================================================
-    # VİDEO
-    # ========================================================
-
-    video_file = (
-        output_folder
-        / &quot;video.mp4&quot;
-    )
-
-    try:
-
-        create_video(
-            images_folder,
-            audio_file,
-            video_file
-        )
-
-    except Exception as error:
-
-        print(
-            f&quot;⚠️ Video oluşturma hatası: {error}&quot;
-        )
-
-        return None
-
-    # ========================================================
-    # TRANSKRİPT
-    # ========================================================
-
-    transcript_file = (
-        output_folder
-        / &quot;transkript.txt&quot;
-    )
-
-    try:
-
-        transcript_result = transcribe_audio(
-            audio_file
-        )
-
-        transcript_text = getattr(
-            transcript_result,
-            &quot;text&quot;,
-            &quot;&quot;
-        )
-
-        if not transcript_text:
-
-            raise ValueError(
-                &quot;Transkript metni boş.&quot;
-            )
-
-        transcript_file.write_text(
-            transcript_text.strip(),
-            encoding=&quot;utf-8&quot;
-        )
+            return result
 
         print()
-        print(
-            f&quot;✅ Transkript kaydedildi: &quot;
-            f&quot;{transcript_file}&quot;
-        )
-
-    except Exception as error:
-
-        print(
-            f&quot;⚠️ Transkript hatası: {error}&quot;
-        )
-
-        return None
-
-    # ========================================================
-    # ALTYAZI
-    # ========================================================
-
-    subtitle_file = (
-        output_folder
-        / &quot;altyazi_ai.srt&quot;
-    )
-
-    try:
-
-        create_subtitle(
-            transcript_file=transcript_file,
-            audio_file=audio_file,
-            output_file=subtitle_file
-        )
-
-    except Exception as error:
-
-        print(
-            f&quot;⚠️ Altyazı oluşturma hatası: {error}&quot;
-        )
-
-        return None
-
-    # ========================================================
-    # ALTYAZIYI VİDEOYA EKLE
-    # ========================================================
-
-    final_video = (
-        output_folder
-        / &quot;video_final.mp4&quot;
-    )
-
-    try:
-
-        add_subtitles(
-            video_file=video_file,
-            subtitle_file=subtitle_file,
-            output_file=final_video
-        )
-
-    except Exception as error:
-
-        print(
-            f&quot;⚠️ Altyazı videoya eklenemedi: {error}&quot;
-        )
-
-        return None
-
-    # ========================================================
-    # DATABASE
-    # ========================================================
-
-    try:
-
-        add_video(
-            video_number=video_number,
-            topic=topic,
-            script_file=str(script_file),
-            video_file=str(final_video)
-        )
-
-    except Exception as error:
-
-        print(
-            f&quot;⚠️ Video veritabanına eklenemedi: {error}&quot;
-        )
-
-    # ========================================================
-    # SONUÇ
-    # ========================================================
+        print(&quot;↩️ RED — sonraki konu deneniyor.&quot;)
 
     print()
     print(&quot;========================================&quot;)
-    print(&quot;✅ SHORTS OLUŞTURULDU&quot;)
+    print(&quot;🛑 OTOMATİK ÜRETİM BAŞARISIZ&quot;)
     print(&quot;========================================&quot;)
     print()
 
-    print(
-        f&quot;🎬 Video No: #{video_number:03d}&quot;
-    )
+    return None
 
-    print(
-        f&quot;📁 Klasör: {output_folder}&quot;
-    )
 
-    print(
-        f&quot;🎨 Görseller: {images_folder}&quot;
-    )
+if __name__ == &quot;__main__&quot;:
 
-    print(
-        f&quot;🎙️ Ses: {audio_file}&quot;
-    )
-
-    print(
-        f&quot;📝 Transkript: {transcript_file}&quot;
-    )
-
-    print(
-        f&quot;💬 Altyazı: {subtitle_file}&quot;
-    )
-
-    print(
-        f&quot;🎥 Final: {final_video}&quot;
-    )
-
-    print()
-
-    return {
-        &quot;video_number&quot;: video_number,
-        &quot;topic&quot;: topic,
-        &quot;script&quot;: content,
-        &quot;voice_text&quot;: voice_text,
-        &quot;folder&quot;: str(output_folder),
-        &quot;evaluation&quot;: evaluation,
-        &quot;final_video&quot;: str(final_video)
-    }</code></pre>
+    run_auto_creator()</code></pre>
 
 </section>
 
 <section class="file-card">
 
 <div class="file-title">
-📄 app/content/subtitle_engine.py
+📄 app/automation/upload_scheduler.py
 </div>
 
 <pre><code class="language-python">from pathlib import Path
 import json
-import re
-import subprocess
+from datetime import datetime
+
+
+BASE_DIR = Path(__file__).resolve().parents[2]
+
+STATE_FILE = BASE_DIR / &quot;data&quot; / &quot;upload_state.json&quot;
+
+
+UPLOAD_TIME = &quot;18:00&quot;
+PUBLISH_TIME = &quot;20:00&quot;
+
+
+def load_state():
+
+    if not STATE_FILE.exists():
+        return {}
+
+    try:
+
+        return json.loads(
+            STATE_FILE.read_text(
+                encoding=&quot;utf-8&quot;
+            )
+        )
+
+    except Exception as error:
+
+        print(f&quot;⚠️ Yükleme durumu okunamadı: {error}&quot;)
+
+        return {}
+
+
+def save_state(state):
+
+    STATE_FILE.write_text(
+        json.dumps(
+            state,
+            ensure_ascii=False,
+            indent=2
+        ),
+        encoding=&quot;utf-8&quot;
+    )
+
+
+def get_today():
+
+    return datetime.now().strftime(&quot;%Y-%m-%d&quot;)
+
+
+def get_video_state(video_number):
+
+    state = load_state()
+
+    return state.get(
+        str(video_number),
+        {}
+    )
+
+
+def mark_uploading(video_number):
+
+    state = load_state()
+
+    state[str(video_number)] = {
+        &quot;status&quot;: &quot;uploading&quot;,
+        &quot;updated_at&quot;: datetime.now().isoformat()
+    }
+
+    save_state(state)
+
+
+def mark_uploaded(
+    video_number,
+    youtube_id
+):
+
+    state = load_state()
+
+    state[str(video_number)] = {
+        &quot;status&quot;: &quot;uploaded&quot;,
+        &quot;youtube_id&quot;: youtube_id,
+        &quot;uploaded_at&quot;: datetime.now().isoformat()
+    }
+
+    save_state(state)
+
+
+def mark_upload_error(
+    video_number,
+    error
+):
+
+    state = load_state()
+
+    state[str(video_number)] = {
+        &quot;status&quot;: &quot;upload_error&quot;,
+        &quot;error&quot;: str(error),
+        &quot;updated_at&quot;: datetime.now().isoformat()
+    }
+
+    save_state(state)
+
+
+def mark_published(
+    video_number
+):
+
+    state = load_state()
+
+    video = state.get(
+        str(video_number),
+        {}
+    )
+
+    video[&quot;status&quot;] = &quot;published&quot;
+    video[&quot;published_at&quot;] = datetime.now().isoformat()
+
+    state[str(video_number)] = video
+
+    save_state(state)
+
+
+def is_uploaded(video_number):
+
+    video = get_video_state(video_number)
+
+    return video.get(&quot;status&quot;) in {
+        &quot;uploaded&quot;,
+        &quot;published&quot;
+    }
+
+
+def is_published(video_number):
+
+    video = get_video_state(video_number)
+
+    return video.get(&quot;status&quot;) == &quot;published&quot;
+
+
+def get_upload_time():
+
+    return UPLOAD_TIME
+
+
+def get_publish_time():
+
+    return PUBLISH_TIME
+
+
+def run_upload_scheduler():
+
+    print()
+    print(&quot;========================================&quot;)
+    print(&quot;📺 CREATOR ENGINE — YOUTUBE ZAMANLAYICI&quot;)
+    print(&quot;========================================&quot;)
+    print()
+
+    print(f&quot;📤 Yükleme saati : {UPLOAD_TIME}&quot;)
+    print(f&quot;🌍 Yayın saati   : {PUBLISH_TIME}&quot;)
+    print()
+
+    print(&quot;⏳ YouTube yükleme motoru hazır.&quot;)
+    print(&quot;⚠️ YouTube API bağlantısı henüz eklenmedi.&quot;)
+    print()
+
+
+if __name__ == &quot;__main__&quot;:
+
+    run_upload_scheduler()</code></pre>
+
+</section>
+
+<section class="file-card">
+
+<div class="file-title">
+📄 app/content/image_generator.py
+</div>
+
+<pre><code class="language-python">import base64
+from pathlib import Path
 
 from openai import OpenAI
 
@@ -6262,288 +8003,65 @@ from config.settings import OPENAI_API_KEY
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 
-# ============================================================
-# AI ALTYAZI PARÇALARINI OLUŞTUR
-# ============================================================
-
-def create_ai_captions(text):
-
-    response = client.responses.create(
-        model=&quot;gpt-5.4-mini&quot;,
-        input=f&quot;&quot;&quot;
-Aşağıdaki Türkçe konuşma metnini YouTube Shorts altyazıları için
-doğal ve okunabilir kısa parçalara böl.
-
-KURALLAR:
-
-- Metni yaklaşık 14-18 anlamlı altyazı bloğuna böl.
-- Her blok yaklaşık 4-9 kelime olabilir.
-- Kelime sayısından çok anlam bütünlüğünü önemse.
-- Doğal konuşma ritmini koru.
-- Birbirine bağlı kelimeleri ayırma.
-- &quot;mi?&quot;, &quot;mı?&quot;, &quot;mu?&quot;, &quot;mü?&quot; gibi soru eklerini asla tek başına bırakma.
-- &quot;ve&quot;, &quot;ama&quot;, &quot;fakat&quot;, &quot;ancak&quot;, &quot;çünkü&quot;, &quot;ile&quot; gibi bağlaçları
-  anlamsız şekilde ayırma.
-- Çok kısa anlamsız parçalar oluşturma.
-- Çok uzun parçalar oluşturma.
-- Noktalama işaretlerini koru.
-- Metindeki hiçbir kelimeyi değiştirme.
-- Hiçbir kelimeyi silme.
-- Yeni kelime ekleme.
-- Kelimelerin sırasını değiştirme.
-
-ÖNCELİK:
-
-1. Anlam bütünlüğü
-2. Doğal konuşma ritmi
-3. Okunabilirlik
-4. Yaklaşık 14-18 blok
-
-SADECE JSON DÖNDÜR.
-
-FORMAT:
-
-{{
-    &quot;captions&quot;: [
-        &quot;parça 1&quot;,
-        &quot;parça 2&quot;,
-        &quot;parça 3&quot;
-    ]
-}}
-
-METİN:
-
-{text}
-&quot;&quot;&quot;,
+def generate_image(prompt, output_path):
+    result = client.images.generate(
+        model=&quot;gpt-image-2&quot;,
+        prompt=prompt,
+        size=&quot;1024x1024&quot;,
+        quality=&quot;low&quot;,
     )
 
-    raw = response.output_text.strip()
+    image_data = result.data[0].b64_json
 
-    raw = re.sub(
-        r&quot;^```json\s*&quot;,
-        &quot;&quot;,
-        raw,
-        flags=re.IGNORECASE
-    )
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    raw = re.sub(
-        r&quot;\s*```$&quot;,
-        &quot;&quot;,
-        raw
-    )
+    with open(output_path, &quot;wb&quot;) as f:
+        f.write(base64.b64decode(image_data))
 
-    data = json.loads(raw)
-
-    captions = data.get(&quot;captions&quot;, [])
-
-    if not captions:
-        raise ValueError(
-            &quot;AI altyazı parçaları oluşturamadı.&quot;
-        )
-
-    return captions
-
-
-# ============================================================
-# SES SÜRESİ
-# ============================================================
-
-def get_audio_duration(audio_file):
-
-    result = subprocess.run(
-        [
-            &quot;ffprobe&quot;,
-            &quot;-v&quot;,
-            &quot;error&quot;,
-            &quot;-show_entries&quot;,
-            &quot;format=duration&quot;,
-            &quot;-of&quot;,
-            &quot;default=noprint_wrappers=1:nokey=1&quot;,
-            str(audio_file),
-        ],
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-
-    return float(result.stdout.strip())
-
-
-# ============================================================
-# SRT ZAMAN FORMATI
-# ============================================================
-
-def format_srt_time(seconds):
-
-    milliseconds = int(round(seconds * 1000))
-
-    hours = milliseconds // 3_600_000
-    milliseconds %= 3_600_000
-
-    minutes = milliseconds // 60_000
-    milliseconds %= 60_000
-
-    seconds = milliseconds // 1000
-    milliseconds %= 1000
-
-    return (
-        f&quot;{hours:02d}:&quot;
-        f&quot;{minutes:02d}:&quot;
-        f&quot;{seconds:02d},&quot;
-        f&quot;{milliseconds:03d}&quot;
-    )
-
-
-# ============================================================
-# SRT OLUŞTUR
-# ============================================================
-
-def create_subtitle(
-    transcript_file,
-    audio_file,
-    output_file,
-):
-
-    transcript_file = Path(transcript_file)
-    audio_file = Path(audio_file)
-    output_file = Path(output_file)
-
-    if not transcript_file.exists():
-        raise FileNotFoundError(
-            f&quot;Transkript bulunamadı: {transcript_file}&quot;
-        )
-
-    if not audio_file.exists():
-        raise FileNotFoundError(
-            f&quot;Ses dosyası bulunamadı: {audio_file}&quot;
-        )
-
-    text = transcript_file.read_text(
-        encoding=&quot;utf-8&quot;
-    ).strip()
-
-    if not text:
-        raise ValueError(
-            &quot;Transkript boş.&quot;
-        )
-
-    duration = get_audio_duration(
-        audio_file
-    )
-
-    print()
-    print(&quot;=== AI ALTYAZI MOTORU ===&quot;)
-    print(
-        f&quot;🎙️ Ses süresi: {duration:.2f} saniye&quot;
-    )
-
-    print(
-        &quot;🤖 AI doğal altyazı bloklarını oluşturuyor...&quot;
-    )
-
-    captions = create_ai_captions(
-        text
-    )
-
-    print(
-        f&quot;📝 {len(captions)} altyazı bloğu oluşturuldu.&quot;
-    )
-
-    # --------------------------------------------------------
-    # KARAKTER TOPLAMI
-    # --------------------------------------------------------
-
-    total_characters = sum(
-        len(caption)
-        for caption in captions
-    )
-
-    if total_characters &lt;= 0:
-        raise ValueError(
-            &quot;Altyazı karakter sayısı geçersiz.&quot;
-        )
-
-    # --------------------------------------------------------
-    # ZAMANLAMA
-    # --------------------------------------------------------
-
-    current_time = 0.0
-
-    srt_blocks = []
-
-    for index, caption in enumerate(
-        captions,
-        start=1
-    ):
-
-        ratio = (
-            len(caption)
-            / total_characters
-        )
-
-        segment_duration = (
-            duration * ratio
-        )
-
-        start_time = current_time
-
-        if index == len(captions):
-
-            end_time = duration
-
-        else:
-
-            end_time = (
-                current_time
-                + segment_duration
-            )
-
-        srt_blocks.append(
-            f&quot;{index}\n&quot;
-            f&quot;{format_srt_time(start_time)} --&gt; &quot;
-            f&quot;{format_srt_time(end_time)}\n&quot;
-            f&quot;{caption}\n&quot;
-        )
-
-        current_time = end_time
-
-    # --------------------------------------------------------
-    # KAYDET
-    # --------------------------------------------------------
-
-    output_file.parent.mkdir(
-        parents=True,
-        exist_ok=True
-    )
-
-    output_file.write_text(
-        &quot;\n&quot;.join(srt_blocks),
-        encoding=&quot;utf-8&quot;
-    )
-
-    print()
-    print(&quot;=== ALTYAZI BLOKLARI ===&quot;)
-
-    for index, caption in enumerate(
-        captions,
-        start=1
-    ):
-        print(
-            f&quot;{index:02d}: {caption}&quot;
-        )
-
-    print()
-    print(&quot;✅ AI ALTYAZI OLUŞTURULDU&quot;)
-    print(f&quot;Dosya: {output_file}&quot;)
-
-    return output_file</code></pre>
+    return output_path</code></pre>
 
 </section>
 
 <section class="file-card">
 
 <div class="file-title">
-📄 app/content/video_creator.py
+📄 app/content/transcriber.py
+</div>
+
+<pre><code class="language-python">from pathlib import Path
+
+from openai import OpenAI
+
+from config.settings import OPENAI_API_KEY
+
+
+client = OpenAI(api_key=OPENAI_API_KEY)
+
+
+def transcribe_audio(audio_path):
+    audio_path = Path(audio_path)
+
+    if not audio_path.exists():
+        raise FileNotFoundError(
+            f&quot;Ses dosyası bulunamadı: {audio_path}&quot;
+        )
+
+    with open(audio_path, &quot;rb&quot;) as audio_file:
+        result = client.audio.transcriptions.create(
+            model=&quot;gpt-4o-mini-transcribe&quot;,
+            file=audio_file,
+            response_format=&quot;json&quot;,
+        )
+
+    return result</code></pre>
+
+</section>
+
+<section class="file-card">
+
+<div class="file-title">
+📄 app/content/video_pipeline.py
 </div>
 
 <pre><code class="language-python">from pathlib import Path
@@ -6551,131 +8069,78 @@ import subprocess
 
 
 # ============================================================
-# SES SÜRESİ
+# VİDEOYA ALTYAZI GÖMME
 # ============================================================
 
-def get_audio_duration(audio_file):
-
-    result = subprocess.run(
-        [
-            &quot;ffprobe&quot;,
-            &quot;-v&quot;,
-            &quot;error&quot;,
-            &quot;-show_entries&quot;,
-            &quot;format=duration&quot;,
-            &quot;-of&quot;,
-            &quot;default=noprint_wrappers=1:nokey=1&quot;,
-            str(audio_file),
-        ],
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-
-    return float(result.stdout.strip())
-
-
-# ============================================================
-# GÖRSELLER + SES → VİDEO
-# ============================================================
-
-def create_video(
-    image_folder,
-    audio_file,
+def add_subtitles(
+    video_file,
+    subtitle_file,
     output_file,
 ):
 
-    image_folder = Path(image_folder)
-    audio_file = Path(audio_file)
+    video_file = Path(video_file)
+    subtitle_file = Path(subtitle_file)
     output_file = Path(output_file)
 
     # --------------------------------------------------------
     # DOSYA KONTROLLERİ
     # --------------------------------------------------------
 
-    if not image_folder.exists():
+    if not video_file.exists():
         raise FileNotFoundError(
-            f&quot;Görsel klasörü bulunamadı: {image_folder}&quot;
+            f&quot;Video bulunamadı: {video_file}&quot;
         )
 
-    if not audio_file.exists():
+    if not subtitle_file.exists():
         raise FileNotFoundError(
-            f&quot;Ses dosyası bulunamadı: {audio_file}&quot;
+            f&quot;Altyazı bulunamadı: {subtitle_file}&quot;
         )
 
-    images = sorted(
-        image_folder.glob(&quot;*.png&quot;)
-    )
-
-    if not images:
-        raise FileNotFoundError(
-            f&quot;Görsel bulunamadı: {image_folder}&quot;
-        )
-
-    # --------------------------------------------------------
-    # SES SÜRESİNİ ÖLÇ
-    # --------------------------------------------------------
-
-    audio_duration = get_audio_duration(
-        audio_file
-    )
-
-    # --------------------------------------------------------
-    # GÖRSELLERİN SÜRESİNİ HESAPLA
-    # --------------------------------------------------------
-
-    image_duration = (
-        audio_duration / len(images)
+    output_file.parent.mkdir(
+        parents=True,
+        exist_ok=True
     )
 
     print()
-    print(&quot;=== VİDEO OLUŞTURMA ===&quot;)
-    print(
-        f&quot;🎨 Görsel sayısı: {len(images)}&quot;
-    )
-    print(
-        f&quot;🎙️ Ses süresi: {audio_duration:.2f} saniye&quot;
-    )
-    print(
-        f&quot;⏱️ Görsel başına süre: &quot;
-        f&quot;{image_duration:.2f} saniye&quot;
-    )
-    print(
-        &quot;🎬 Video oluşturuluyor...&quot;
+    print(&quot;=== VİDEO MOTORU ===&quot;)
+    print(&quot;🎬 Video hazırlanıyor...&quot;)
+    print(&quot;📝 Altyazı videoya gömülüyor...&quot;)
+
+    # --------------------------------------------------------
+    # WINDOWS YOLU
+    # --------------------------------------------------------
+
+    subtitle_path = str(
+        subtitle_file.resolve()
+    ).replace(&quot;\\&quot;, &quot;/&quot;)
+
+    # FFmpeg filter için Windows sürücüsündeki : karakterini kaçır
+    subtitle_path = subtitle_path.replace(
+        &quot;:&quot;,
+        &quot;\\:&quot;
     )
 
     # --------------------------------------------------------
-    # GEÇİCİ GÖRSEL LİSTESİ
+    # ALTYAZI STİLİ
     # --------------------------------------------------------
 
-    concat_file = (
-        image_folder.parent
-        / &quot;image_list.txt&quot;
+    subtitle_style = (
+        &quot;FontName=Arial,&quot;
+        &quot;FontSize=10,&quot;
+        &quot;Bold=1,&quot;
+        &quot;PrimaryColour=&amp;H00FFFFFF,&quot;
+        &quot;OutlineColour=&amp;H00000000,&quot;
+        &quot;BorderStyle=1,&quot;
+        &quot;Outline=2,&quot;
+        &quot;Shadow=1,&quot;
+        &quot;Alignment=8,&quot;
+        &quot;MarginV=220&quot;
     )
 
-    with open(
-        concat_file,
-        &quot;w&quot;,
-        encoding=&quot;utf-8&quot;
-    ) as file:
-
-        for image in images:
-
-            file.write(
-                f&quot;file &#x27;{image.resolve()}&#x27;\n&quot;
-            )
-
-            file.write(
-                f&quot;duration {image_duration:.6f}\n&quot;
-            )
-
-        # FFmpeg concat demuxer&#x27;da son görselin
-        # duration değerinin uygulanması için
-        # son dosyayı tekrar ekliyoruz.
-
-        file.write(
-            f&quot;file &#x27;{images[-1].resolve()}&#x27;\n&quot;
-        )
+    subtitle_filter = (
+        f&quot;subtitles=&#x27;{subtitle_path}&#x27;&quot;
+        f&quot;:force_style=&#x27;{subtitle_style}&#x27;&quot;
+    )
 
     # --------------------------------------------------------
     # FFMPEG
@@ -6685,35 +8150,11 @@ def create_video(
         &quot;ffmpeg&quot;,
         &quot;-y&quot;,
 
-        &quot;-f&quot;,
-        &quot;concat&quot;,
-
-        &quot;-safe&quot;,
-        &quot;0&quot;,
-
         &quot;-i&quot;,
-        str(concat_file),
-
-        &quot;-i&quot;,
-        str(audio_file),
-
-        # ----------------------------------------------------
-        # SHORTS FORMAT
-        # ----------------------------------------------------
+        str(video_file),
 
         &quot;-vf&quot;,
-        (
-            &quot;scale=1080:1920:&quot;
-            &quot;force_original_aspect_ratio=increase,&quot;
-            &quot;crop=1080:1920&quot;
-        ),
-
-        &quot;-r&quot;,
-        &quot;25&quot;,
-
-        # ----------------------------------------------------
-        # VİDEO
-        # ----------------------------------------------------
+        subtitle_filter,
 
         &quot;-c:v&quot;,
         &quot;libx264&quot;,
@@ -6724,25 +8165,8 @@ def create_video(
         &quot;-crf&quot;,
         &quot;20&quot;,
 
-        &quot;-pix_fmt&quot;,
-        &quot;yuv420p&quot;,
-
-        # ----------------------------------------------------
-        # SES
-        # ----------------------------------------------------
-
         &quot;-c:a&quot;,
-        &quot;aac&quot;,
-
-        &quot;-b:a&quot;,
-        &quot;128k&quot;,
-
-        # ----------------------------------------------------
-        # SESİ KESME
-        # ----------------------------------------------------
-
-        &quot;-t&quot;,
-        f&quot;{audio_duration:.3f}&quot;,
+        &quot;copy&quot;,
 
         str(output_file),
     ]
@@ -6757,170 +8181,121 @@ def create_video(
     )
 
     # --------------------------------------------------------
-    # GEÇİCİ DOSYAYI SİL
-    # --------------------------------------------------------
-
-    if concat_file.exists():
-        concat_file.unlink()
-
-    # --------------------------------------------------------
     # SONUÇ
     # --------------------------------------------------------
 
     if not output_file.exists():
         raise RuntimeError(
-            &quot;FFmpeg çalıştı ancak video oluşmadı.&quot;
+            &quot;FFmpeg çalıştı ancak çıktı videosu oluşmadı.&quot;
         )
 
     print()
     print(&quot;========================================&quot;)
-    print(&quot;✅ VIDEO OLUŞTURULDU&quot;)
+    print(&quot;✅ FİNAL VİDEO OLUŞTURULDU&quot;)
     print(&quot;========================================&quot;)
     print()
-    print(
-        f&quot;Dosya: {output_file}&quot;
-    )
+    print(f&quot;Dosya: {output_file}&quot;)
 
-    return output_file
-</code></pre>
+    return output_file</code></pre>
 
 </section>
 
 <section class="file-card">
 
 <div class="file-title">
-📄 app/core/editor_test.py
+📄 app/core/engine.py
 </div>
 
-<pre><code class="language-python">from app.content.content_editor import evaluate_content
+<pre><code class="language-python">from config.settings import APP_NAME, VERSION, LANGUAGE
+from app.content.content_engine import create_short
 
 
-test_content = &quot;&quot;&quot;
-Uzayda yaşamak kulağa harika geliyor ama gerçek çok daha tuhaf!
+print(APP_NAME)
+print(&quot;Sürüm:&quot;, VERSION)
+print(&quot;Dil:&quot;, LANGUAGE)
+print(&quot;--------------------&quot;)
 
-Bir bardak suyu masaya koyuyorsun ama su aşağıya akmıyor.
-Yemek yerken kırıntılar havada uçuşuyor.
+topic = input(&quot;Konu gir: &quot;)
 
-Astronotlar uyumak için özel uyku tulumları kullanıyor.
-Uzun süre uzayda kalmak ise kasların ve kemiklerin güç kaybetmesine neden oluyor.
-
-Peki sen uzayda yaşamaya bir hafta dayanabilir miydin?
-&quot;&quot;&quot;
-
-
-result, decision = evaluate_content(test_content)
-
-print()
-print(&quot;=== TEST SONUCU ===&quot;)
-print(f&quot;Karar: {decision}&quot;)</code></pre>
+create_short(topic)</code></pre>
 
 </section>
 
 <section class="file-card">
 
 <div class="file-title">
-📄 app/core/image_test.py
+📄 app/core/srt_test.py
 </div>
 
 <pre><code class="language-python">from pathlib import Path
 
-from app.content.image_generator import generate_image
+from app.content.subtitle_engine import create_subtitle
 
 
-prompts = [
-    &quot;&quot;&quot;
-    Cinematic realistic visualization of the early universe,
-    expanding space, forming galaxies and stars,
-    deep space background, dramatic lighting,
-    scientific documentary style.
-    &quot;&quot;&quot;,
+VIDEO_FOLDER = Path(&quot;shorts/007&quot;)
 
-    &quot;&quot;&quot;
-    A mysterious cosmic energy point expanding into the universe,
-    forming particles and galaxies,
-    cinematic realistic space scene,
-    scientific documentary style.
-    &quot;&quot;&quot;,
-
-    &quot;&quot;&quot;
-    Early galaxies forming in the young universe,
-    clouds of cosmic dust, newborn stars,
-    deep space, ultra realistic, cinematic lighting.
-    &quot;&quot;&quot;,
-
-    &quot;&quot;&quot;
-    The evolution of the universe from a hot dense state
-    toward galaxies and stars,
-    scientific visualization, realistic, highly detailed.
-    &quot;&quot;&quot;,
-
-    &quot;&quot;&quot;
-    Epic view of the expanding universe,
-    countless galaxies appearing across deep space,
-    cinematic documentary photography style,
-    realistic and highly detailed.
-    &quot;&quot;&quot;
-]
-
-
-output_folder = Path(&quot;shorts&quot;) / &quot;image_test&quot;
-
-output_folder.mkdir(parents=True, exist_ok=True)
-
-
-for index, prompt in enumerate(prompts, start=1):
-
-    print()
-    print(f&quot;🎨 Görsel {index}/5 oluşturuluyor...&quot;)
-
-    output_path = output_folder / f&quot;{index:02d}.png&quot;
-
-    generate_image(prompt, output_path)
-
-    print(f&quot;✅ Kaydedildi: {output_path}&quot;)
+TRANSCRIPT_FILE = VIDEO_FOLDER / &quot;transkript.txt&quot;
+AUDIO_FILE = VIDEO_FOLDER / &quot;ses.mp3&quot;
+SRT_FILE = VIDEO_FOLDER / &quot;altyazi_ai.srt&quot;
 
 
 print()
-print(&quot;🎉 5 GÖRSEL TAMAMLANDI!&quot;)</code></pre>
-
-</section>
-
-<section class="file-card">
-
-<div class="file-title">
-📄 app/core/transcribe_test.py
-</div>
-
-<pre><code class="language-python">from pathlib import Path
-
-from app.content.transcriber import transcribe_audio
+print(&quot;=== SRT TEST ===&quot;)
 
 
-audio_file = Path(&quot;shorts/007/ses.mp3&quot;)
-output_file = Path(&quot;shorts/007/transkript.txt&quot;)
-
-
-print()
-print(&quot;=== AI TRANSCRIBE ===&quot;)
-print(&quot;🎙️ Ses yazıya çevriliyor...&quot;)
-
-
-result = transcribe_audio(audio_file)
-
-
-print()
-print(&quot;=== TRANSKRİPT ===&quot;)
-print(result.text)
-
-
-output_file.write_text(
-    result.text,
-    encoding=&quot;utf-8&quot;
+create_subtitle(
+    transcript_file=TRANSCRIPT_FILE,
+    audio_file=AUDIO_FILE,
+    output_file=SRT_FILE,
 )
 
 
 print()
-print(&quot;✅ TRANSKRİPT TAMAMLANDI&quot;)
+print(&quot;🎉 SRT TEST BAŞARILI&quot;)</code></pre>
+
+</section>
+
+<section class="file-card">
+
+<div class="file-title">
+📄 app/core/tts_test.py
+</div>
+
+<pre><code class="language-python">from pathlib import Path
+
+from app.content.tts_generator import generate_speech
+
+
+script_file = Path(&quot;shorts/007/senaryo.txt&quot;)
+output_file = Path(&quot;shorts/007/ses.mp3&quot;)
+
+
+if not script_file.exists():
+    raise FileNotFoundError(
+        f&quot;Senaryo bulunamadı: {script_file}&quot;
+    )
+
+
+text = script_file.read_text(encoding=&quot;utf-8&quot;).strip()
+
+
+if not text:
+    raise ValueError(&quot;Senaryo dosyası boş.&quot;)
+
+
+print()
+print(&quot;=== AI TTS ===&quot;)
+print(&quot;🎙️ Ses oluşturuluyor...&quot;)
+
+
+generate_speech(
+    text,
+    output_file
+)
+
+
+print()
+print(&quot;✅ SES OLUŞTURULDU&quot;)
 print(f&quot;Dosya: {output_file}&quot;)</code></pre>
 
 </section>
@@ -6928,50 +8303,110 @@ print(f&quot;Dosya: {output_file}&quot;)</code></pre>
 <section class="file-card">
 
 <div class="file-title">
-📄 app/core/word_timestamp_test.py
+📄 app/upload/__init__.py
+</div>
+
+<pre><code class="language-python"></code></pre>
+
+</section>
+
+<section class="file-card">
+
+<div class="file-title">
+📄 app/upload/upload_state.py
 </div>
 
 <pre><code class="language-python">from pathlib import Path
-
-from app.content.transcriber import transcribe_audio
-
-
-audio_file = Path(&quot;shorts/007/ses.mp3&quot;)
+import json
 
 
-print()
-print(&quot;=== GERÇEK KELİME ZAMANLARI TESTİ ===&quot;)
-print(&quot;🎙️ Ses analiz ediliyor...&quot;)
+BASE_DIR = Path(__file__).resolve().parents[2]
+
+STATE_FILE = BASE_DIR / &quot;data&quot; / &quot;upload_state.json&quot;
 
 
-result = transcribe_audio(audio_file)
+def load_state():
 
+    if not STATE_FILE.exists():
+        return {}
 
-print()
-print(&quot;=== TRANSKRİPT ===&quot;)
-print(result.text)
+    try:
 
-print()
-print(&quot;=== KELİME ZAMANLARI ===&quot;)
-
-
-if hasattr(result, &quot;words&quot;) and result.words:
-
-    for word in result.words[:20]:
-
-        print(
-            f&quot;{word.word}  &quot;
-            f&quot;{word.start:.2f}s → &quot;
-            f&quot;{word.end:.2f}s&quot;
+        return json.loads(
+            STATE_FILE.read_text(
+                encoding=&quot;utf-8&quot;
+            )
         )
 
-else:
+    except Exception:
 
-    print(&quot;⚠️ Kelime zamanları döndürülmedi.&quot;)
+        return {}
 
 
-print()
-print(&quot;✅ TEST TAMAMLANDI&quot;)</code></pre>
+def save_state(state):
+
+    STATE_FILE.parent.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    STATE_FILE.write_text(
+        json.dumps(
+            state,
+            ensure_ascii=False,
+            indent=4
+        ),
+        encoding=&quot;utf-8&quot;
+    )
+
+
+def get_video_state(video_number):
+
+    state = load_state()
+
+    return state.get(
+        str(video_number)
+    )
+
+
+def set_video_state(
+    video_number,
+    status,
+    youtube_id=None,
+    upload_time=None,
+    publish_at=None,
+    error=None,
+):
+
+    state = load_state()
+
+    video_key = str(video_number)
+
+    state[video_key] = {
+        &quot;status&quot;: status,
+        &quot;youtube_id&quot;: youtube_id,
+        &quot;upload_time&quot;: upload_time,
+        &quot;publish_at&quot;: publish_at,
+        &quot;error&quot;: error,
+    }
+
+    save_state(state)
+
+    return state[video_key]
+
+
+def is_uploaded(video_number):
+
+    video_state = get_video_state(
+        video_number
+    )
+
+    if not video_state:
+        return False
+
+    return video_state.get(
+        &quot;status&quot;
+    ) == &quot;uploaded&quot;</code></pre>
 
 </section>
 
@@ -7014,6 +8449,7 @@ TOKEN_FILE = (
 SCOPES = [
     &quot;https://www.googleapis.com/auth/youtube.readonly&quot;,
     &quot;https://www.googleapis.com/auth/yt-analytics.readonly&quot;,
+    &quot;https://www.googleapis.com/auth/youtube.upload&quot;,
 ]
 
 
@@ -7154,10 +8590,170 @@ if __name__ == &quot;__main__&quot;:
 <section class="file-card">
 
 <div class="file-title">
-📄 config/__init__.py
+📄 app/youtube/youtube_uploader.py
 </div>
 
-<pre><code class="language-python"></code></pre>
+<pre><code class="language-python">from pathlib import Path
+
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaFileUpload
+
+from app.youtube.youtube_auth import authenticate_youtube
+
+
+BASE_DIR = Path(__file__).resolve().parents[2]
+
+
+def get_youtube_service():
+
+    credentials = authenticate_youtube()
+
+    if credentials is None:
+        raise RuntimeError(
+            &quot;YouTube yetkilendirmesi alınamadı.&quot;
+        )
+
+    return build(
+        &quot;youtube&quot;,
+        &quot;v3&quot;,
+        credentials=credentials
+    )
+
+
+def test_connection():
+
+    youtube = get_youtube_service()
+
+    response = youtube.channels().list(
+        part=&quot;snippet&quot;,
+        mine=True
+    ).execute()
+
+    items = response.get(
+        &quot;items&quot;,
+        []
+    )
+
+    if not items:
+        raise RuntimeError(
+            &quot;YouTube kanalı bulunamadı.&quot;
+        )
+
+    channel = items[0][&quot;snippet&quot;]
+
+    print()
+    print(&quot;========================================&quot;)
+    print(&quot;✅ YOUTUBE API BAĞLANTISI BAŞARILI&quot;)
+    print(&quot;========================================&quot;)
+    print()
+    print(
+        f&quot;📺 Kanal: {channel.get(&#x27;title&#x27;)}&quot;
+    )
+    print()
+
+
+def upload_video(
+    video_file,
+    title,
+    description=&quot;&quot;,
+    tags=None,
+    publish_at=None,
+):
+
+    video_file = Path(video_file)
+
+    if not video_file.exists():
+        raise FileNotFoundError(
+            f&quot;Video bulunamadı: {video_file}&quot;
+        )
+
+    if tags is None:
+        tags = []
+
+    youtube = get_youtube_service()
+
+    print()
+    print(&quot;========================================&quot;)
+    print(&quot;📤 YOUTUBE VIDEO YÜKLEME&quot;)
+    print(&quot;========================================&quot;)
+    print()
+    print(f&quot;🎬 Video : {video_file}&quot;)
+    print(f&quot;📝 Başlık: {title}&quot;)
+
+    if publish_at:
+        print(
+            f&quot;📅 Yayın zamanı: {publish_at}&quot;
+        )
+
+    body = {
+        &quot;snippet&quot;: {
+            &quot;title&quot;: title,
+            &quot;description&quot;: description,
+            &quot;tags&quot;: tags,
+            &quot;categoryId&quot;: &quot;22&quot;,
+        },
+        &quot;status&quot;: {
+            &quot;privacyStatus&quot;: &quot;private&quot;,
+        },
+    }
+
+    if publish_at:
+        body[&quot;status&quot;][&quot;publishAt&quot;] = publish_at
+
+    media = MediaFileUpload(
+        str(video_file),
+        mimetype=&quot;video/mp4&quot;,
+        resumable=True,
+    )
+
+    print()
+    print(&quot;📤 YouTube&#x27;a yükleme başlıyor...&quot;)
+
+    request = youtube.videos().insert(
+        part=&quot;snippet,status&quot;,
+        body=body,
+        media_body=media,
+    )
+
+    response = None
+
+    while response is None:
+
+        status, response = request.next_chunk()
+
+        if status:
+            progress = int(
+                status.progress() * 100
+            )
+
+            print(
+                f&quot;📤 Yükleme: %{progress}&quot;
+            )
+
+    video_id = response.get(&quot;id&quot;)
+
+    if not video_id:
+        raise RuntimeError(
+            &quot;YouTube video ID döndürmedi.&quot;
+        )
+
+    print()
+    print(&quot;========================================&quot;)
+    print(&quot;✅ YOUTUBE YÜKLEME BAŞARILI&quot;)
+    print(&quot;========================================&quot;)
+    print()
+    print(f&quot;🆔 Video ID: {video_id}&quot;)
+    print(
+        f&quot;🔗 https://www.youtube.com/watch?v={video_id}&quot;
+    )
+    print()
+
+    return video_id
+
+
+if __name__ == &quot;__main__&quot;:
+
+    test_connection()</code></pre>
 
 </section>
 
