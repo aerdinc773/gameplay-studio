@@ -147,7 +147,7 @@ pre code {
 </h1>
 
 <div class="update">
-GÜNCELLEME #001
+GÜNCELLEME #002
 </div>
 
 <p>
@@ -3719,48 +3719,96 @@ Sadece bu formatı kullan.
 from app.content.image_generator import generate_image
 
 
-def generate_images_from_prompt_file(prompt_file, output_folder):
+MAX_IMAGES = 5
+
+
+def generate_images_from_prompt_file(
+    prompt_file,
+    output_folder
+):
+
     prompt_file = Path(prompt_file)
     output_folder = Path(output_folder)
 
     if not prompt_file.exists():
+
         raise FileNotFoundError(
             f&quot;Görsel prompt dosyası bulunamadı: {prompt_file}&quot;
         )
 
-    output_folder.mkdir(parents=True, exist_ok=True)
+    output_folder.mkdir(
+        parents=True,
+        exist_ok=True
+    )
 
-    text = prompt_file.read_text(encoding=&quot;utf-8&quot;)
+    text = prompt_file.read_text(
+        encoding=&quot;utf-8&quot;
+    )
 
     prompts = [
         prompt.strip()
-        for prompt in text.split(&quot;\n&quot;)
+        for prompt in text.splitlines()
         if prompt.strip()
     ]
 
     if not prompts:
-        raise ValueError(&quot;Görsel promptu bulunamadı.&quot;)
+
+        raise ValueError(
+            &quot;Görsel promptu bulunamadı.&quot;
+        )
+
+    original_count = len(prompts)
+
+    prompts = prompts[:MAX_IMAGES]
+
+    if original_count &gt; MAX_IMAGES:
+
+        print()
+        print(
+            f&quot;⚠️ {original_count} prompt bulundu.&quot;
+        )
+
+        print(
+            f&quot;⚠️ Maksimum {MAX_IMAGES} görsel işlenecek.&quot;
+        )
 
     print()
-    print(f&quot;🎨 Toplam {len(prompts)} görsel üretilecek.&quot;)
+    print(
+        f&quot;🎨 Toplam {len(prompts)} görsel üretilecek.&quot;
+    )
 
     generated_files = []
 
-    for index, prompt in enumerate(prompts, start=1):
+    for index, prompt in enumerate(
+        prompts,
+        start=1
+    ):
 
         print()
-        print(f&quot;🎨 Görsel {index}/{len(prompts)} oluşturuluyor...&quot;)
+        print(
+            f&quot;🎨 Görsel {index}/{len(prompts)} oluşturuluyor...&quot;
+        )
 
-        output_path = output_folder / f&quot;{index:02d}.png&quot;
+        output_path = (
+            output_folder
+            / f&quot;{index:02d}.png&quot;
+        )
 
-        generate_image(prompt, output_path)
+        generate_image(
+            prompt,
+            output_path
+        )
 
-        print(f&quot;✅ Kaydedildi: {output_path}&quot;)
+        print(
+            f&quot;✅ Kaydedildi: {output_path}&quot;
+        )
 
-        generated_files.append(output_path)
+        generated_files.append(
+            output_path
+        )
 
     print()
-    print(&quot;🎉 TÜM GÖRSELLER TAMAMLANDI!&quot;)
+    print(&quot;🎉 GÖRSELLER TAMAMLANDI!&quot;)
 
     return generated_files</code></pre>
 
@@ -5501,8 +5549,8 @@ if __name__ == &quot;__main__&quot;:
 
 <pre><code class="language-python">from openai import OpenAI
 from pathlib import Path
-from datetime import datetime
 import json
+import re
 
 from config.settings import OPENAI_API_KEY
 
@@ -5528,11 +5576,12 @@ STRATEGY_FILE = (
     / &quot;current_strategy.json&quot;
 )
 
+SHORTS_DIR = BASE_DIR / &quot;shorts&quot;
+
 
 def load_strategy():
 
     if not STRATEGY_FILE.exists():
-
         return None
 
     try:
@@ -5554,6 +5603,65 @@ def load_strategy():
         return None
 
 
+def get_next_video_number():
+
+    SHORTS_DIR.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    numbers = []
+
+    for path in SHORTS_DIR.iterdir():
+
+        if not path.is_dir():
+            continue
+
+        match = re.fullmatch(
+            r&quot;(\d+)&quot;,
+            path.name
+        )
+
+        if match:
+
+            numbers.append(
+                int(match.group(1))
+            )
+
+    if not numbers:
+        return 1
+
+    return max(numbers) + 1
+
+
+def extract_voice_text(content):
+
+    lines = content.splitlines()
+
+    sections = {
+        &quot;HOOK:&quot;,
+        &quot;GİRİŞ:&quot;,
+        &quot;GELİŞME:&quot;,
+        &quot;KAPANIŞ:&quot;
+    }
+
+    voice_lines = []
+
+    for line in lines:
+
+        clean = line.strip()
+
+        if not clean:
+            continue
+
+        if clean.upper() in sections:
+            continue
+
+        voice_lines.append(clean)
+
+    return &quot;\n&quot;.join(voice_lines).strip()
+
+
 def create_short(topic):
 
     print()
@@ -5562,20 +5670,17 @@ def create_short(topic):
     print(&quot;========================================&quot;)
     print()
 
-
     # ========================================================
     # ANALİZ ZAMANINI KONTROL ET
     # ========================================================
 
-    analysis_ready = run_analysis_if_needed()
-
+    run_analysis_if_needed()
 
     # ========================================================
-    # MEVCUT STRATEJİYİ AL
+    # MEVCUT STRATEJİ
     # ========================================================
 
     strategy = load_strategy()
-
 
     if strategy is None:
 
@@ -5591,7 +5696,6 @@ def create_short(topic):
             &quot;♻️ Mevcut AI stratejisi kullanılacak.&quot;
         )
 
-
     # ========================================================
     # OPENAI
     # ========================================================
@@ -5600,9 +5704,8 @@ def create_short(topic):
         api_key=OPENAI_API_KEY
     )
 
-
     # ========================================================
-    # STRATEJİ BİLGİSİ
+    # STRATEJİ METNİ
     # ========================================================
 
     if strategy:
@@ -5619,130 +5722,35 @@ def create_short(topic):
             &quot;Henüz kayıtlı bir strateji yok.&quot;
         )
 
-
     # ========================================================
-    # SENARYO OLUŞTUR
+    # SENARYO
     # ========================================================
 
     prompt = f&quot;&quot;&quot;
 Sen Creator Engine&#x27;in profesyonel YouTube Shorts
 senaryo motorusun.
 
-Verilen KONU için, aşağıdaki güncel AI stratejisini
-uygulayarak yüksek retention hedefleyen bir Shorts
-senaryosu oluştur.
-
-========================================================
-KONU
-========================================================
-
+KONU:
 {topic}
 
-
-========================================================
-GÜNCEL AI STRATEJİSİ
-========================================================
-
+GÜNCEL AI STRATEJİSİ:
 {strategy_text}
 
+KURALLAR:
 
-========================================================
-SENARYO KURALLARI
-========================================================
+- Tek ana fikir anlat.
+- Hedef süre 21-30 saniye.
+- İlk 1-2 saniyede güçlü hook kullan.
+- Uzun giriş yapma.
+- Doğal Türkçe kullan.
+- Kısa ve akıcı cümleler kullan.
+- Gereksiz tekrar yapma.
+- Videonun ortasında şaşırtıcı veya güçlü bir bilgi ver.
+- Sonunda güçlü ve net bir sonuç ver.
+- &quot;Merhaba arkadaşlar&quot;, &quot;bugün sizlere&quot; gibi girişler kullanma.
+- &quot;Abone ol&quot;, &quot;like at&quot; gibi standart kapanışlar kullanma.
 
-1. TEK FİKİR KURALI
-
-Videoda yalnızca tek bir ana fikir anlat.
-
-Konuyu gereksiz yan bilgilere bölme.
-
-
-2. SÜRE KURALI
-
-Varsayılan hedef:
-
-21-30 saniye.
-
-Senaryo bu süreye uygun uzunlukta olmalı.
-
-31 saniyeyi ancak konunun anlaşılması gerçekten
-mümkün değilse aş.
-
-60 saniyeyi kesinlikle hedefleme.
-
-
-3. HOOK KURALI
-
-İlk 1-2 saniyede doğrudan güçlü bir merak
-veya şaşırtıcı bilgi oluştur.
-
-Uzun giriş yapma.
-
-&quot;Merhaba arkadaşlar&quot;
-&quot;Bugün sizlere...&quot;
-&quot;Bu videoda...&quot;
-gibi girişler kullanma.
-
-Mümkünse cevabın küçük bir bölümünü ilk cümlede
-ver fakat izleyicinin devamını merak etmesini sağla.
-
-
-4. ANLATIM
-
-Kısa cümleler kullan.
-
-Doğal Türkçe kullan.
-
-Gereksiz tekrar yapma.
-
-Teknik terim gerekiyorsa sade şekilde açıkla.
-
-Her cümle bir sonraki cümleyi merak ettirmeli.
-
-
-5. RETENTION
-
-Videonun ortasında yeni bir bilgi,
-karşılaştırma, şaşırtıcı sayı veya ters köşe
-kullan.
-
-Son bölümde güçlü bir sonuç ver.
-
-Gereksiz uzun kapanış yapma.
-
-
-6. KAPANIŞ
-
-Videonun sonunda ana fikri net şekilde tamamla.
-
-&quot;Abone olmayı unutmayın&quot;
-&quot;Like atmayı unutmayın&quot;
-gibi standart kapanışlar kullanma.
-
-
-7. STRATEJİYE UYUM
-
-AI STRATEJİSİNDE bulunan:
-
-- başarılı konu türlerini
-- başarılı hook özelliklerini
-- başarılı başlık yaklaşımını
-- başarılı süre aralığını
-- kaçınılması gereken içerikleri
-
-mümkün olduğunca uygula.
-
-Ancak strateji ile verilen KONU arasında çelişki
-varsa KONU&#x27;yu değiştirme.
-
-KONU&#x27;yu stratejiye uygun şekilde işle.
-
-
-========================================================
-ÇIKTI FORMATI
-========================================================
-
-Tam olarak şu formatı kullan:
+ÇIKTI FORMATI:
 
 HOOK:
 ...
@@ -5756,26 +5764,7 @@ GELİŞME:
 KAPANIŞ:
 ...
 
-
-========================================================
-SON KONTROL
-========================================================
-
-Senaryoyu oluşturmadan önce kendi içinde kontrol et:
-
-- İlk 2 saniyede güçlü hook var mı?
-- Tek bir ana fikir var mı?
-- 21-30 saniyeye uygun mu?
-- Gereksiz giriş var mı?
-- Gereksiz cümle var mı?
-- İzleyicide &quot;sonra ne olacak?&quot; merakı oluşuyor mu?
-- Sonunda güçlü bir sonuç var mı?
-- Güncel AI stratejisine uyuyor mu?
-
-Eksikse düzelt.
-
 SADECE SENARYOYU ÜRET.
-
 Türkçe yaz.
 &quot;&quot;&quot;
 
@@ -5788,7 +5777,6 @@ Türkçe yaz.
 
         content = response.output_text.strip()
 
-
     except Exception as error:
 
         print()
@@ -5798,8 +5786,7 @@ Türkçe yaz.
 
         return None
 
-
-    # ========================================================
+       # ========================================================
     # İÇERİK DEĞERLENDİRME
     # ========================================================
 
@@ -5815,21 +5802,72 @@ Türkçe yaz.
             f&quot;⚠️ İçerik değerlendirme hatası: {error}&quot;
         )
 
-        evaluation = None
+        return False
 
 
     # ========================================================
-    # ÇIKTI KLASÖRÜ
+    # AI EDİTÖR KARARI
     # ========================================================
 
-    timestamp = datetime.now().strftime(
-        &quot;%Y%m%d_%H%M%S&quot;
+    editor_result, decision = evaluation
+
+
+    if decision != &quot;ONAY&quot;:
+
+        print()
+        print(&quot;========================================&quot;)
+        print(&quot;🛑 VİDEO ÜRETİMİ DURDURULDU&quot;)
+        print(&quot;========================================&quot;)
+        print()
+
+        print(
+            &quot;🎯 AI Editör Kararı:&quot;,
+            decision
+        )
+
+        print(
+            &quot;❌ İçerik üretim kriterlerini geçemedi.&quot;
+        )
+
+        print(
+            &quot;➡️ Görsel, ses, video ve altyazı üretimi yapılmayacak.&quot;
+        )
+
+        print()
+
+        return False
+
+
+    print()
+    print(
+        &quot;🎯 AI Editör Kararı: ONAY&quot;
     )
 
+    # ========================================================
+    # SESLENDİRME METNİ
+    # ========================================================
+
+    voice_text = extract_voice_text(
+        content
+    )
+
+    if not voice_text:
+
+        print(
+            &quot;❌ Seslendirme metni oluşturulamadı.&quot;
+        )
+
+        return None
+
+    # ========================================================
+    # SHORTS KLASÖRÜ
+    # ========================================================
+
+    video_number = get_next_video_number()
+
     output_folder = (
-        BASE_DIR
-        / &quot;output&quot;
-        / f&quot;short_{timestamp}&quot;
+        SHORTS_DIR
+        / f&quot;{video_number:03d}&quot;
     )
 
     output_folder.mkdir(
@@ -5837,14 +5875,18 @@ Türkçe yaz.
         exist_ok=True
     )
 
+    print()
+    print(
+        f&quot;📁 Shorts klasörü: {output_folder}&quot;
+    )
 
     # ========================================================
-    # SENARYOYU KAYDET
+    # SENARYO
     # ========================================================
 
     script_file = (
         output_folder
-        / &quot;script.txt&quot;
+        / &quot;senaryo.txt&quot;
     )
 
     script_file.write_text(
@@ -5852,6 +5894,19 @@ Türkçe yaz.
         encoding=&quot;utf-8&quot;
     )
 
+    # ========================================================
+    # SES METNİ
+    # ========================================================
+
+    voice_text_file = (
+        output_folder
+        / &quot;ses_metni.txt&quot;
+    )
+
+    voice_text_file.write_text(
+        voice_text,
+        encoding=&quot;utf-8&quot;
+    )
 
     # ========================================================
     # GÖRSEL PROMPTLARI
@@ -5859,7 +5914,7 @@ Türkçe yaz.
 
     prompt_file = (
         output_folder
-        / &quot;image_prompts.txt&quot;
+        / &quot;gorsel_prompt.txt&quot;
     )
 
     try:
@@ -5867,21 +5922,77 @@ Türkçe yaz.
         image_prompt_response = client.responses.create(
             model=&quot;gpt-5.4-mini&quot;,
             input=f&quot;&quot;&quot;
-Aşağıdaki Shorts senaryosu için
-görsel üretim promptları oluştur.
+Aşağıdaki YouTube Shorts senaryosu için
+TAM OLARAK 5 adet görsel üretim promptu oluştur.
 
-Senaryo:
+ÇOK ÖNEMLİ:
 
-{content}
+- Tam olarak 5 prompt yaz.
+- 5&#x27;ten fazla yazma.
+- Her prompt bir sahneyi temsil etmeli.
+- Her prompt tek satırda olmalı.
+- Numaralandırma kullanma.
+- Açıklama yazma.
+- Sadece 5 görsel promptu döndür.
 
-Her sahne için ayrı bir prompt yaz.
-Sadece promptları yaz.
+Görsel stil:
+- Gerçekçi
+- Sinematik
+- Belgesel kalitesinde
+- Dikey Shorts videosuna uygun kompozisyon
+- Güçlü görsel anlatım
+- Metin, logo veya watermark kullanma
+
+SENARYO:
+
+{voice_text}
 &quot;&quot;&quot;
         )
 
+        image_prompts = (
+            image_prompt_response
+            .output_text
+            .strip()
+        )
+
+        prompt_lines = [
+            line.strip()
+            for line in image_prompts.splitlines()
+            if line.strip()
+        ]
+
+        prompt_lines = [
+            re.sub(
+                r&quot;^\s*(?:\d+[\.\)\-:]|\-)\s*&quot;,
+                &quot;&quot;,
+                line
+            ).strip()
+            for line in prompt_lines
+        ]
+
+        prompt_lines = [
+            line
+            for line in prompt_lines
+            if line
+        ]
+
+        prompt_lines = prompt_lines[:5]
+
+        if len(prompt_lines) != 5:
+
+            raise ValueError(
+                f&quot;AI tam olarak 5 görsel promptu üretmedi. &quot;
+                f&quot;Alınan: {len(prompt_lines)}&quot;
+            )
+
         prompt_file.write_text(
-            image_prompt_response.output_text.strip(),
+            &quot;\n&quot;.join(prompt_lines),
             encoding=&quot;utf-8&quot;
+        )
+
+        print()
+        print(
+            &quot;🎨 Tam 5 görsel promptu hazır.&quot;
         )
 
     except Exception as error:
@@ -5890,6 +6001,7 @@ Sadece promptları yaz.
             f&quot;⚠️ Görsel promptları oluşturulamadı: {error}&quot;
         )
 
+        return None
 
     # ========================================================
     # GÖRSELLER
@@ -5897,7 +6009,7 @@ Sadece promptları yaz.
 
     images_folder = (
         output_folder
-        / &quot;images&quot;
+        / &quot;gorseller&quot;
     )
 
     try:
@@ -5913,6 +6025,7 @@ Sadece promptları yaz.
             f&quot;⚠️ Görsel üretim hatası: {error}&quot;
         )
 
+        return None
 
     # ========================================================
     # SES
@@ -5920,13 +6033,13 @@ Sadece promptları yaz.
 
     audio_file = (
         output_folder
-        / &quot;voice.mp3&quot;
+        / &quot;ses.mp3&quot;
     )
 
     try:
 
         generate_voice(
-            content,
+            voice_text,
             audio_file
         )
 
@@ -5936,6 +6049,7 @@ Sadece promptları yaz.
             f&quot;⚠️ Ses üretim hatası: {error}&quot;
         )
 
+        return None
 
     # ========================================================
     # VİDEO
@@ -5960,15 +6074,44 @@ Sadece promptları yaz.
             f&quot;⚠️ Video oluşturma hatası: {error}&quot;
         )
 
+        return None
 
     # ========================================================
     # TRANSKRİPT
     # ========================================================
 
+    transcript_file = (
+        output_folder
+        / &quot;transkript.txt&quot;
+    )
+
     try:
 
-        transcribe_audio(
+        transcript_result = transcribe_audio(
             audio_file
+        )
+
+        transcript_text = getattr(
+            transcript_result,
+            &quot;text&quot;,
+            &quot;&quot;
+        )
+
+        if not transcript_text:
+
+            raise ValueError(
+                &quot;Transkript metni boş.&quot;
+            )
+
+        transcript_file.write_text(
+            transcript_text.strip(),
+            encoding=&quot;utf-8&quot;
+        )
+
+        print()
+        print(
+            f&quot;✅ Transkript kaydedildi: &quot;
+            f&quot;{transcript_file}&quot;
         )
 
     except Exception as error:
@@ -5977,6 +6120,7 @@ Sadece promptları yaz.
             f&quot;⚠️ Transkript hatası: {error}&quot;
         )
 
+        return None
 
     # ========================================================
     # ALTYAZI
@@ -5984,15 +6128,15 @@ Sadece promptları yaz.
 
     subtitle_file = (
         output_folder
-        / &quot;subtitles.srt&quot;
+        / &quot;altyazi_ai.srt&quot;
     )
 
     try:
 
         create_subtitle(
-            content,
-            audio_file,
-            subtitle_file
+            transcript_file=transcript_file,
+            audio_file=audio_file,
+            output_file=subtitle_file
         )
 
     except Exception as error:
@@ -6001,6 +6145,7 @@ Sadece promptları yaz.
             f&quot;⚠️ Altyazı oluşturma hatası: {error}&quot;
         )
 
+        return None
 
     # ========================================================
     # ALTYAZIYI VİDEOYA EKLE
@@ -6008,23 +6153,24 @@ Sadece promptları yaz.
 
     final_video = (
         output_folder
-        / &quot;final.mp4&quot;
+        / &quot;video_final.mp4&quot;
     )
 
     try:
 
         add_subtitles(
-            video_file,
-            subtitle_file,
-            final_video
+            video_file=video_file,
+            subtitle_file=subtitle_file,
+            output_file=final_video
         )
 
     except Exception as error:
 
         print(
-            f&quot;⚠️ Altyazı ekleme hatası: {error}&quot;
+            f&quot;⚠️ Altyazı videoya eklenemedi: {error}&quot;
         )
 
+        return None
 
     # ========================================================
     # DATABASE
@@ -6033,7 +6179,7 @@ Sadece promptları yaz.
     try:
 
         add_video(
-            video_number=None,
+            video_number=video_number,
             topic=topic,
             script_file=str(script_file),
             video_file=str(final_video)
@@ -6044,7 +6190,6 @@ Sadece promptları yaz.
         print(
             f&quot;⚠️ Video veritabanına eklenemedi: {error}&quot;
         )
-
 
     # ========================================================
     # SONUÇ
@@ -6057,16 +6202,43 @@ Sadece promptları yaz.
     print()
 
     print(
+        f&quot;🎬 Video No: #{video_number:03d}&quot;
+    )
+
+    print(
         f&quot;📁 Klasör: {output_folder}&quot;
+    )
+
+    print(
+        f&quot;🎨 Görseller: {images_folder}&quot;
+    )
+
+    print(
+        f&quot;🎙️ Ses: {audio_file}&quot;
+    )
+
+    print(
+        f&quot;📝 Transkript: {transcript_file}&quot;
+    )
+
+    print(
+        f&quot;💬 Altyazı: {subtitle_file}&quot;
+    )
+
+    print(
+        f&quot;🎥 Final: {final_video}&quot;
     )
 
     print()
 
     return {
+        &quot;video_number&quot;: video_number,
         &quot;topic&quot;: topic,
         &quot;script&quot;: content,
+        &quot;voice_text&quot;: voice_text,
         &quot;folder&quot;: str(output_folder),
-        &quot;evaluation&quot;: evaluation
+        &quot;evaluation&quot;: evaluation,
+        &quot;final_video&quot;: str(final_video)
     }</code></pre>
 
 </section>
