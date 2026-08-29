@@ -7,12 +7,18 @@
 
 <style>
 
+* {
+    box-sizing: border-box;
+}
+
 body {
     margin: 0;
     background: #111;
     color: #ddd;
     font-family: Consolas, "Courier New", monospace;
 }
+
+/* ÜST BAŞLIK */
 
 .header {
     background: #181818;
@@ -28,28 +34,81 @@ body {
 
 .header p {
     color: #aaa;
+    margin-bottom: 0;
 }
 
-textarea {
-    display: block;
-    width: 100%;
-    height: calc(100vh - 110px);
+/* 3 SÜTUN */
 
-    box-sizing: border-box;
+.container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    height: calc(100vh - 116px);
+    padding: 8px;
+}
+
+/* KOD ALANLARI */
+
+textarea {
+    width: 100%;
+    height: 100%;
 
     background: #0b0b0b;
     color: #ddd;
 
-    border: none;
+    border: 1px solid #333;
     outline: none;
 
-    padding: 25px;
+    padding: 15px;
 
     font-family: Consolas, "Courier New", monospace;
-    font-size: 14px;
-    line-height: 1.5;
+    font-size: 13px;
+    line-height: 1.45;
 
     resize: none;
+
+    white-space: pre;
+    overflow: auto;
+}
+
+/* SÜTUN BAŞLIKLARI */
+
+.column {
+    position: relative;
+    min-width: 0;
+}
+
+.label {
+    position: absolute;
+    top: 6px;
+    right: 12px;
+
+    background: #222;
+    color: #888;
+
+    padding: 4px 8px;
+
+    font-family: Arial, sans-serif;
+    font-size: 11px;
+
+    border-radius: 4px;
+
+    z-index: 2;
+}
+
+/* EKRAN DARALIRSA */
+
+@media (max-width: 900px) {
+
+    .container {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+
+    textarea {
+        height: 500px;
+    }
+
 }
 
 </style>
@@ -62,13 +121,68 @@ textarea {
 <h1>🚀 Creator Engine — Proje İnceleme</h1>
 
 <p>
-Aşağıdaki alanın içine inceleme.txt içeriğini yapıştır.
+Proje dökümü — içerik üç sütuna bölünerek gösterilir.
 Kodlar çalıştırılmaz, yalnızca düz metin olarak gösterilir.
 </p>
 
 </div>
 
-<textarea spellcheck="false">
+
+<div class="container">
+
+    <div class="column">
+
+        <div class="label">1 / 3</div>
+
+        <textarea
+            id="column1"
+            spellcheck="false"
+            readonly
+        ></textarea>
+
+    </div>
+
+
+    <div class="column">
+
+        <div class="label">2 / 3</div>
+
+        <textarea
+            id="column2"
+            spellcheck="false"
+            readonly
+        ></textarea>
+
+    </div>
+
+
+    <div class="column">
+
+        <div class="label">3 / 3</div>
+
+        <textarea
+            id="column3"
+            spellcheck="false"
+            readonly
+        ></textarea>
+
+    </div>
+
+</div>
+
+
+<!--
+===========================================================
+İNCELEME VERİSİ
+===========================================================
+
+AŞAĞIDAKİ KISMA inceleme.txt'nin TAMAMINI
+SADECE BİR KEZ YAPIŞTIR.
+
+===========================================================
+-->
+
+<textarea id="source" style="display:none;">
 
 CREATOR ENGINE TAM PROJE RAPORU
 Oluşturulma: 08/29/2026 11:46:36
@@ -15396,6 +15510,36 @@ DOSYA: config\__init__.py
 
 
 </textarea>
+
+
+<script>
+
+const source =
+    document.getElementById("source").value;
+
+const lines =
+    source.split("\n");
+
+const total =
+    lines.length;
+
+const part =
+    Math.ceil(total / 3);
+
+
+document.getElementById("column1").value =
+    lines.slice(0, part).join("\n");
+
+
+document.getElementById("column2").value =
+    lines.slice(part, part * 2).join("\n");
+
+
+document.getElementById("column3").value =
+    lines.slice(part * 2).join("\n");
+
+</script>
+
 
 </body>
 </html>
