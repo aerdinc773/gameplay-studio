@@ -147,13 +147,13 @@ pre code {
 </h1>
 
 <div class="update">
-GÜNCELLEME #003
+GÜNCELLEME #004
 </div>
 
 <p>
 Gerçek proje dosyaları tarandı.
 Toplam Python dosyası:
-<strong>47</strong>
+<strong>49</strong>
 </p>
 
 <input
@@ -1539,6 +1539,7 @@ import json
 from datetime import datetime
 
 from app.automation.auto_creator import run_auto_creator
+from app.core.recovery_engine import run_with_retry
 
 
 BASE_DIR = Path(__file__).resolve().parents[2]
@@ -1561,7 +1562,9 @@ def load_state():
 
     except Exception as error:
 
-        print(f&quot;⚠️ Üretim durumu okunamadı: {error}&quot;)
+        print(
+            f&quot;⚠️ Üretim durumu okunamadı: {error}&quot;
+        )
 
         return {}
 
@@ -1621,27 +1624,61 @@ def run_production_scheduler():
 
     if already_produced_today():
 
-        print(&quot;✅ Bugünün videosu zaten üretildi.&quot;)
-        print(&quot;🛑 Yeni üretim yapılmayacak.&quot;)
+        print(
+            &quot;✅ Bugünün videosu zaten üretildi.&quot;
+        )
+
+        print(
+            &quot;🛑 Yeni üretim yapılmayacak.&quot;
+        )
+
         return None
 
-    print(&quot;🎬 Bugünün videosu henüz üretilmedi.&quot;)
-    print(&quot;🚀 Otomatik üretim başlatılıyor...&quot;)
+    print(
+        &quot;🎬 Bugünün videosu henüz üretilmedi.&quot;
+    )
+
+    print(
+        &quot;🚀 Otomatik üretim başlatılıyor...&quot;
+    )
+
     print()
 
-    result = run_auto_creator()
+    # --------------------------------------------------------
+    # RECOVERY İLE OTOMATİK ÜRETİM
+    # --------------------------------------------------------
 
-    if result:
+    recovery_result = run_with_retry(
+        run_auto_creator,
+        job_name=&quot;daily_production&quot;,
+        job_id=today,
+        max_retries=3,
+        retry_delay=60,
+    )
 
-        mark_produced()
+    # --------------------------------------------------------
+    # ÜRETİM BAŞARILI
+    # --------------------------------------------------------
 
-        print()
-        print(&quot;========================================&quot;)
-        print(&quot;✅ BUGÜNÜN ÜRETİMİ TAMAMLANDI&quot;)
-        print(&quot;========================================&quot;)
-        print()
+    if recovery_result[&quot;status&quot;] == &quot;success&quot;:
 
-        return result
+        result = recovery_result[&quot;result&quot;]
+
+        if result:
+
+            mark_produced()
+
+            print()
+            print(&quot;========================================&quot;)
+            print(&quot;✅ BUGÜNÜN ÜRETİMİ TAMAMLANDI&quot;)
+            print(&quot;========================================&quot;)
+            print()
+
+            return result
+
+    # --------------------------------------------------------
+    # ÜRETİM BAŞARISIZ
+    # --------------------------------------------------------
 
     print()
     print(&quot;========================================&quot;)
@@ -2123,820 +2160,813 @@ generate_images_from_prompt_file(
 <section class="file-card">
 
 <div class="file-title">
-📄 app/core/subtitle_test.py
-</div>
-
-<pre><code class="language-python">from pathlib import Path
-import subprocess
-
-
-# ============================================================
-# AYARLAR
-# ============================================================
-
-VIDEO_FOLDER = Path(&quot;shorts/007&quot;)
-
-VIDEO_FILE = VIDEO_FOLDER / &quot;video.mp4&quot;
-SRT_FILE = VIDEO_FOLDER / &quot;altyazi_ai.srt&quot;
-
-OUTPUT_VIDEO = VIDEO_FOLDER / &quot;video_final.mp4&quot;
-
-
-# ============================================================
-# DOSYA KONTROLLERİ
-# ============================================================
-
-print()
-print(&quot;=== PROFESYONEL ALTYAZI TESTİ ===&quot;)
-
-if not VIDEO_FILE.exists():
-    raise FileNotFoundError(
-        f&quot;Video bulunamadı: {VIDEO_FILE}&quot;
-    )
-
-if not SRT_FILE.exists():
-    raise FileNotFoundError(
-        f&quot;Altyazı bulunamadı: {SRT_FILE}&quot;
-    )
-
-
-print()
-print(&quot;🎬 Video bulundu:&quot;)
-print(VIDEO_FILE)
-
-print()
-print(&quot;📝 AI altyazı bulundu:&quot;)
-print(SRT_FILE)
-
-
-# ============================================================
-# SRT YOLUNU WINDOWS / FFMPEG FORMATINA ÇEVİR
-# ============================================================
-
-srt_path = SRT_FILE.resolve()
-
-# Windows yolunu FFmpeg subtitles filtresi için düzenle
-srt_filter_path = str(srt_path).replace(&quot;\\&quot;, &quot;/&quot;)
-
-# C: -&gt; C\:
-if &quot;:&quot; in srt_filter_path:
-    srt_filter_path = srt_filter_path.replace(&quot;:&quot;, &quot;\\:&quot;)
-
-
-# ============================================================
-# ALTYAZI STİLİ
-# ============================================================
-
-subtitle_style = (
-    &quot;FontName=Arial,&quot;
-    &quot;FontSize=10,&quot;
-    &quot;Bold=1,&quot;
-    &quot;PrimaryColour=&amp;H00FFFFFF,&quot;
-    &quot;OutlineColour=&amp;H00000000,&quot;
-    &quot;BorderStyle=1,&quot;
-    &quot;Outline=2,&quot;
-    &quot;Shadow=1,&quot;
-    &quot;Alignment=8,&quot;
-    &quot;MarginV=220&quot;
-)
-
-# ============================================================
-# FFMPEG KOMUTU
-# ============================================================
-
-subtitle_filter = (
-    f&quot;subtitles=&#x27;{srt_filter_path}&#x27;&quot;
-    f&quot;:force_style=&#x27;{subtitle_style}&#x27;&quot;
-)
-
-
-command = [
-    &quot;ffmpeg&quot;,
-    &quot;-y&quot;,
-
-    &quot;-i&quot;,
-    str(VIDEO_FILE),
-
-    &quot;-vf&quot;,
-    subtitle_filter,
-
-    # --------------------------------------------------------
-    # VİDEO
-    # --------------------------------------------------------
-
-    &quot;-c:v&quot;,
-    &quot;libx264&quot;,
-
-    &quot;-preset&quot;,
-    &quot;medium&quot;,
-
-    &quot;-crf&quot;,
-    &quot;20&quot;,
-
-    # --------------------------------------------------------
-    # SES
-    # --------------------------------------------------------
-
-    &quot;-c:a&quot;,
-    &quot;copy&quot;,
-
-    # --------------------------------------------------------
-    # ÇIKIŞ
-    # --------------------------------------------------------
-
-    str(OUTPUT_VIDEO),
-]
-
-
-# ============================================================
-# ÇALIŞTIR
-# ============================================================
-
-print()
-print(&quot;🎨 Altyazı videoya gömülüyor...&quot;)
-print()
-print(&quot;📍 Konum: Üst-Orta&quot;)
-print(&quot;🔠 Boyut: Küçük&quot;)
-print(&quot;⚪ Yazı: Beyaz&quot;)
-print(&quot;⬛ Kenarlık: Siyah&quot;)
-print()
-
-
-subprocess.run(
-    command,
-    check=True
-)
-
-
-# ============================================================
-# SONUÇ
-# ============================================================
-
-print()
-print(&quot;========================================&quot;)
-print(&quot;✅ FİNAL VİDEO OLUŞTURULDU&quot;)
-print(&quot;========================================&quot;)
-print()
-print(f&quot;Dosya: {OUTPUT_VIDEO}&quot;)
-print()</code></pre>
-
-</section>
-
-<section class="file-card">
-
-<div class="file-title">
-📄 app/core/video_test.py
+📄 app/core/srt_test.py
 </div>
 
 <pre><code class="language-python">from pathlib import Path
 
-from app.content.video_pipeline import add_subtitles
+from app.content.subtitle_engine import create_subtitle
 
 
 VIDEO_FOLDER = Path(&quot;shorts/007&quot;)
 
-VIDEO_FILE = VIDEO_FOLDER / &quot;video.mp4&quot;
+TRANSCRIPT_FILE = VIDEO_FOLDER / &quot;transkript.txt&quot;
+AUDIO_FILE = VIDEO_FOLDER / &quot;ses.mp3&quot;
 SRT_FILE = VIDEO_FOLDER / &quot;altyazi_ai.srt&quot;
-OUTPUT_FILE = VIDEO_FOLDER / &quot;video_final.mp4&quot;
 
 
 print()
-print(&quot;=== VİDEO PIPELINE TEST ===&quot;)
+print(&quot;=== SRT TEST ===&quot;)
 
-add_subtitles(
-    video_file=VIDEO_FILE,
-    subtitle_file=SRT_FILE,
-    output_file=OUTPUT_FILE,
+
+create_subtitle(
+    transcript_file=TRANSCRIPT_FILE,
+    audio_file=AUDIO_FILE,
+    output_file=SRT_FILE,
 )
 
+
 print()
-print(&quot;🎉 VİDEO TEST BAŞARILI&quot;)
-print(f&quot;Dosya: {OUTPUT_FILE}&quot;)</code></pre>
+print(&quot;🎉 SRT TEST BAŞARILI&quot;)</code></pre>
 
 </section>
 
 <section class="file-card">
 
 <div class="file-title">
-📄 app/upload/upload_config.py
-</div>
-
-<pre><code class="language-python">UPLOAD_ENABLED = True
-
-# Videonun YouTube&#x27;a yükleneceği saat
-UPLOAD_TIME = &quot;17:00&quot;
-
-# YouTube&#x27;da yayınlanacağı saat
-PUBLISH_TIME = &quot;18:00&quot;</code></pre>
-
-</section>
-
-<section class="file-card">
-
-<div class="file-title">
-📄 app/youtube/youtube_analytics_sync.py
+📄 app/core/tts_test.py
 </div>
 
 <pre><code class="language-python">from pathlib import Path
-import sqlite3
+
+from app.content.tts_generator import generate_speech
+
+
+script_file = Path(&quot;shorts/007/senaryo.txt&quot;)
+output_file = Path(&quot;shorts/007/ses.mp3&quot;)
+
+
+if not script_file.exists():
+    raise FileNotFoundError(
+        f&quot;Senaryo bulunamadı: {script_file}&quot;
+    )
+
+
+text = script_file.read_text(encoding=&quot;utf-8&quot;).strip()
+
+
+if not text:
+    raise ValueError(&quot;Senaryo dosyası boş.&quot;)
+
+
+print()
+print(&quot;=== AI TTS ===&quot;)
+print(&quot;🎙️ Ses oluşturuluyor...&quot;)
+
+
+generate_speech(
+    text,
+    output_file
+)
+
+
+print()
+print(&quot;✅ SES OLUŞTURULDU&quot;)
+print(f&quot;Dosya: {output_file}&quot;)</code></pre>
+
+</section>
+
+<section class="file-card">
+
+<div class="file-title">
+📄 app/upload/__init__.py
+</div>
+
+<pre><code class="language-python"></code></pre>
+
+</section>
+
+<section class="file-card">
+
+<div class="file-title">
+📄 app/upload/upload_scheduler.py
+</div>
+
+<pre><code class="language-python">from pathlib import Path
+from datetime import datetime
+import re
+
+from app.upload.upload_state import (
+    get_video_state,
+    set_video_state,
+)
+
+from app.youtube.youtube_uploader import upload_video
+from app.core.recovery_engine import run_with_retry
+
+from app.upload.upload_config import (
+    UPLOAD_ENABLED,
+    UPLOAD_TIME,
+    PUBLISH_TIME,
+)
+
+from app.upload.publish_scheduler import (
+    get_next_available_publish_time,
+)
+
+
+BASE_DIR = Path(__file__).resolve().parents[2]
+
+SHORTS_DIR = BASE_DIR / &quot;shorts&quot;
+
+
+# ============================================================
+# VIDEO BUL
+# ============================================================
+
+def find_video(video_number):
+
+    video_dir = (
+        SHORTS_DIR
+        / f&quot;{int(video_number):03d}&quot;
+    )
+
+    video_file = (
+        video_dir
+        / &quot;video_final.mp4&quot;
+    )
+
+    if not video_file.exists():
+        return None
+
+    return video_file
+
+
+# ============================================================
+# METADATA OKU
+# ============================================================
+
+def read_metadata(video_number):
+
+    video_dir = (
+        SHORTS_DIR
+        / f&quot;{int(video_number):03d}&quot;
+    )
+
+    title_file = video_dir / &quot;baslik.txt&quot;
+    description_file = video_dir / &quot;aciklama.txt&quot;
+    hashtag_file = video_dir / &quot;hashtag.txt&quot;
+
+    if not title_file.exists():
+        raise FileNotFoundError(
+            f&quot;Başlık dosyası bulunamadı: {title_file}&quot;
+        )
+
+    if not description_file.exists():
+        raise FileNotFoundError(
+            f&quot;Açıklama dosyası bulunamadı: {description_file}&quot;
+        )
+
+    if not hashtag_file.exists():
+        raise FileNotFoundError(
+            f&quot;Hashtag dosyası bulunamadı: {hashtag_file}&quot;
+        )
+
+    title = title_file.read_text(
+        encoding=&quot;utf-8&quot;
+    ).strip()
+
+    description = description_file.read_text(
+        encoding=&quot;utf-8&quot;
+    ).strip()
+
+    hashtag_text = hashtag_file.read_text(
+        encoding=&quot;utf-8&quot;
+    ).strip()
+
+    tags = [
+        tag.strip().lstrip(&quot;#&quot;)
+        for tag in hashtag_text.split()
+        if tag.strip()
+    ]
+
+    if not title:
+        raise ValueError(
+            f&quot;Başlık boş: {title_file}&quot;
+        )
+
+    if not description:
+        raise ValueError(
+            f&quot;Açıklama boş: {description_file}&quot;
+        )
+
+    if not tags:
+        raise ValueError(
+            f&quot;Hashtag bulunamadı: {hashtag_file}&quot;
+        )
+
+    return title, description, tags
+
+
+# ============================================================
+# UPLOAD ZAMANI
+# ============================================================
+
+def is_upload_time():
+
+    now = datetime.now()
+
+    current_time = now.strftime(
+        &quot;%H:%M&quot;
+    )
+
+    return current_time &gt;= UPLOAD_TIME
+
+
+# ============================================================
+# ESKİ YAYIN ZAMANI FONKSİYONU
+# ============================================================
+
+def get_publish_time():
+
+    today = datetime.now().strftime(
+        &quot;%Y-%m-%d&quot;
+    )
+
+    return (
+        f&quot;{today}T{PUBLISH_TIME}:00&quot;
+    )
+
+
+# ============================================================
+# NUMARALI SHORTS KLASÖRLERİNİ BUL
+# ============================================================
+
+def get_video_numbers():
+
+    SHORTS_DIR.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    numbers = []
+
+    for path in SHORTS_DIR.iterdir():
+
+        if not path.is_dir():
+            continue
+
+        if not re.fullmatch(
+            r&quot;\d+&quot;,
+            path.name
+        ):
+            continue
+
+        numbers.append(
+            int(path.name)
+        )
+
+    return sorted(numbers)
+
+
+# ============================================================
+# SIRADAKİ YÜKLENMEMİŞ VIDEO
+# ============================================================
+
+def find_next_upload():
+
+    video_numbers = get_video_numbers()
+
+    for video_number in video_numbers:
+
+        state = get_video_state(
+            video_number
+        )
+
+        if state:
+
+            status = state.get(
+                &quot;status&quot;
+            )
+
+            if status in {
+                &quot;uploaded&quot;,
+                &quot;published&quot;
+            }:
+
+                continue
+
+        video_file = find_video(
+            video_number
+        )
+
+        if video_file is None:
+            continue
+
+        return video_number
+
+    return None
+
+
+# ============================================================
+# VIDEO UPLOAD
+# ============================================================
+
+def upload_short(
+    video_number=None,
+):
+
+    print()
+    print(&quot;========================================&quot;)
+    print(&quot;📤 CREATOR ENGINE — UPLOAD SCHEDULER&quot;)
+    print(&quot;========================================&quot;)
+    print()
+
+    if not UPLOAD_ENABLED:
+
+        print(
+            &quot;🛑 Upload sistemi devre dışı.&quot;
+        )
+
+        return None
+
+    # --------------------------------------------------------
+    # SIRADAKİ VIDEOYU BUL
+    # --------------------------------------------------------
+
+    if video_number is None:
+
+        video_number = find_next_upload()
+
+        if video_number is None:
+
+            print(
+                &quot;ℹ️ Yüklenecek hazır video bulunamadı.&quot;
+            )
+
+            return None
+
+    print(
+        f&quot;🎬 Kontrol edilen video: #{video_number:03d}&quot;
+    )
+
+    # --------------------------------------------------------
+    # STATE KONTROL
+    # --------------------------------------------------------
+
+    existing_state = get_video_state(
+        video_number
+    )
+
+    if existing_state:
+
+        status = existing_state.get(
+            &quot;status&quot;
+        )
+
+        if status in {
+            &quot;uploaded&quot;,
+            &quot;published&quot;
+        }:
+
+            print(
+                f&quot;✅ Video #{video_number:03d} &quot;
+                &quot;zaten yüklendi.&quot;
+            )
+
+            print(
+                f&quot;🆔 YouTube ID: &quot;
+                f&quot;{existing_state.get(&#x27;youtube_id&#x27;)}&quot;
+            )
+
+            return existing_state
+
+    # --------------------------------------------------------
+    # UPLOAD SAATİ
+    # --------------------------------------------------------
+
+    if not is_upload_time():
+
+        print(
+            &quot;⏰ Henüz upload saati gelmedi.&quot;
+        )
+
+        print(
+            f&quot;📅 Upload saati: {UPLOAD_TIME}&quot;
+        )
+
+        return None
+
+    # --------------------------------------------------------
+    # VIDEO
+    # --------------------------------------------------------
+
+    video_file = find_video(
+        video_number
+    )
+
+    if video_file is None:
+
+        raise FileNotFoundError(
+            f&quot;Video #{video_number:03d} bulunamadı.&quot;
+        )
+
+    # --------------------------------------------------------
+    # METADATA
+    # --------------------------------------------------------
+
+    title, description, tags = read_metadata(
+        video_number
+    )
+
+    print()
+    print(&quot;=== YOUTUBE METADATA ===&quot;)
+    print()
+
+    print(
+        f&quot;📝 Başlık    : {title}&quot;
+    )
+
+    print(
+        f&quot;📄 Açıklama  : {description}&quot;
+    )
+
+    print(
+        f&quot;#️⃣ Etiketler : {&#x27;, &#x27;.join(tags)}&quot;
+    )
+
+    # --------------------------------------------------------
+    # YAYIN ZAMANI
+    # --------------------------------------------------------
+
+    print()
+    print(
+        &quot;🔎 Uygun Shorts yayın günü aranıyor...&quot;
+    )
+
+    publish_at = (
+        get_next_available_publish_time()
+    )
+
+    print()
+    print(
+        f&quot;📺 Seçilen yayın zamanı: {publish_at}&quot;
+    )
+
+    upload_time = (
+        datetime.now().isoformat()
+    )
+
+    # --------------------------------------------------------
+    # STATE — UPLOADING
+    # --------------------------------------------------------
+
+    set_video_state(
+        video_number=video_number,
+        status=&quot;uploading&quot;,
+        upload_time=upload_time,
+        publish_at=publish_at,
+    )
+
+    # --------------------------------------------------------
+    # YOUTUBE UPLOAD
+    # --------------------------------------------------------
+
+    try:
+
+        # ----------------------------------------------------
+        # RECOVERY / RETRY İLE YOUTUBE UPLOAD
+        # ----------------------------------------------------
+
+        recovery_result = run_with_retry(
+            upload_video,
+            video_file=video_file,
+            title=title,
+            description=description,
+            tags=tags,
+            publish_at=publish_at,
+            job_name=&quot;youtube_upload&quot;,
+            job_id=f&quot;{video_number:03d}&quot;,
+            max_retries=3,
+            retry_delay=30,
+        )
+
+        # ----------------------------------------------------
+        # RECOVERY BAŞARISIZ
+        # ----------------------------------------------------
+
+        if recovery_result[&quot;status&quot;] != &quot;success&quot;:
+
+            error_message = recovery_result.get(
+                &quot;error&quot;,
+                &quot;YouTube upload başarısız.&quot;
+            )
+
+            result = set_video_state(
+                video_number=video_number,
+                status=&quot;error&quot;,
+                upload_time=upload_time,
+                publish_at=publish_at,
+                error=error_message,
+            )
+
+            print()
+            print(&quot;========================================&quot;)
+            print(
+                f&quot;❌ VIDEO #{video_number:03d} &quot;
+                &quot;YÜKLENEMEDİ&quot;
+            )
+            print(&quot;========================================&quot;)
+            print()
+
+            print(
+                f&quot;Hata: {error_message}&quot;
+            )
+
+            return result
+
+        # ----------------------------------------------------
+        # RECOVERY BAŞARILI
+        # ----------------------------------------------------
+
+        youtube_id = recovery_result[&quot;result&quot;]
+
+        # ----------------------------------------------------
+        # STATE — UPLOADED
+        # ----------------------------------------------------
+
+        result = set_video_state(
+            video_number=video_number,
+            status=&quot;uploaded&quot;,
+            youtube_id=youtube_id,
+            upload_time=upload_time,
+            publish_at=publish_at,
+        )
+
+        print()
+        print(&quot;========================================&quot;)
+        print(&quot;✅ VIDEO BAŞARIYLA YÜKLENDİ&quot;)
+        print(&quot;========================================&quot;)
+        print()
+
+        print(
+            f&quot;🎬 Video: #{video_number:03d}&quot;
+        )
+
+        print(
+            f&quot;🔗 YouTube ID: {youtube_id}&quot;
+        )
+
+        print(
+            f&quot;📅 Yayın zamanı: {publish_at}&quot;
+        )
+
+        print(
+            f&quot;🔄 Recovery denemesi: &quot;
+            f&quot;{recovery_result[&#x27;attempt&#x27;]}&quot;
+        )
+
+        return result
+
+    except Exception as error:
+
+        result = set_video_state(
+            video_number=video_number,
+            status=&quot;error&quot;,
+            upload_time=upload_time,
+            publish_at=publish_at,
+            error=str(error),
+        )
+
+        print()
+        print(
+            f&quot;❌ Video #{video_number:03d} &quot;
+            &quot;yüklenemedi.&quot;
+        )
+
+        print(
+            f&quot;Hata: {error}&quot;
+        )
+
+        return result
+
+
+# ============================================================
+# TEST / ÇALIŞTIRMA
+# ============================================================
+
+if __name__ == &quot;__main__&quot;:
+
+    print()
+    print(&quot;========================================&quot;)
+    print(&quot;⏰ UPLOAD SCHEDULER&quot;)
+    print(&quot;========================================&quot;)
+    print()
+
+    print(
+        f&quot;📤 Upload saati : {UPLOAD_TIME}&quot;
+    )
+
+    print(
+        f&quot;📺 Yayın saati  : {PUBLISH_TIME}&quot;
+    )
+
+    print(
+        f&quot;🕐 Şu an        : &quot;
+        f&quot;{datetime.now().strftime(&#x27;%H:%M&#x27;)}&quot;
+    )
+
+    print()
+
+    next_video = find_next_upload()
+
+    if next_video is None:
+
+        print(
+            &quot;ℹ️ Yüklenecek hazır video bulunamadı.&quot;
+        )
+
+    else:
+
+        print(
+            f&quot;🎯 Sıradaki video: #{next_video:03d}&quot;
+        )
+
+        if is_upload_time():
+
+            print(
+                &quot;✅ Upload zamanı geldi.&quot;
+            )
+
+            print()
+
+            upload_short(
+                next_video
+            )
+
+        else:
+
+            print(
+                &quot;⏳ Upload zamanı henüz gelmedi.&quot;
+            )</code></pre>
+
+</section>
+
+<section class="file-card">
+
+<div class="file-title">
+📄 app/youtube/youtube_analytics_test.py
+</div>
+
+<pre><code class="language-python">from pathlib import Path
 
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
 
 
 # ============================================================
-# CREATOR ENGINE — YOUTUBE ANALYTICS SYNC
+# CREATOR ENGINE — YOUTUBE ANALYTICS TEST
 # ============================================================
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 
-TOKEN_FILE = BASE_DIR / &quot;data&quot; / &quot;youtube_token.json&quot;
-DB_FILE = BASE_DIR / &quot;data&quot; / &quot;creator_engine.db&quot;
+TOKEN_FILE = (
+    BASE_DIR
+    / &quot;data&quot;
+    / &quot;youtube_token.json&quot;
+)
 
 
 # ============================================================
-# AYAR
+# YOUTUBE ANALYTICS BAĞLANTISI
 # ============================================================
-
-# İlk çalıştırmada False bırakıyoruz.
-# True yaptığımızda veriler DB&#x27;ye yazılacak.
-WRITE_TO_DATABASE = True
-
-
-# ============================================================
-# YOUTUBE
-# ============================================================
-
-def get_youtube():
-
-    credentials = Credentials.from_authorized_user_file(
-        TOKEN_FILE
-    )
-
-    return build(
-        &quot;youtube&quot;,
-        &quot;v3&quot;,
-        credentials=credentials
-    )
-
 
 def get_analytics():
 
+    if not TOKEN_FILE.exists():
+
+        print()
+        print(&quot;❌ YouTube token bulunamadı.&quot;)
+        print(
+            f&quot;📁 {TOKEN_FILE}&quot;
+        )
+
+        return None
+
     credentials = Credentials.from_authorized_user_file(
         TOKEN_FILE
     )
 
-    return build(
+    analytics = build(
         &quot;youtubeAnalytics&quot;,
         &quot;v2&quot;,
         credentials=credentials
     )
 
-
-# ============================================================
-# KANAL VİDEOLARI
-# ============================================================
-
-def get_all_video_ids(youtube):
-
-    response = youtube.channels().list(
-        part=&quot;contentDetails&quot;,
-        mine=True
-    ).execute()
-
-    channels = response.get(&quot;items&quot;, [])
-
-    if not channels:
-        return []
-
-    uploads_playlist = (
-        channels[0]
-        [&quot;contentDetails&quot;]
-        [&quot;relatedPlaylists&quot;]
-        [&quot;uploads&quot;]
-    )
-
-    video_ids = []
-    page_token = None
-
-    while True:
-
-        response = youtube.playlistItems().list(
-            part=&quot;contentDetails&quot;,
-            playlistId=uploads_playlist,
-            maxResults=50,
-            pageToken=page_token
-        ).execute()
-
-        for item in response.get(&quot;items&quot;, []):
-
-            video_ids.append(
-                item[&quot;contentDetails&quot;][&quot;videoId&quot;]
-            )
-
-        page_token = response.get(
-            &quot;nextPageToken&quot;
-        )
-
-        if not page_token:
-            break
-
-    return video_ids
+    return analytics
 
 
 # ============================================================
-# VİDEO DETAYLARI
+# ANALYTICS TEST
 # ============================================================
 
-def get_video_details(youtube, video_ids):
-
-    videos = []
-
-    for start in range(
-        0,
-        len(video_ids),
-        50
-    ):
-
-        batch = video_ids[
-            start:start + 50
-        ]
-
-        response = youtube.videos().list(
-            part=&quot;snippet,contentDetails,statistics&quot;,
-            id=&quot;,&quot;.join(batch)
-        ).execute()
-
-        videos.extend(
-            response.get(&quot;items&quot;, [])
-        )
-
-    return videos
-
-
-# ============================================================
-# SÜRE
-# ============================================================
-
-def parse_duration(duration):
-
-    import re
-
-    match = re.fullmatch(
-        r&quot;PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?&quot;,
-        duration
-    )
-
-    if not match:
-        return 0
-
-    hours = int(match.group(1) or 0)
-    minutes = int(match.group(2) or 0)
-    seconds = int(match.group(3) or 0)
-
-    return (
-        hours * 3600
-        + minutes * 60
-        + seconds
-    )
-
-
-# ============================================================
-# SHORTS BELİRLE
-# ============================================================
-
-def get_shorts(videos):
-
-    shorts = []
-
-    for video in videos:
-
-        duration = parse_duration(
-            video[&quot;contentDetails&quot;][&quot;duration&quot;]
-        )
-
-        # Önceden gördüğümüz kanal yapısına göre
-        # 4 uzun video + 1 canlı yayın Shorts değildir.
-        #
-        # 3 dakikaya kadar Shorts olabileceği için
-        # sadece süreye göre 60 saniye sınırı koymuyoruz.
-
-        title = video[&quot;snippet&quot;].get(
-            &quot;title&quot;,
-            &quot;&quot;
-        )
-
-        # Canlı yayın
-        if title.lower().find(
-            &quot;kanalı canlı yayında&quot;
-        ) &gt;= 0:
-
-            continue
-
-        # 3 dakikadan uzun içerikler
-        if duration &gt; 180:
-
-            continue
-
-        shorts.append(video)
-
-    return shorts
-
-
-# ============================================================
-# ANALYTICS
-# ============================================================
-
-def get_video_analytics(
-    analytics,
-    video_id
-):
-
-    try:
-
-        response = analytics.reports().query(
-            ids=&quot;channel==MINE&quot;,
-            startDate=&quot;2020-01-01&quot;,
-            endDate=&quot;2030-01-01&quot;,
-            metrics=(
-                &quot;views,&quot;
-                &quot;likes,&quot;
-                &quot;comments,&quot;
-                &quot;estimatedMinutesWatched,&quot;
-                &quot;averageViewDuration,&quot;
-                &quot;averageViewPercentage&quot;
-            ),
-            filters=f&quot;video=={video_id}&quot;
-        ).execute()
-
-        rows = response.get(
-            &quot;rows&quot;,
-            []
-        )
-
-        if not rows:
-            return None
-
-        row = rows[0]
-
-        return {
-            &quot;views&quot;: int(row[0]),
-            &quot;likes&quot;: int(row[1]),
-            &quot;comments&quot;: int(row[2]),
-            &quot;estimated_minutes&quot;: float(row[3]),
-            &quot;average_watch_time&quot;: float(row[4]),
-            &quot;watch_percentage&quot;: float(row[5]),
-        }
-
-    except Exception as error:
-
-        print(
-            f&quot;⚠️ Analytics alınamadı: &quot;
-            f&quot;{video_id}&quot;
-        )
-
-        print(
-            f&quot;   {error}&quot;
-        )
-
-        return None
-
-
-# ============================================================
-# DB
-# ============================================================
-
-def get_existing_video_numbers():
-
-    db = sqlite3.connect(DB_FILE)
-
-    rows = db.execute(
-        &quot;&quot;&quot;
-        SELECT
-            video_number,
-            youtube_id
-        FROM videos
-        WHERE youtube_id IS NOT NULL
-        &quot;&quot;&quot;
-    ).fetchall()
-
-    db.close()
-
-    return {
-        youtube_id: video_number
-        for video_number, youtube_id
-        in rows
-        if youtube_id
-    }
-
-
-def get_next_video_number():
-
-    db = sqlite3.connect(DB_FILE)
-
-    row = db.execute(
-        &quot;&quot;&quot;
-        SELECT COALESCE(
-            MAX(video_number),
-            0
-        )
-        FROM videos
-        &quot;&quot;&quot;
-    ).fetchone()
-
-    db.close()
-
-    return int(row[0]) + 1
-
-
-# ============================================================
-# AKTARIM
-# ============================================================
-
-def sync():
+def test_analytics():
 
     print()
     print(&quot;========================================&quot;)
-    print(&quot;🧠 CREATOR ENGINE — YOUTUBE ANALYTICS&quot;)
+    print(&quot;📊 CREATOR ENGINE — ANALYTICS TEST&quot;)
     print(&quot;========================================&quot;)
     print()
 
-    youtube = get_youtube()
     analytics = get_analytics()
 
-    video_ids = get_all_video_ids(
-        youtube
-    )
+    if analytics is None:
 
-    videos = get_video_details(
-        youtube,
-        video_ids
-    )
+        return
 
-    shorts = get_shorts(
-        videos
-    )
-
-    print(
-        f&quot;🎬 YouTube videoları: &quot;
-        f&quot;{len(videos)}&quot;
-    )
-
-    print(
-        f&quot;📱 Shorts olarak belirlenen: &quot;
-        f&quot;{len(shorts)}&quot;
-    )
-
+    print(&quot;🔌 YouTube Analytics API bağlantısı başarılı.&quot;)
     print()
 
-    existing = get_existing_video_numbers()
+    # --------------------------------------------------------
+    # Son 30 gün için kanal özeti
+    # --------------------------------------------------------
 
-    next_number = get_next_video_number()
-
-    db = None
-
-    if WRITE_TO_DATABASE:
-
-        db = sqlite3.connect(
-            DB_FILE
+    response = analytics.reports().query(
+        ids=&quot;channel==MINE&quot;,
+        startDate=&quot;2026-07-29&quot;,
+        endDate=&quot;2026-08-28&quot;,
+        metrics=(
+            &quot;views,&quot;
+            &quot;likes,&quot;
+            &quot;comments,&quot;
+            &quot;estimatedMinutesWatched,&quot;
+            &quot;averageViewDuration,&quot;
+            &quot;averageViewPercentage&quot;
         )
+    ).execute()
 
-    added = 0
-    updated = 0
-    analytics_ok = 0
-
-    print(&quot;----------------------------------------&quot;)
-
-    for video in shorts:
-
-        youtube_id = video[&quot;id&quot;]
-
-        title = video[&quot;snippet&quot;].get(
-            &quot;title&quot;,
-            &quot;&quot;
-        )
-
-        published_at = video[&quot;snippet&quot;].get(
-            &quot;publishedAt&quot;,
-            &quot;&quot;
-        )
-
-        duration = parse_duration(
-            video[&quot;contentDetails&quot;][&quot;duration&quot;]
-        )
-
-        stats = video.get(
-            &quot;statistics&quot;,
-            {}
-        )
-
-        views = int(
-            stats.get(
-                &quot;viewCount&quot;,
-                0
-            )
-        )
-
-        likes = int(
-            stats.get(
-                &quot;likeCount&quot;,
-                0
-            )
-        )
-
-        comments = int(
-            stats.get(
-                &quot;commentCount&quot;,
-                0
-            )
-        )
-
-        analytics_data = get_video_analytics(
-            analytics,
-            youtube_id
-        )
-
-        if analytics_data:
-
-            average_watch_time = (
-                analytics_data[
-                    &quot;average_watch_time&quot;
-                ]
-            )
-
-            watch_percentage = (
-                analytics_data[
-                    &quot;watch_percentage&quot;
-                ]
-            )
-
-            analytics_ok += 1
-
-        else:
-
-            average_watch_time = 0
-            watch_percentage = 0
-
-        if youtube_id in existing:
-
-            video_number = existing[
-                youtube_id
-            ]
-
-            action = &quot;GÜNCELLE&quot;
-
-            if WRITE_TO_DATABASE:
-
-                db.execute(
-                    &quot;&quot;&quot;
-                    UPDATE videos
-                    SET
-                        topic = ?,
-                        duration = ?,
-                        published_at = ?,
-                        views = ?,
-                        likes = ?,
-                        comments = ?,
-                        average_watch_time = ?,
-                        watch_percentage = ?
-                    WHERE youtube_id = ?
-                    &quot;&quot;&quot;,
-                    (
-                        title,
-                        duration,
-                        published_at,
-                        views,
-                        likes,
-                        comments,
-                        average_watch_time,
-                        watch_percentage,
-                        youtube_id,
-                    )
-                )
-
-            updated += 1
-
-        else:
-
-            video_number = next_number
-            next_number += 1
-
-            action = &quot;YENİ&quot;
-
-            if WRITE_TO_DATABASE:
-
-                db.execute(
-                    &quot;&quot;&quot;
-                    INSERT INTO videos (
-                        video_number,
-                        topic,
-                        category,
-                        hook,
-                        duration,
-                        image_count,
-                        created_at,
-                        published_at,
-                        views,
-                        likes,
-                        comments,
-                        shares,
-                        average_watch_time,
-                        watch_percentage,
-                        youtube_id
-                    )
-                    VALUES (
-                        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-                    )
-                    &quot;&quot;&quot;,
-                    (
-                        video_number,
-                        title,
-                        &quot;youtube&quot;,
-                        &quot;&quot;,
-                        duration,
-                        0,
-                        published_at,
-                        published_at,
-                        views,
-                        likes,
-                        comments,
-                        0,
-                        average_watch_time,
-                        watch_percentage,
-                        youtube_id,
-                    )
-                )
-
-            added += 1
-
-        print(
-            f&quot;{action:8} &quot;
-            f&quot;#{video_number:03d} | &quot;
-            f&quot;{duration:3d} sn | &quot;
-            f&quot;{views:7d} izlenme | &quot;
-            f&quot;{title}&quot;
-        )
-
-    if db:
-
-        db.commit()
-        db.close()
-
-    print(&quot;----------------------------------------&quot;)
-
+    print(&quot;========================================&quot;)
+    print(&quot;📈 ANALYTICS VERİLERİ&quot;)
+    print(&quot;========================================&quot;)
     print()
-    print(
-        f&quot;🆕 Yeni: {added}&quot;
+
+    column_headers = response.get(
+        &quot;columnHeaders&quot;,
+        []
     )
 
-    print(
-        f&quot;🔄 Güncellenen: {updated}&quot;
+    rows = response.get(
+        &quot;rows&quot;,
+        []
     )
 
-    print(
-        f&quot;📊 Analytics alınan: &quot;
-        f&quot;{analytics_ok}/{len(shorts)}&quot;
-    )
+    if not rows:
 
-    if WRITE_TO_DATABASE:
-
-        print()
-        print(
-            &quot;💾 Veriler veritabanına yazıldı.&quot;
-        )
+        print(&quot;⚠️ Seçilen tarih aralığında veri bulunamadı.&quot;)
 
     else:
 
-        print()
-        print(
-            &quot;⚠️ ÖNİZLEME MODU&quot;
-        )
+        headers = [
+            column[&quot;name&quot;]
+            for column in column_headers
+        ]
 
         print(
-            &quot;💾 Veritabanına hiçbir değişiklik yapılmadı.&quot;
+            &quot; | &quot;.join(headers)
         )
+
+        print(&quot;----------------------------------------&quot;)
+
+        for row in rows:
+
+            print(
+                &quot; | &quot;.join(
+                    str(value)
+                    for value in row
+                )
+            )
 
     print()
     print(&quot;========================================&quot;)
-    print(&quot;✅ SENKRONİZASYON TAMAMLANDI&quot;)
+    print(&quot;✅ ANALYTICS TESTİ TAMAMLANDI&quot;)
     print(&quot;========================================&quot;)
     print()
 
 
 # ============================================================
-# ÇALIŞTIR
+# TEST
 # ============================================================
 
 if __name__ == &quot;__main__&quot;:
 
-    sync()</code></pre>
+    test_analytics()</code></pre>
 
 </section>
 
 <section class="file-card">
 
 <div class="file-title">
-📄 app/youtube/youtube_list.py
+📄 app/youtube/youtube_test.py
 </div>
 
 <pre><code class="language-python">from pathlib import Path
@@ -2946,7 +2976,7 @@ from google.oauth2.credentials import Credentials
 
 
 # ============================================================
-# CREATOR ENGINE — YOUTUBE VIDEO LİSTELEME
+# CREATOR ENGINE — YOUTUBE BAĞLANTI TESTİ
 # ============================================================
 
 BASE_DIR = Path(__file__).resolve().parents[2]
@@ -2988,80 +3018,14 @@ def get_youtube():
 
 
 # ============================================================
-# KANAL VİDEOLARINI BUL
+# KANAL BİLGİLERİ
 # ============================================================
 
-def get_all_videos(youtube):
-
-    # --------------------------------------------------------
-    # Önce kanalın uploads playlist ID&#x27;sini al
-    # --------------------------------------------------------
-
-    channel_response = youtube.channels().list(
-        part=&quot;contentDetails&quot;,
-        mine=True
-    ).execute()
-
-    channels = channel_response.get(
-        &quot;items&quot;,
-        []
-    )
-
-    if not channels:
-
-        return []
-
-    uploads_playlist_id = (
-        channels[0]
-        [&quot;contentDetails&quot;]
-        [&quot;relatedPlaylists&quot;]
-        [&quot;uploads&quot;]
-    )
-
-    # --------------------------------------------------------
-    # Uploads playlistinden videoları al
-    # --------------------------------------------------------
-
-    videos = []
-
-    next_page_token = None
-
-    while True:
-
-        response = youtube.playlistItems().list(
-            part=&quot;snippet,contentDetails&quot;,
-            playlistId=uploads_playlist_id,
-            maxResults=50,
-            pageToken=next_page_token
-        ).execute()
-
-        videos.extend(
-            response.get(
-                &quot;items&quot;,
-                []
-            )
-        )
-
-        next_page_token = response.get(
-            &quot;nextPageToken&quot;
-        )
-
-        if not next_page_token:
-
-            break
-
-    return videos
-
-
-# ============================================================
-# VİDEO LİSTESİNİ YAZDIR
-# ============================================================
-
-def list_videos():
+def test_channel():
 
     print()
     print(&quot;========================================&quot;)
-    print(&quot;📺 CREATOR ENGINE — YOUTUBE VİDEOLARI&quot;)
+    print(&quot;📺 CREATOR ENGINE — YOUTUBE TEST&quot;)
     print(&quot;========================================&quot;)
     print()
 
@@ -3071,58 +3035,62 @@ def list_videos():
 
         return
 
-    videos = get_all_videos(
-        youtube
-    )
-
-    if not videos:
-
-        print(&quot;❌ Video bulunamadı.&quot;)
-        return
-
-    print(
-        f&quot;🎬 Toplam bulunan video: &quot;
-        f&quot;{len(videos)}&quot;
-    )
-
+    print(&quot;🔌 YouTube API bağlantısı başarılı.&quot;)
     print()
 
-    print(&quot;----------------------------------------&quot;)
+    response = youtube.channels().list(
+        part=&quot;snippet,statistics&quot;,
+        mine=True
+    ).execute()
 
-    for index, video in enumerate(
-        videos,
-        start=1
-    ):
+    channels = response.get(
+        &quot;items&quot;,
+        []
+    )
 
-        snippet = video[&quot;snippet&quot;]
+    if not channels:
 
-        video_id = (
-            video[&quot;contentDetails&quot;]
-            [&quot;videoId&quot;]
-        )
+        print(&quot;❌ Kanal bulunamadı.&quot;)
+        return
 
-        title = snippet.get(
-            &quot;title&quot;,
-            &quot;&quot;
-        )
+    channel = channels[0]
 
-        published_at = snippet.get(
-            &quot;publishedAt&quot;,
-            &quot;&quot;
-        )
+    snippet = channel[&quot;snippet&quot;]
+    statistics = channel[&quot;statistics&quot;]
 
-        print(
-            f&quot;#{index:02d} | &quot;
-            f&quot;{video_id} | &quot;
-            f&quot;{published_at} | &quot;
-            f&quot;{title}&quot;
-        )
+    print(&quot;========================================&quot;)
+    print(&quot;📺 KANAL BİLGİLERİ&quot;)
+    print(&quot;========================================&quot;)
+    print()
 
-    print(&quot;----------------------------------------&quot;)
+    print(
+        f&quot;📛 Kanal adı: &quot;
+        f&quot;{snippet.get(&#x27;title&#x27;, &#x27;&#x27;)}&quot;
+    )
+
+    print(
+        f&quot;🆔 Kanal ID: &quot;
+        f&quot;{channel.get(&#x27;id&#x27;, &#x27;&#x27;)}&quot;
+    )
+
+    print(
+        f&quot;👥 Abone: &quot;
+        f&quot;{statistics.get(&#x27;subscriberCount&#x27;, &#x27;Gizli&#x27;)}&quot;
+    )
+
+    print(
+        f&quot;🎬 Toplam video: &quot;
+        f&quot;{statistics.get(&#x27;videoCount&#x27;, 0)}&quot;
+    )
+
+    print(
+        f&quot;👁️ Toplam görüntülenme: &quot;
+        f&quot;{statistics.get(&#x27;viewCount&#x27;, 0)}&quot;
+    )
 
     print()
     print(&quot;========================================&quot;)
-    print(&quot;✅ VİDEO LİSTESİ TAMAMLANDI&quot;)
+    print(&quot;✅ YOUTUBE BAĞLANTI TESTİ BAŞARILI&quot;)
     print(&quot;========================================&quot;)
     print()
 
@@ -3133,17 +3101,25 @@ def list_videos():
 
 if __name__ == &quot;__main__&quot;:
 
-    list_videos()</code></pre>
+    test_channel()</code></pre>
 
 </section>
 
 <section class="file-card">
 
 <div class="file-title">
-📄 config/__init__.py
+📄 config/settings.py
 </div>
 
-<pre><code class="language-python"></code></pre>
+<pre><code class="language-python">APP_NAME = &quot;Creator Engine&quot;
+VERSION = &quot;0.1.0&quot;
+LANGUAGE = &quot;tr&quot;
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+OPENAI_API_KEY = os.getenv(&quot;OPENAI_API_KEY&quot;)</code></pre>
 
 </section>
 
@@ -5803,870 +5779,838 @@ print(&quot;🎉 5 GÖRSEL TAMAMLANDI!&quot;)</code></pre>
 <section class="file-card">
 
 <div class="file-title">
-📄 app/core/transcribe_test.py
+📄 app/core/subtitle_test.py
 </div>
 
 <pre><code class="language-python">from pathlib import Path
+import subprocess
 
-from app.content.transcriber import transcribe_audio
+
+# ============================================================
+# AYARLAR
+# ============================================================
+
+VIDEO_FOLDER = Path(&quot;shorts/007&quot;)
+
+VIDEO_FILE = VIDEO_FOLDER / &quot;video.mp4&quot;
+SRT_FILE = VIDEO_FOLDER / &quot;altyazi_ai.srt&quot;
+
+OUTPUT_VIDEO = VIDEO_FOLDER / &quot;video_final.mp4&quot;
 
 
-audio_file = Path(&quot;shorts/007/ses.mp3&quot;)
-output_file = Path(&quot;shorts/007/transkript.txt&quot;)
+# ============================================================
+# DOSYA KONTROLLERİ
+# ============================================================
+
+print()
+print(&quot;=== PROFESYONEL ALTYAZI TESTİ ===&quot;)
+
+if not VIDEO_FILE.exists():
+    raise FileNotFoundError(
+        f&quot;Video bulunamadı: {VIDEO_FILE}&quot;
+    )
+
+if not SRT_FILE.exists():
+    raise FileNotFoundError(
+        f&quot;Altyazı bulunamadı: {SRT_FILE}&quot;
+    )
 
 
 print()
-print(&quot;=== AI TRANSCRIBE ===&quot;)
-print(&quot;🎙️ Ses yazıya çevriliyor...&quot;)
-
-
-result = transcribe_audio(audio_file)
-
+print(&quot;🎬 Video bulundu:&quot;)
+print(VIDEO_FILE)
 
 print()
-print(&quot;=== TRANSKRİPT ===&quot;)
-print(result.text)
+print(&quot;📝 AI altyazı bulundu:&quot;)
+print(SRT_FILE)
 
 
-output_file.write_text(
-    result.text,
-    encoding=&quot;utf-8&quot;
+# ============================================================
+# SRT YOLUNU WINDOWS / FFMPEG FORMATINA ÇEVİR
+# ============================================================
+
+srt_path = SRT_FILE.resolve()
+
+# Windows yolunu FFmpeg subtitles filtresi için düzenle
+srt_filter_path = str(srt_path).replace(&quot;\\&quot;, &quot;/&quot;)
+
+# C: -&gt; C\:
+if &quot;:&quot; in srt_filter_path:
+    srt_filter_path = srt_filter_path.replace(&quot;:&quot;, &quot;\\:&quot;)
+
+
+# ============================================================
+# ALTYAZI STİLİ
+# ============================================================
+
+subtitle_style = (
+    &quot;FontName=Arial,&quot;
+    &quot;FontSize=10,&quot;
+    &quot;Bold=1,&quot;
+    &quot;PrimaryColour=&amp;H00FFFFFF,&quot;
+    &quot;OutlineColour=&amp;H00000000,&quot;
+    &quot;BorderStyle=1,&quot;
+    &quot;Outline=2,&quot;
+    &quot;Shadow=1,&quot;
+    &quot;Alignment=8,&quot;
+    &quot;MarginV=220&quot;
+)
+
+# ============================================================
+# FFMPEG KOMUTU
+# ============================================================
+
+subtitle_filter = (
+    f&quot;subtitles=&#x27;{srt_filter_path}&#x27;&quot;
+    f&quot;:force_style=&#x27;{subtitle_style}&#x27;&quot;
 )
 
 
+command = [
+    &quot;ffmpeg&quot;,
+    &quot;-y&quot;,
+
+    &quot;-i&quot;,
+    str(VIDEO_FILE),
+
+    &quot;-vf&quot;,
+    subtitle_filter,
+
+    # --------------------------------------------------------
+    # VİDEO
+    # --------------------------------------------------------
+
+    &quot;-c:v&quot;,
+    &quot;libx264&quot;,
+
+    &quot;-preset&quot;,
+    &quot;medium&quot;,
+
+    &quot;-crf&quot;,
+    &quot;20&quot;,
+
+    # --------------------------------------------------------
+    # SES
+    # --------------------------------------------------------
+
+    &quot;-c:a&quot;,
+    &quot;copy&quot;,
+
+    # --------------------------------------------------------
+    # ÇIKIŞ
+    # --------------------------------------------------------
+
+    str(OUTPUT_VIDEO),
+]
+
+
+# ============================================================
+# ÇALIŞTIR
+# ============================================================
+
 print()
-print(&quot;✅ TRANSKRİPT TAMAMLANDI&quot;)
-print(f&quot;Dosya: {output_file}&quot;)</code></pre>
+print(&quot;🎨 Altyazı videoya gömülüyor...&quot;)
+print()
+print(&quot;📍 Konum: Üst-Orta&quot;)
+print(&quot;🔠 Boyut: Küçük&quot;)
+print(&quot;⚪ Yazı: Beyaz&quot;)
+print(&quot;⬛ Kenarlık: Siyah&quot;)
+print()
+
+
+subprocess.run(
+    command,
+    check=True
+)
+
+
+# ============================================================
+# SONUÇ
+# ============================================================
+
+print()
+print(&quot;========================================&quot;)
+print(&quot;✅ FİNAL VİDEO OLUŞTURULDU&quot;)
+print(&quot;========================================&quot;)
+print()
+print(f&quot;Dosya: {OUTPUT_VIDEO}&quot;)
+print()</code></pre>
 
 </section>
 
 <section class="file-card">
 
 <div class="file-title">
-📄 app/core/word_timestamp_test.py
+📄 app/core/video_test.py
 </div>
 
 <pre><code class="language-python">from pathlib import Path
 
-from app.content.transcriber import transcribe_audio
+from app.content.video_pipeline import add_subtitles
 
 
-audio_file = Path(&quot;shorts/007/ses.mp3&quot;)
+VIDEO_FOLDER = Path(&quot;shorts/007&quot;)
 
-
-print()
-print(&quot;=== GERÇEK KELİME ZAMANLARI TESTİ ===&quot;)
-print(&quot;🎙️ Ses analiz ediliyor...&quot;)
-
-
-result = transcribe_audio(audio_file)
+VIDEO_FILE = VIDEO_FOLDER / &quot;video.mp4&quot;
+SRT_FILE = VIDEO_FOLDER / &quot;altyazi_ai.srt&quot;
+OUTPUT_FILE = VIDEO_FOLDER / &quot;video_final.mp4&quot;
 
 
 print()
-print(&quot;=== TRANSKRİPT ===&quot;)
-print(result.text)
+print(&quot;=== VİDEO PIPELINE TEST ===&quot;)
+
+add_subtitles(
+    video_file=VIDEO_FILE,
+    subtitle_file=SRT_FILE,
+    output_file=OUTPUT_FILE,
+)
 
 print()
-print(&quot;=== KELİME ZAMANLARI ===&quot;)
-
-
-if hasattr(result, &quot;words&quot;) and result.words:
-
-    for word in result.words[:20]:
-
-        print(
-            f&quot;{word.word}  &quot;
-            f&quot;{word.start:.2f}s → &quot;
-            f&quot;{word.end:.2f}s&quot;
-        )
-
-else:
-
-    print(&quot;⚠️ Kelime zamanları döndürülmedi.&quot;)
-
-
-print()
-print(&quot;✅ TEST TAMAMLANDI&quot;)</code></pre>
+print(&quot;🎉 VİDEO TEST BAŞARILI&quot;)
+print(f&quot;Dosya: {OUTPUT_FILE}&quot;)</code></pre>
 
 </section>
 
 <section class="file-card">
 
 <div class="file-title">
-📄 app/upload/upload_scheduler.py
+📄 app/upload/publish_scheduler.py
 </div>
 
-<pre><code class="language-python">from pathlib import Path
-from datetime import datetime
+<pre><code class="language-python">from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+from pathlib import Path
+import json
 import re
 
-from app.upload.upload_state import (
-    get_video_state,
-    set_video_state,
-)
+from googleapiclient.discovery import build
 
-from app.youtube.youtube_uploader import upload_video
+from app.upload.upload_config import PUBLISH_TIME
+from app.youtube.youtube_auth import authenticate_youtube
 
-from app.upload.upload_config import (
-    UPLOAD_ENABLED,
-    UPLOAD_TIME,
-    PUBLISH_TIME,
-)
 
+# ============================================================
+# AYARLAR
+# ============================================================
+
+TIMEZONE = ZoneInfo(&quot;Europe/Istanbul&quot;)
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 
-SHORTS_DIR = BASE_DIR / &quot;shorts&quot;
+DATA_DIR = BASE_DIR / &quot;data&quot;
+
+UPLOAD_STATE_FILE = DATA_DIR / &quot;upload_state.json&quot;
+VIDEO_STATE_FILE = DATA_DIR / &quot;video_state.json&quot;
 
 
 # ============================================================
-# VIDEO BUL
+# SHORTS KONTROLÜ
 # ============================================================
 
-def find_video(video_number):
+def is_short_duration(duration):
 
-    video_dir = (
-        SHORTS_DIR
-        / f&quot;{int(video_number):03d}&quot;
+    if not duration:
+        return False
+
+    match = re.fullmatch(
+        r&quot;PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?&quot;,
+        duration
     )
 
-    video_file = (
-        video_dir
-        / &quot;video_final.mp4&quot;
+    if not match:
+        return False
+
+    hours = int(match.group(1) or 0)
+    minutes = int(match.group(2) or 0)
+    seconds = int(match.group(3) or 0)
+
+    total_seconds = (
+        hours * 3600
+        + minutes * 60
+        + seconds
     )
 
-    if not video_file.exists():
-        return None
-
-    return video_file
-
-
-# ============================================================
-# METADATA OKU
-# ============================================================
-
-def read_metadata(video_number):
-
-    video_dir = (
-        SHORTS_DIR
-        / f&quot;{int(video_number):03d}&quot;
-    )
-
-    title_file = video_dir / &quot;baslik.txt&quot;
-    description_file = video_dir / &quot;aciklama.txt&quot;
-    hashtag_file = video_dir / &quot;hashtag.txt&quot;
-
-    if not title_file.exists():
-        raise FileNotFoundError(
-            f&quot;Başlık dosyası bulunamadı: {title_file}&quot;
-        )
-
-    if not description_file.exists():
-        raise FileNotFoundError(
-            f&quot;Açıklama dosyası bulunamadı: {description_file}&quot;
-        )
-
-    if not hashtag_file.exists():
-        raise FileNotFoundError(
-            f&quot;Hashtag dosyası bulunamadı: {hashtag_file}&quot;
-        )
-
-    title = title_file.read_text(
-        encoding=&quot;utf-8&quot;
-    ).strip()
-
-    description = description_file.read_text(
-        encoding=&quot;utf-8&quot;
-    ).strip()
-
-    hashtag_text = hashtag_file.read_text(
-        encoding=&quot;utf-8&quot;
-    ).strip()
-
-    tags = [
-        tag.strip().lstrip(&quot;#&quot;)
-        for tag in hashtag_text.split()
-        if tag.strip()
-    ]
-
-    if not title:
-        raise ValueError(
-            f&quot;Başlık boş: {title_file}&quot;
-        )
-
-    if not description:
-        raise ValueError(
-            f&quot;Açıklama boş: {description_file}&quot;
-        )
-
-    if not tags:
-        raise ValueError(
-            f&quot;Hashtag bulunamadı: {hashtag_file}&quot;
-        )
-
-    return title, description, tags
+    return total_seconds &lt;= 180
 
 
 # ============================================================
-# UPLOAD ZAMANI
+# PUBLISH SAATİNİ OKU
 # ============================================================
 
-def is_upload_time():
-
-    now = datetime.now()
-
-    current_time = now.strftime(
-        &quot;%H:%M&quot;
-    )
-
-    return current_time &gt;= UPLOAD_TIME
-
-
-# ============================================================
-# YAYIN ZAMANI
-# ============================================================
-
-def get_publish_time():
-
-    today = datetime.now().strftime(
-        &quot;%Y-%m-%d&quot;
-    )
-
-    return (
-        f&quot;{today}T{PUBLISH_TIME}:00&quot;
-    )
-
-
-# ============================================================
-# NUMARALI SHORTS KLASÖRLERİNİ BUL
-# ============================================================
-
-def get_video_numbers():
-
-    SHORTS_DIR.mkdir(
-        parents=True,
-        exist_ok=True
-    )
-
-    numbers = []
-
-    for path in SHORTS_DIR.iterdir():
-
-        if not path.is_dir():
-            continue
-
-        if not re.fullmatch(
-            r&quot;\d+&quot;,
-            path.name
-        ):
-            continue
-
-        numbers.append(
-            int(path.name)
-        )
-
-    return sorted(numbers)
-
-
-# ============================================================
-# SIRADAKİ YÜKLENMEMİŞ VIDEO
-# ============================================================
-
-def find_next_upload():
-
-    video_numbers = get_video_numbers()
-
-    for video_number in video_numbers:
-
-        state = get_video_state(
-            video_number
-        )
-
-        if state:
-
-            status = state.get(
-                &quot;status&quot;
-            )
-
-            if status in {
-                &quot;uploaded&quot;,
-                &quot;published&quot;
-            }:
-
-                continue
-
-        video_file = find_video(
-            video_number
-        )
-
-        if video_file is None:
-            continue
-
-        return video_number
-
-    return None
-
-
-# ============================================================
-# VIDEO UPLOAD
-# ============================================================
-
-def upload_short(
-    video_number=None,
-):
-
-    print()
-    print(&quot;========================================&quot;)
-    print(&quot;📤 CREATOR ENGINE — UPLOAD SCHEDULER&quot;)
-    print(&quot;========================================&quot;)
-    print()
-
-    if not UPLOAD_ENABLED:
-
-        print(
-            &quot;🛑 Upload sistemi devre dışı.&quot;
-        )
-
-        return None
-
-    # --------------------------------------------------------
-    # SIRADAKİ VIDEOYU BUL
-    # --------------------------------------------------------
-
-    if video_number is None:
-
-        video_number = find_next_upload()
-
-        if video_number is None:
-
-            print(
-                &quot;ℹ️ Yüklenecek hazır video bulunamadı.&quot;
-            )
-
-            return None
-
-    print(
-        f&quot;🎬 Kontrol edilen video: #{video_number:03d}&quot;
-    )
-
-    # --------------------------------------------------------
-    # STATE KONTROL
-    # --------------------------------------------------------
-
-    existing_state = get_video_state(
-        video_number
-    )
-
-    if existing_state:
-
-        status = existing_state.get(
-            &quot;status&quot;
-        )
-
-        if status in {
-            &quot;uploaded&quot;,
-            &quot;published&quot;
-        }:
-
-            print(
-                f&quot;✅ Video #{video_number:03d} &quot;
-                &quot;zaten yüklendi.&quot;
-            )
-
-            print(
-                f&quot;🆔 YouTube ID: &quot;
-                f&quot;{existing_state.get(&#x27;youtube_id&#x27;)}&quot;
-            )
-
-            return existing_state
-
-    # --------------------------------------------------------
-    # UPLOAD SAATİ
-    # --------------------------------------------------------
-
-    if not is_upload_time():
-
-        print(
-            &quot;⏰ Henüz upload saati gelmedi.&quot;
-        )
-
-        print(
-            f&quot;📅 Upload saati: {UPLOAD_TIME}&quot;
-        )
-
-        return None
-
-    # --------------------------------------------------------
-    # VIDEO
-    # --------------------------------------------------------
-
-    video_file = find_video(
-        video_number
-    )
-
-    if video_file is None:
-
-        raise FileNotFoundError(
-            f&quot;Video #{video_number:03d} bulunamadı.&quot;
-        )
-
-    # --------------------------------------------------------
-    # METADATA
-    # --------------------------------------------------------
-
-    title, description, tags = read_metadata(
-        video_number
-    )
-
-    print()
-    print(&quot;=== YOUTUBE METADATA ===&quot;)
-    print()
-
-    print(
-        f&quot;📝 Başlık    : {title}&quot;
-    )
-
-    print(
-        f&quot;📄 Açıklama  : {description}&quot;
-    )
-
-    print(
-        f&quot;#️⃣ Etiketler : {&#x27;, &#x27;.join(tags)}&quot;
-    )
-
-    # --------------------------------------------------------
-    # YAYIN ZAMANI
-    # --------------------------------------------------------
-
-    publish_at = get_publish_time()
-
-    print()
-    print(
-        f&quot;📺 Yayın zamanı: {publish_at}&quot;
-    )
-
-    upload_time = (
-        datetime.now().isoformat()
-    )
-
-    # --------------------------------------------------------
-    # STATE — UPLOADING
-    # --------------------------------------------------------
-
-    set_video_state(
-        video_number=video_number,
-        status=&quot;uploading&quot;,
-        upload_time=upload_time,
-        publish_at=publish_at,
-    )
-
-    # --------------------------------------------------------
-    # YOUTUBE UPLOAD
-    # --------------------------------------------------------
+def get_publish_hour_minute():
 
     try:
 
-        youtube_id = upload_video(
-            video_file=video_file,
-            title=title,
-            description=description,
-            tags=tags,
-            publish_at=publish_at,
-        )
+        hour, minute = PUBLISH_TIME.split(&quot;:&quot;)
 
-        # ----------------------------------------------------
-        # STATE — UPLOADED
-        # ----------------------------------------------------
-
-        result = set_video_state(
-            video_number=video_number,
-            status=&quot;uploaded&quot;,
-            youtube_id=youtube_id,
-            upload_time=upload_time,
-            publish_at=publish_at,
-        )
-
-        print()
-        print(&quot;========================================&quot;)
-        print(&quot;✅ VIDEO BAŞARIYLA YÜKLENDİ&quot;)
-        print(&quot;========================================&quot;)
-        print()
-
-        print(
-            f&quot;🎬 Video: #{video_number:03d}&quot;
-        )
-
-        print(
-            f&quot;🆔 YouTube ID: {youtube_id}&quot;
-        )
-
-        return result
+        return int(hour), int(minute)
 
     except Exception as error:
 
-        result = set_video_state(
-            video_number=video_number,
-            status=&quot;error&quot;,
-            upload_time=upload_time,
-            publish_at=publish_at,
-            error=str(error),
-        )
-
-        print()
-        print(
-            f&quot;❌ Video #{video_number:03d} &quot;
-            &quot;yüklenemedi.&quot;
-        )
-
-        print(
-            f&quot;Hata: {error}&quot;
-        )
-
-        return result
+        raise ValueError(
+            f&quot;Geçersiz PUBLISH_TIME: {PUBLISH_TIME}&quot;
+        ) from error
 
 
 # ============================================================
-# TEST / ÇALIŞTIRMA
+# STATE DOSYALARINI OKU
 # ============================================================
 
-if __name__ == &quot;__main__&quot;:
+def load_json_state(path):
 
-    print()
-    print(&quot;========================================&quot;)
-    print(&quot;⏰ UPLOAD SCHEDULER&quot;)
-    print(&quot;========================================&quot;)
-    print()
+    if not path.exists():
+        return {}
 
-    print(
-        f&quot;📤 Upload saati : {UPLOAD_TIME}&quot;
-    )
+    try:
 
-    print(
-        f&quot;📺 Yayın saati  : {PUBLISH_TIME}&quot;
-    )
-
-    print(
-        f&quot;🕐 Şu an        : &quot;
-        f&quot;{datetime.now().strftime(&#x27;%H:%M&#x27;)}&quot;
-    )
-
-    print()
-
-    next_video = find_next_upload()
-
-    if next_video is None:
-
-        print(
-            &quot;ℹ️ Yüklenecek hazır video bulunamadı.&quot;
+        data = json.loads(
+            path.read_text(
+                encoding=&quot;utf-8&quot;
+            )
         )
 
-    else:
+        if isinstance(data, dict):
+            return data
+
+        return {}
+
+    except Exception as error:
 
         print(
-            f&quot;🎯 Sıradaki video: #{next_video:03d}&quot;
+            f&quot;⚠️ State okunamadı: {path}&quot;
         )
 
-        if is_upload_time():
+        print(
+            f&quot;   Hata: {error}&quot;
+        )
 
-            print(
-                &quot;✅ Upload zamanı geldi.&quot;
+        return {}
+
+
+# ============================================================
+# TARİHİ NORMALLEŞTİR
+# ============================================================
+
+def get_local_date_from_publish_at(publish_at):
+
+    if not publish_at:
+        return None
+
+    try:
+
+        dt = datetime.fromisoformat(
+            publish_at.replace(
+                &quot;Z&quot;,
+                &quot;+00:00&quot;
+            )
+        )
+
+        if dt.tzinfo is None:
+
+            dt = dt.replace(
+                tzinfo=TIMEZONE
             )
 
-            print()
+        dt = dt.astimezone(
+            TIMEZONE
+        )
 
-            upload_short(
-                next_video
-            )
+        return dt.strftime(
+            &quot;%Y-%m-%d&quot;
+        )
 
-        else:
+    except Exception as error:
 
-            print(
-                &quot;⏳ Upload zamanı henüz gelmedi.&quot;
-            )</code></pre>
-
-</section>
-
-<section class="file-card">
-
-<div class="file-title">
-📄 app/youtube/youtube_analytics_test.py
-</div>
-
-<pre><code class="language-python">from pathlib import Path
-
-from googleapiclient.discovery import build
-from google.oauth2.credentials import Credentials
-
-
-# ============================================================
-# CREATOR ENGINE — YOUTUBE ANALYTICS TEST
-# ============================================================
-
-BASE_DIR = Path(__file__).resolve().parents[2]
-
-TOKEN_FILE = (
-    BASE_DIR
-    / &quot;data&quot;
-    / &quot;youtube_token.json&quot;
-)
-
-
-# ============================================================
-# YOUTUBE ANALYTICS BAĞLANTISI
-# ============================================================
-
-def get_analytics():
-
-    if not TOKEN_FILE.exists():
-
-        print()
-        print(&quot;❌ YouTube token bulunamadı.&quot;)
         print(
-            f&quot;📁 {TOKEN_FILE}&quot;
+            f&quot;⚠️ Yayın tarihi okunamadı: &quot;
+            f&quot;{publish_at}&quot;
+        )
+
+        print(
+            f&quot;   Hata: {error}&quot;
         )
 
         return None
 
-    credentials = Credentials.from_authorized_user_file(
-        TOKEN_FILE
-    )
-
-    analytics = build(
-        &quot;youtubeAnalytics&quot;,
-        &quot;v2&quot;,
-        credentials=credentials
-    )
-
-    return analytics
-
 
 # ============================================================
-# ANALYTICS TEST
+# KENDİ STATE KAYITLARINDAKİ DOLU GÜNLERİ BUL
 # ============================================================
 
-def test_analytics():
+def get_state_publish_dates():
 
-    print()
-    print(&quot;========================================&quot;)
-    print(&quot;📊 CREATOR ENGINE — ANALYTICS TEST&quot;)
-    print(&quot;========================================&quot;)
-    print()
+    occupied_dates = set()
 
-    analytics = get_analytics()
+    state_files = [
+        UPLOAD_STATE_FILE,
+        VIDEO_STATE_FILE,
+    ]
 
-    if analytics is None:
-
-        return
-
-    print(&quot;🔌 YouTube Analytics API bağlantısı başarılı.&quot;)
-    print()
-
-    # --------------------------------------------------------
-    # Son 30 gün için kanal özeti
-    # --------------------------------------------------------
-
-    response = analytics.reports().query(
-        ids=&quot;channel==MINE&quot;,
-        startDate=&quot;2026-07-29&quot;,
-        endDate=&quot;2026-08-28&quot;,
-        metrics=(
-            &quot;views,&quot;
-            &quot;likes,&quot;
-            &quot;comments,&quot;
-            &quot;estimatedMinutesWatched,&quot;
-            &quot;averageViewDuration,&quot;
-            &quot;averageViewPercentage&quot;
-        )
-    ).execute()
-
-    print(&quot;========================================&quot;)
-    print(&quot;📈 ANALYTICS VERİLERİ&quot;)
-    print(&quot;========================================&quot;)
-    print()
-
-    column_headers = response.get(
-        &quot;columnHeaders&quot;,
-        []
+    today = datetime.now(
+        TIMEZONE
+    ).strftime(
+        &quot;%Y-%m-%d&quot;
     )
 
-    rows = response.get(
-        &quot;rows&quot;,
-        []
-    )
+    for state_file in state_files:
 
-    if not rows:
-
-        print(&quot;⚠️ Seçilen tarih aralığında veri bulunamadı.&quot;)
-
-    else:
-
-        headers = [
-            column[&quot;name&quot;]
-            for column in column_headers
-        ]
-
-        print(
-            &quot; | &quot;.join(headers)
+        state = load_json_state(
+            state_file
         )
 
-        print(&quot;----------------------------------------&quot;)
+        if not state:
+            continue
 
-        for row in rows:
+        for value in state.values():
 
-            print(
-                &quot; | &quot;.join(
-                    str(value)
-                    for value in row
+            if not isinstance(value, dict):
+                continue
+
+            publish_at = value.get(
+                &quot;publish_at&quot;
+            )
+
+            if not publish_at:
+                continue
+
+            publish_date = (
+                get_local_date_from_publish_at(
+                    publish_at
                 )
             )
 
+            if not publish_date:
+                continue
+
+            # Geçmiş günleri dikkate alma
+            if publish_date &lt; today:
+                continue
+
+            occupied_dates.add(
+                publish_date
+            )
+
+    return occupied_dates
+
+
+# ============================================================
+# YOUTUBE&#x27;DAKİ PLANLI SHORTS GÜNLERİNİ BUL
+# ============================================================
+
+def get_youtube_scheduled_dates():
+
     print()
-    print(&quot;========================================&quot;)
-    print(&quot;✅ ANALYTICS TESTİ TAMAMLANDI&quot;)
-    print(&quot;========================================&quot;)
-    print()
-
-
-# ============================================================
-# TEST
-# ============================================================
-
-if __name__ == &quot;__main__&quot;:
-
-    test_analytics()</code></pre>
-
-</section>
-
-<section class="file-card">
-
-<div class="file-title">
-📄 app/youtube/youtube_test.py
-</div>
-
-<pre><code class="language-python">from pathlib import Path
-
-from googleapiclient.discovery import build
-from google.oauth2.credentials import Credentials
-
-
-# ============================================================
-# CREATOR ENGINE — YOUTUBE BAĞLANTI TESTİ
-# ============================================================
-
-BASE_DIR = Path(__file__).resolve().parents[2]
-
-TOKEN_FILE = (
-    BASE_DIR
-    / &quot;data&quot;
-    / &quot;youtube_token.json&quot;
-)
-
-
-# ============================================================
-# YOUTUBE BAĞLANTISI
-# ============================================================
-
-def get_youtube():
-
-    if not TOKEN_FILE.exists():
-
-        print()
-        print(&quot;❌ YouTube token bulunamadı.&quot;)
-        print(
-            f&quot;📁 {TOKEN_FILE}&quot;
-        )
-
-        return None
-
-    credentials = Credentials.from_authorized_user_file(
-        TOKEN_FILE
+    print(
+        &quot;🔎 YouTube Shorts yayın kuyruğu &quot;
+        &quot;kontrol ediliyor...&quot;
     )
+    print()
+
+    occupied_dates = set()
+
+    credentials = authenticate_youtube()
 
     youtube = build(
         &quot;youtube&quot;,
         &quot;v3&quot;,
-        credentials=credentials
+        credentials=credentials,
     )
 
-    return youtube
+    # --------------------------------------------------------
+    # KANAL + UPLOADS PLAYLIST
+    # --------------------------------------------------------
 
+    channel_response = (
+        youtube.channels()
+        .list(
+            part=&quot;contentDetails&quot;,
+            mine=True,
+        )
+        .execute()
+    )
 
-# ============================================================
-# KANAL BİLGİLERİ
-# ============================================================
-
-def test_channel():
-
-    print()
-    print(&quot;========================================&quot;)
-    print(&quot;📺 CREATOR ENGINE — YOUTUBE TEST&quot;)
-    print(&quot;========================================&quot;)
-    print()
-
-    youtube = get_youtube()
-
-    if youtube is None:
-
-        return
-
-    print(&quot;🔌 YouTube API bağlantısı başarılı.&quot;)
-    print()
-
-    response = youtube.channels().list(
-        part=&quot;snippet,statistics&quot;,
-        mine=True
-    ).execute()
-
-    channels = response.get(
+    channels = channel_response.get(
         &quot;items&quot;,
         []
     )
 
     if not channels:
 
-        print(&quot;❌ Kanal bulunamadı.&quot;)
-        return
+        print(
+            &quot;❌ YouTube kanalı bulunamadı.&quot;
+        )
+
+        return occupied_dates
 
     channel = channels[0]
 
-    snippet = channel[&quot;snippet&quot;]
-    statistics = channel[&quot;statistics&quot;]
+    uploads_playlist = (
+        channel
+        .get(&quot;contentDetails&quot;, {})
+        .get(&quot;relatedPlaylists&quot;, {})
+        .get(&quot;uploads&quot;)
+    )
 
+    if not uploads_playlist:
+
+        print(
+            &quot;❌ Uploads playlist bulunamadı.&quot;
+        )
+
+        return occupied_dates
+
+    print(
+        f&quot;📂 Uploads Playlist: &quot;
+        f&quot;{uploads_playlist}&quot;
+    )
+
+    # --------------------------------------------------------
+    # PLAYLIST VİDEOLARINI ÇEK
+    # --------------------------------------------------------
+
+    video_ids = []
+
+    next_page_token = None
+
+    while True:
+
+        response = (
+            youtube.playlistItems()
+            .list(
+                part=&quot;contentDetails&quot;,
+                playlistId=uploads_playlist,
+                maxResults=50,
+                pageToken=next_page_token,
+            )
+            .execute()
+        )
+
+        for item in response.get(
+            &quot;items&quot;,
+            []
+        ):
+
+            video_id = (
+                item
+                .get(&quot;contentDetails&quot;, {})
+                .get(&quot;videoId&quot;)
+            )
+
+            if video_id:
+
+                video_ids.append(
+                    video_id
+                )
+
+        next_page_token = (
+            response.get(
+                &quot;nextPageToken&quot;
+            )
+        )
+
+        if not next_page_token:
+            break
+
+    print(
+        f&quot;🎬 Kanal videoları taranıyor: &quot;
+        f&quot;{len(video_ids)}&quot;
+    )
+
+    # --------------------------------------------------------
+    # VİDEO BİLGİLERİNİ ÇEK
+    # --------------------------------------------------------
+
+    now = datetime.now(
+        TIMEZONE
+    )
+
+    today = now.strftime(
+        &quot;%Y-%m-%d&quot;
+    )
+
+    for start in range(
+        0,
+        len(video_ids),
+        50
+    ):
+
+        batch = video_ids[
+            start:start + 50
+        ]
+
+        if not batch:
+            continue
+
+        response = (
+            youtube.videos()
+            .list(
+                part=(
+                    &quot;status,&quot;
+                    &quot;contentDetails,&quot;
+                    &quot;snippet&quot;
+                ),
+                id=&quot;,&quot;.join(batch),
+            )
+            .execute()
+        )
+
+        for video in response.get(
+            &quot;items&quot;,
+            []
+        ):
+
+            status = video.get(
+                &quot;status&quot;,
+                {}
+            )
+
+            content_details = video.get(
+                &quot;contentDetails&quot;,
+                {}
+            )
+
+            snippet = video.get(
+                &quot;snippet&quot;,
+                {}
+            )
+
+            publish_at = status.get(
+                &quot;publishAt&quot;
+            )
+
+            privacy_status = status.get(
+                &quot;privacyStatus&quot;
+            )
+
+            duration = content_details.get(
+                &quot;duration&quot;
+            )
+
+            title = snippet.get(
+                &quot;title&quot;,
+                &quot;Başlıksız video&quot;
+            )
+
+            # ------------------------------------------------
+            # PLANLI DEĞİLSE GEÇ
+            # ------------------------------------------------
+
+            if not publish_at:
+                continue
+
+            # ------------------------------------------------
+            # SADECE PRIVATE PLANLI VİDEOLAR
+            # ------------------------------------------------
+
+            if privacy_status != &quot;private&quot;:
+                continue
+
+            # ------------------------------------------------
+            # YAYIN TARİHİNİ AL
+            # ------------------------------------------------
+
+            publish_date = (
+                get_local_date_from_publish_at(
+                    publish_at
+                )
+            )
+
+            if not publish_date:
+                continue
+
+            # ------------------------------------------------
+            # GEÇMİŞ TARİHLERİ GEÇ
+            # ------------------------------------------------
+
+            if publish_date &lt; today:
+                continue
+
+            # ------------------------------------------------
+            # SADECE SHORTS
+            # ------------------------------------------------
+
+            if not is_short_duration(
+                duration
+            ):
+
+                print(
+                    f&quot;⏭️ Uzun video atlandı: &quot;
+                    f&quot;{title}&quot;
+                )
+
+                continue
+
+            # ------------------------------------------------
+            # GÜNÜ DOLU OLARAK İŞARETLE
+            # ------------------------------------------------
+
+            occupied_dates.add(
+                publish_date
+            )
+
+            print(
+                f&quot;📅 Shorts günü dolu: &quot;
+                f&quot;{publish_date}&quot;
+            )
+
+            print(
+                f&quot;   🎬 {title}&quot;
+            )
+
+            print(
+                f&quot;   ⏱️ Süre: {duration}&quot;
+            )
+
+    print()
+    print(
+        f&quot;📊 YouTube planlı Shorts günü: &quot;
+        f&quot;{len(occupied_dates)}&quot;
+    )
+
+    return occupied_dates
+
+
+# ============================================================
+# SONRAKİ BOŞ YAYIN GÜNÜNÜ BUL
+# ============================================================
+
+def get_next_available_publish_time():
+
+    now = datetime.now(
+        TIMEZONE
+    )
+
+    publish_hour, publish_minute = (
+        get_publish_hour_minute()
+    )
+
+    print()
     print(&quot;========================================&quot;)
-    print(&quot;📺 KANAL BİLGİLERİ&quot;)
+    print(&quot;📅 YAYIN ZAMANI PLANLAYICI&quot;)
     print(&quot;========================================&quot;)
     print()
 
     print(
-        f&quot;📛 Kanal adı: &quot;
-        f&quot;{snippet.get(&#x27;title&#x27;, &#x27;&#x27;)}&quot;
+        f&quot;🕐 Şu an: &quot;
+        f&quot;{now.strftime(&#x27;%Y-%m-%d %H:%M:%S&#x27;)}&quot;
     )
 
     print(
-        f&quot;🆔 Kanal ID: &quot;
-        f&quot;{channel.get(&#x27;id&#x27;, &#x27;&#x27;)}&quot;
+        f&quot;📺 Yayın saati: &quot;
+        f&quot;{PUBLISH_TIME}&quot;
+    )
+
+    # --------------------------------------------------------
+    # KENDİ STATE
+    # --------------------------------------------------------
+
+    state_dates = (
+        get_state_publish_dates()
     )
 
     print(
-        f&quot;👥 Abone: &quot;
-        f&quot;{statistics.get(&#x27;subscriberCount&#x27;, &#x27;Gizli&#x27;)}&quot;
+        f&quot;🗃️ Kendi state dolu günleri: &quot;
+        f&quot;{len(state_dates)}&quot;
+    )
+
+    # --------------------------------------------------------
+    # YOUTUBE
+    # --------------------------------------------------------
+
+    youtube_dates = (
+        get_youtube_scheduled_dates()
     )
 
     print(
-        f&quot;🎬 Toplam video: &quot;
-        f&quot;{statistics.get(&#x27;videoCount&#x27;, 0)}&quot;
+        f&quot;📺 YouTube planlı Shorts günleri: &quot;
+        f&quot;{len(youtube_dates)}&quot;
     )
 
-    print(
-        f&quot;👁️ Toplam görüntülenme: &quot;
-        f&quot;{statistics.get(&#x27;viewCount&#x27;, 0)}&quot;
+    # --------------------------------------------------------
+    # TÜM DOLU GÜNLERİ BİRLEŞTİR
+    # --------------------------------------------------------
+
+    occupied_dates = (
+        state_dates
+        | youtube_dates
     )
 
     print()
-    print(&quot;========================================&quot;)
-    print(&quot;✅ YOUTUBE BAĞLANTI TESTİ BAŞARILI&quot;)
-    print(&quot;========================================&quot;)
-    print()
+    print(
+        f&quot;🔒 Toplam dolu gün: &quot;
+        f&quot;{len(occupied_dates)}&quot;
+    )
+
+    # --------------------------------------------------------
+    # İLK ADAY GÜN
+    # --------------------------------------------------------
+
+    candidate_date = now.date()
+
+    # Eğer bugünün yayın saati geçmişse yarından başla.
+    candidate_datetime = datetime(
+        candidate_date.year,
+        candidate_date.month,
+        candidate_date.day,
+        publish_hour,
+        publish_minute,
+        tzinfo=TIMEZONE,
+    )
+
+    if candidate_datetime &lt;= now:
+
+        candidate_date += timedelta(
+            days=1
+        )
+
+    # --------------------------------------------------------
+    # BOŞ GÜN ARA
+    # --------------------------------------------------------
+
+    while True:
+
+        date_key = candidate_date.strftime(
+            &quot;%Y-%m-%d&quot;
+        )
+
+        print(
+            f&quot;🔍 Gün kontrolü: {date_key}&quot;
+        )
+
+        if date_key not in occupied_dates:
+
+            publish_datetime = datetime(
+                candidate_date.year,
+                candidate_date.month,
+                candidate_date.day,
+                publish_hour,
+                publish_minute,
+                tzinfo=TIMEZONE,
+            )
+
+            publish_at = (
+                publish_datetime.isoformat()
+            )
+
+            print()
+            print(&quot;========================================&quot;)
+            print(&quot;✅ UYGUN SHORTS YAYIN GÜNÜ BULUNDU&quot;)
+            print(&quot;========================================&quot;)
+            print()
+
+            print(
+                f&quot;🎯 {publish_at}&quot;
+            )
+
+            return publish_at
+
+        print(
+            f&quot;⛔ GÜN DOLU: {date_key}&quot;
+        )
+
+        candidate_date += timedelta(
+            days=1
+        )
 
 
 # ============================================================
@@ -6675,25 +6619,486 @@ def test_channel():
 
 if __name__ == &quot;__main__&quot;:
 
-    test_channel()</code></pre>
+    print()
+    print(&quot;========================================&quot;)
+    print(&quot;🧪 PUBLISH SCHEDULER TEST&quot;)
+    print(&quot;========================================&quot;)
+    print()
+
+    try:
+
+        result = (
+            get_next_available_publish_time()
+        )
+
+        print()
+        print(&quot;========================================&quot;)
+        print(&quot;🎯 TEST SONUCU&quot;)
+        print(&quot;========================================&quot;)
+        print()
+
+        print(
+            f&quot;publish_at = {result}&quot;
+        )
+
+    except Exception as error:
+
+        print()
+        print(&quot;========================================&quot;)
+        print(&quot;❌ TEST BAŞARISIZ&quot;)
+        print(&quot;========================================&quot;)
+        print()
+
+        print(
+            f&quot;Hata: {error}&quot;
+        )</code></pre>
 
 </section>
 
 <section class="file-card">
 
 <div class="file-title">
-📄 config/settings.py
+📄 app/upload/upload_state.py
 </div>
 
-<pre><code class="language-python">APP_NAME = &quot;Creator Engine&quot;
-VERSION = &quot;0.1.0&quot;
-LANGUAGE = &quot;tr&quot;
-from dotenv import load_dotenv
-import os
+<pre><code class="language-python">from pathlib import Path
+import json
 
-load_dotenv()
 
-OPENAI_API_KEY = os.getenv(&quot;OPENAI_API_KEY&quot;)</code></pre>
+BASE_DIR = Path(__file__).resolve().parents[2]
+
+STATE_FILE = BASE_DIR / &quot;data&quot; / &quot;upload_state.json&quot;
+
+
+def load_state():
+
+    if not STATE_FILE.exists():
+        return {}
+
+    try:
+
+        return json.loads(
+            STATE_FILE.read_text(
+                encoding=&quot;utf-8&quot;
+            )
+        )
+
+    except Exception:
+
+        return {}
+
+
+def save_state(state):
+
+    STATE_FILE.parent.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    STATE_FILE.write_text(
+        json.dumps(
+            state,
+            ensure_ascii=False,
+            indent=4
+        ),
+        encoding=&quot;utf-8&quot;
+    )
+
+
+def get_video_state(video_number):
+
+    state = load_state()
+
+    return state.get(
+        str(video_number)
+    )
+
+
+def set_video_state(
+    video_number,
+    status,
+    youtube_id=None,
+    upload_time=None,
+    publish_at=None,
+    error=None,
+):
+
+    state = load_state()
+
+    video_key = str(video_number)
+
+    state[video_key] = {
+        &quot;status&quot;: status,
+        &quot;youtube_id&quot;: youtube_id,
+        &quot;upload_time&quot;: upload_time,
+        &quot;publish_at&quot;: publish_at,
+        &quot;error&quot;: error,
+    }
+
+    save_state(state)
+
+    return state[video_key]
+
+
+def is_uploaded(video_number):
+
+    video_state = get_video_state(
+        video_number
+    )
+
+    if not video_state:
+        return False
+
+    return video_state.get(
+        &quot;status&quot;
+    ) == &quot;uploaded&quot;</code></pre>
+
+</section>
+
+<section class="file-card">
+
+<div class="file-title">
+📄 app/youtube/youtube_auth.py
+</div>
+
+<pre><code class="language-python">from pathlib import Path
+
+from google_auth_oauthlib.flow import InstalledAppFlow
+from google.oauth2.credentials import Credentials
+
+
+# ============================================================
+# CREATOR ENGINE — YOUTUBE OAUTH
+# ============================================================
+
+BASE_DIR = Path(__file__).resolve().parents[2]
+
+# Google Cloud&#x27;dan indirdiğin OAuth JSON dosyası
+CLIENT_SECRET_FILE = (
+    BASE_DIR
+    / &quot;client_secret_150956391796-vpb251vj5d9dib3qccgpjqjmmnjmv4p9.apps.googleusercontent.com.json&quot;
+)
+
+# OAuth sonrası oluşturulacak token
+TOKEN_FILE = (
+    BASE_DIR
+    / &quot;data&quot;
+    / &quot;youtube_token.json&quot;
+)
+
+
+# ============================================================
+# YOUTUBE İZİNLERİ
+# ============================================================
+
+SCOPES = [
+    &quot;https://www.googleapis.com/auth/youtube.readonly&quot;,
+    &quot;https://www.googleapis.com/auth/yt-analytics.readonly&quot;,
+    &quot;https://www.googleapis.com/auth/youtube.upload&quot;,
+]
+
+
+# ============================================================
+# OAUTH BAĞLANTISI
+# ============================================================
+
+def authenticate_youtube():
+
+    print()
+    print(&quot;========================================&quot;)
+    print(&quot;🔐 CREATOR ENGINE — YOUTUBE BAĞLANTISI&quot;)
+    print(&quot;========================================&quot;)
+    print()
+
+    if not CLIENT_SECRET_FILE.exists():
+
+        print(&quot;❌ OAuth JSON dosyası bulunamadı.&quot;)
+        print()
+        print(
+            f&quot;Aranan dosya:&quot;
+        )
+        print(
+            CLIENT_SECRET_FILE
+        )
+
+        return None
+
+    credentials = None
+
+    # --------------------------------------------------------
+    # Daha önce alınmış token varsa kullan
+    # --------------------------------------------------------
+
+    if TOKEN_FILE.exists():
+
+        try:
+
+            credentials = Credentials.from_authorized_user_file(
+                TOKEN_FILE,
+                SCOPES,
+            )
+
+            print(&quot;✅ Mevcut YouTube yetkilendirmesi bulundu.&quot;)
+
+        except Exception as error:
+
+            print()
+            print(
+                f&quot;⚠️ Mevcut token okunamadı: {error}&quot;
+            )
+
+            credentials = None
+
+    # --------------------------------------------------------
+    # Yeni OAuth bağlantısı
+    # --------------------------------------------------------
+
+    if credentials is None or not credentials.valid:
+
+        print()
+        print(&quot;🌐 Google OAuth başlatılıyor...&quot;)
+        print()
+        print(
+            &quot;Tarayıcı açılacak.&quot;
+        )
+        print(
+            &quot;33 Shorts bulunan YouTube kanalının&quot;
+        )
+        print(
+            &quot;Google hesabıyla giriş yap.&quot;
+        )
+        print()
+
+        try:
+
+            flow = InstalledAppFlow.from_client_secrets_file(
+                CLIENT_SECRET_FILE,
+                SCOPES,
+            )
+
+            credentials = flow.run_local_server(
+                port=0
+            )
+
+        except Exception as error:
+
+            print()
+            print(
+                f&quot;❌ OAuth bağlantısı başarısız: {error}&quot;
+            )
+
+            return None
+
+        # ----------------------------------------------------
+        # Token kaydet
+        # ----------------------------------------------------
+
+        TOKEN_FILE.parent.mkdir(
+            parents=True,
+            exist_ok=True
+        )
+
+        TOKEN_FILE.write_text(
+            credentials.to_json(),
+            encoding=&quot;utf-8&quot;
+        )
+
+        print()
+        print(&quot;✅ YouTube yetkilendirmesi tamamlandı.&quot;)
+        print()
+        print(
+            f&quot;🔐 Token kaydedildi:&quot;
+        )
+        print(
+            TOKEN_FILE
+        )
+
+    print()
+    print(&quot;========================================&quot;)
+    print(&quot;✅ YOUTUBE BAĞLANTISI HAZIR&quot;)
+    print(&quot;========================================&quot;)
+    print()
+
+    return credentials
+
+
+# ============================================================
+# TEST
+# ============================================================
+
+if __name__ == &quot;__main__&quot;:
+
+    authenticate_youtube()</code></pre>
+
+</section>
+
+<section class="file-card">
+
+<div class="file-title">
+📄 app/youtube/youtube_uploader.py
+</div>
+
+<pre><code class="language-python">from pathlib import Path
+
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaFileUpload
+
+from app.youtube.youtube_auth import authenticate_youtube
+
+
+BASE_DIR = Path(__file__).resolve().parents[2]
+
+
+def get_youtube_service():
+
+    credentials = authenticate_youtube()
+
+    if credentials is None:
+        raise RuntimeError(
+            &quot;YouTube yetkilendirmesi alınamadı.&quot;
+        )
+
+    return build(
+        &quot;youtube&quot;,
+        &quot;v3&quot;,
+        credentials=credentials
+    )
+
+
+def test_connection():
+
+    youtube = get_youtube_service()
+
+    response = youtube.channels().list(
+        part=&quot;snippet&quot;,
+        mine=True
+    ).execute()
+
+    items = response.get(
+        &quot;items&quot;,
+        []
+    )
+
+    if not items:
+        raise RuntimeError(
+            &quot;YouTube kanalı bulunamadı.&quot;
+        )
+
+    channel = items[0][&quot;snippet&quot;]
+
+    print()
+    print(&quot;========================================&quot;)
+    print(&quot;✅ YOUTUBE API BAĞLANTISI BAŞARILI&quot;)
+    print(&quot;========================================&quot;)
+    print()
+    print(
+        f&quot;📺 Kanal: {channel.get(&#x27;title&#x27;)}&quot;
+    )
+    print()
+
+
+def upload_video(
+    video_file,
+    title,
+    description=&quot;&quot;,
+    tags=None,
+    publish_at=None,
+):
+
+    video_file = Path(video_file)
+
+    if not video_file.exists():
+        raise FileNotFoundError(
+            f&quot;Video bulunamadı: {video_file}&quot;
+        )
+
+    if tags is None:
+        tags = []
+
+    youtube = get_youtube_service()
+
+    print()
+    print(&quot;========================================&quot;)
+    print(&quot;📤 YOUTUBE VIDEO YÜKLEME&quot;)
+    print(&quot;========================================&quot;)
+    print()
+    print(f&quot;🎬 Video : {video_file}&quot;)
+    print(f&quot;📝 Başlık: {title}&quot;)
+
+    if publish_at:
+        print(
+            f&quot;📅 Yayın zamanı: {publish_at}&quot;
+        )
+
+    body = {
+        &quot;snippet&quot;: {
+            &quot;title&quot;: title,
+            &quot;description&quot;: description,
+            &quot;tags&quot;: tags,
+            &quot;categoryId&quot;: &quot;22&quot;,
+        },
+        &quot;status&quot;: {
+            &quot;privacyStatus&quot;: &quot;private&quot;,
+        },
+    }
+
+    if publish_at:
+        body[&quot;status&quot;][&quot;publishAt&quot;] = publish_at
+
+    media = MediaFileUpload(
+        str(video_file),
+        mimetype=&quot;video/mp4&quot;,
+        resumable=True,
+    )
+
+    print()
+    print(&quot;📤 YouTube&#x27;a yükleme başlıyor...&quot;)
+
+    request = youtube.videos().insert(
+        part=&quot;snippet,status&quot;,
+        body=body,
+        media_body=media,
+    )
+
+    response = None
+
+    while response is None:
+
+        status, response = request.next_chunk()
+
+        if status:
+            progress = int(
+                status.progress() * 100
+            )
+
+            print(
+                f&quot;📤 Yükleme: %{progress}&quot;
+            )
+
+    video_id = response.get(&quot;id&quot;)
+
+    if not video_id:
+        raise RuntimeError(
+            &quot;YouTube video ID döndürmedi.&quot;
+        )
+
+    print()
+    print(&quot;========================================&quot;)
+    print(&quot;✅ YOUTUBE YÜKLEME BAŞARILI&quot;)
+    print(&quot;========================================&quot;)
+    print()
+    print(f&quot;🆔 Video ID: {video_id}&quot;)
+    print(
+        f&quot;🔗 https://www.youtube.com/watch?v={video_id}&quot;
+    )
+    print()
+
+    return video_id
+
+
+if __name__ == &quot;__main__&quot;:
+
+    test_connection()</code></pre>
 
 </section>
 
@@ -8224,78 +8629,455 @@ create_short(topic)</code></pre>
 <section class="file-card">
 
 <div class="file-title">
-📄 app/core/srt_test.py
+📄 app/core/recovery_engine.py
 </div>
 
-<pre><code class="language-python">from pathlib import Path
-
-from app.content.subtitle_engine import create_subtitle
-
-
-VIDEO_FOLDER = Path(&quot;shorts/007&quot;)
-
-TRANSCRIPT_FILE = VIDEO_FOLDER / &quot;transkript.txt&quot;
-AUDIO_FILE = VIDEO_FOLDER / &quot;ses.mp3&quot;
-SRT_FILE = VIDEO_FOLDER / &quot;altyazi_ai.srt&quot;
+<pre><code class="language-python">import json
+import time
+from datetime import datetime
+from pathlib import Path
 
 
-print()
-print(&quot;=== SRT TEST ===&quot;)
+# ============================================================
+# CREATOR ENGINE — RECOVERY / RETRY ENGINE
+# ============================================================
+
+BASE_DIR = Path(__file__).resolve().parents[2]
+
+DATA_DIR = BASE_DIR / &quot;data&quot;
+RECOVERY_STATE_FILE = DATA_DIR / &quot;recovery_state.json&quot;
 
 
-create_subtitle(
-    transcript_file=TRANSCRIPT_FILE,
-    audio_file=AUDIO_FILE,
-    output_file=SRT_FILE,
-)
+# ============================================================
+# AYARLAR
+# ============================================================
+
+DEFAULT_MAX_RETRIES = 3
+DEFAULT_RETRY_DELAY = 30
 
 
-print()
-print(&quot;🎉 SRT TEST BAŞARILI&quot;)</code></pre>
+# ============================================================
+# STATE OKU
+# ============================================================
+
+def load_recovery_state():
+    if not RECOVERY_STATE_FILE.exists():
+        return {}
+
+    try:
+        with open(
+            RECOVERY_STATE_FILE,
+            &quot;r&quot;,
+            encoding=&quot;utf-8&quot;
+        ) as file:
+            return json.load(file)
+
+    except Exception as error:
+        print(
+            f&quot;⚠️ Recovery state okunamadı: {error}&quot;
+        )
+
+        return {}
+
+
+# ============================================================
+# STATE KAYDET
+# ============================================================
+
+def save_recovery_state(state):
+    DATA_DIR.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    with open(
+        RECOVERY_STATE_FILE,
+        &quot;w&quot;,
+        encoding=&quot;utf-8&quot;
+    ) as file:
+
+        json.dump(
+            state,
+            file,
+            ensure_ascii=False,
+            indent=4
+        )
+
+
+# ============================================================
+# HATA SINIFLANDIRMA
+# ============================================================
+
+def is_retryable_error(error):
+    &quot;&quot;&quot;
+    Hatanın tekrar denenebilir olup olmadığını belirler.
+    &quot;&quot;&quot;
+
+    error_text = str(error).lower()
+
+    retryable_keywords = (
+        &quot;timeout&quot;,
+        &quot;timed out&quot;,
+        &quot;rate limit&quot;,
+        &quot;429&quot;,
+        &quot;500&quot;,
+        &quot;502&quot;,
+        &quot;503&quot;,
+        &quot;504&quot;,
+        &quot;temporarily unavailable&quot;,
+        &quot;temporary&quot;,
+        &quot;connection&quot;,
+        &quot;network&quot;,
+        &quot;server error&quot;,
+        &quot;service unavailable&quot;,
+        &quot;internal server error&quot;,
+    )
+
+    return any(
+        keyword in error_text
+        for keyword in retryable_keywords
+    )
+
+
+# ============================================================
+# İŞ KİMLİĞİ
+# ============================================================
+
+def get_job_key(
+    job_name,
+    job_id=None
+):
+    if job_id is not None:
+        return f&quot;{job_name}:{job_id}&quot;
+
+    return job_name
+
+
+# ============================================================
+# İŞ HATASINI KAYDET
+# ============================================================
+
+def record_failure(
+    job_name,
+    error,
+    job_id=None,
+    attempt=1,
+    max_retries=DEFAULT_MAX_RETRIES
+):
+
+    state = load_recovery_state()
+
+    job_key = get_job_key(
+        job_name,
+        job_id
+    )
+
+    now = datetime.now().isoformat()
+
+    state[job_key] = {
+        &quot;job_name&quot;: job_name,
+        &quot;job_id&quot;: job_id,
+        &quot;status&quot;: &quot;retrying&quot;,
+        &quot;attempt&quot;: attempt,
+        &quot;max_retries&quot;: max_retries,
+        &quot;retryable&quot;: is_retryable_error(error),
+        &quot;last_error&quot;: str(error),
+        &quot;last_error_at&quot;: now,
+    }
+
+    save_recovery_state(state)
+
+    return state[job_key]
+
+
+# ============================================================
+# İŞ BAŞARILI
+# ============================================================
+
+def clear_failure(
+    job_name,
+    job_id=None
+):
+
+    state = load_recovery_state()
+
+    job_key = get_job_key(
+        job_name,
+        job_id
+    )
+
+    if job_key in state:
+        del state[job_key]
+        save_recovery_state(state)
+
+    return True
+
+
+# ============================================================
+# İŞ DURUMU
+# ============================================================
+
+def get_job_state(
+    job_name,
+    job_id=None
+):
+
+    state = load_recovery_state()
+
+    job_key = get_job_key(
+        job_name,
+        job_id
+    )
+
+    return state.get(job_key)
+
+
+# ============================================================
+# RETRY MOTORU
+# ============================================================
+
+def run_with_retry(
+    function,
+    *args,
+    job_name=&quot;unknown&quot;,
+    job_id=None,
+    max_retries=DEFAULT_MAX_RETRIES,
+    retry_delay=DEFAULT_RETRY_DELAY,
+    **kwargs
+):
+
+    previous_state = get_job_state(
+        job_name,
+        job_id
+    )
+
+    if previous_state:
+        start_attempt = (
+            previous_state.get(&quot;attempt&quot;, 0)
+            + 1
+        )
+    else:
+        start_attempt = 1
+
+    for attempt in range(
+        start_attempt,
+        max_retries + 1
+    ):
+
+        print()
+        print(
+            &quot;========================================&quot;
+        )
+        print(
+            &quot;🛡️ CREATOR ENGINE — RECOVERY&quot;
+        )
+        print(
+            &quot;========================================&quot;
+        )
+
+        print(
+            f&quot;🔧 İş      : {job_name}&quot;
+        )
+
+        if job_id is not None:
+            print(
+                f&quot;🆔 ID      : {job_id}&quot;
+            )
+
+        print(
+            f&quot;🔄 Deneme  : &quot;
+            f&quot;{attempt}/{max_retries}&quot;
+        )
+
+        try:
+
+            result = function(
+                *args,
+                **kwargs
+            )
+
+            clear_failure(
+                job_name,
+                job_id
+            )
+
+            print(
+                &quot;✅ İşlem başarıyla tamamlandı.&quot;
+            )
+
+            return {
+                &quot;status&quot;: &quot;success&quot;,
+                &quot;result&quot;: result,
+                &quot;attempt&quot;: attempt,
+            }
+
+        except Exception as error:
+
+            retryable = is_retryable_error(
+                error
+            )
+
+            print(
+                f&quot;❌ Hata: {error}&quot;
+            )
+
+            record_failure(
+                job_name=job_name,
+                error=error,
+                job_id=job_id,
+                attempt=attempt,
+                max_retries=max_retries
+            )
+
+            if not retryable:
+
+                print(
+                    &quot;🛑 Hata tekrar denenebilir &quot;
+                    &quot;türden değil.&quot;
+                )
+
+                return {
+                    &quot;status&quot;: &quot;failed&quot;,
+                    &quot;retryable&quot;: False,
+                    &quot;error&quot;: str(error),
+                    &quot;attempt&quot;: attempt,
+                }
+
+            if attempt &gt;= max_retries:
+
+                print(
+                    &quot;🛑 Maksimum retry sayısına &quot;
+                    &quot;ulaşıldı.&quot;
+                )
+
+                state = load_recovery_state()
+
+                job_key = get_job_key(
+                    job_name,
+                    job_id
+                )
+
+                if job_key in state:
+                    state[job_key][
+                        &quot;status&quot;
+                    ] = &quot;failed&quot;
+
+                    save_recovery_state(
+                        state
+                    )
+
+                return {
+                    &quot;status&quot;: &quot;failed&quot;,
+                    &quot;retryable&quot;: True,
+                    &quot;error&quot;: str(error),
+                    &quot;attempt&quot;: attempt,
+                }
+
+            print(
+                f&quot;⏳ {retry_delay} saniye &quot;
+                &quot;sonra tekrar denenecek...&quot;
+            )
+
+            time.sleep(
+                retry_delay
+            )
+
+    return {
+        &quot;status&quot;: &quot;failed&quot;,
+        &quot;error&quot;: &quot;Retry döngüsü beklenmedik şekilde sona erdi.&quot;
+    }
+
+
+# ============================================================
+# TEST
+# ============================================================
+
+def test_recovery():
+
+    counter = {
+        &quot;attempts&quot;: 0
+    }
+
+    def test_function():
+
+        counter[&quot;attempts&quot;] += 1
+
+        print(
+            f&quot;🧪 Test denemesi: &quot;
+            f&quot;{counter[&#x27;attempts&#x27;]}&quot;
+        )
+
+        if counter[&quot;attempts&quot;] &lt; 3:
+
+            raise TimeoutError(
+                &quot;Test amaçlı geçici timeout.&quot;
+            )
+
+        return &quot;TEST BAŞARILI&quot;
+
+    result = run_with_retry(
+        test_function,
+        job_name=&quot;recovery_test&quot;,
+        max_retries=3,
+        retry_delay=2
+    )
+
+    print()
+    print(
+        &quot;========================================&quot;
+    )
+    print(
+        &quot;🧪 RECOVERY TEST SONUCU&quot;
+    )
+    print(
+        &quot;========================================&quot;
+    )
+
+    print(result)
+
+
+if __name__ == &quot;__main__&quot;:
+
+    test_recovery()</code></pre>
 
 </section>
 
 <section class="file-card">
 
 <div class="file-title">
-📄 app/core/tts_test.py
+📄 app/core/transcribe_test.py
 </div>
 
 <pre><code class="language-python">from pathlib import Path
 
-from app.content.tts_generator import generate_speech
+from app.content.transcriber import transcribe_audio
 
 
-script_file = Path(&quot;shorts/007/senaryo.txt&quot;)
-output_file = Path(&quot;shorts/007/ses.mp3&quot;)
-
-
-if not script_file.exists():
-    raise FileNotFoundError(
-        f&quot;Senaryo bulunamadı: {script_file}&quot;
-    )
-
-
-text = script_file.read_text(encoding=&quot;utf-8&quot;).strip()
-
-
-if not text:
-    raise ValueError(&quot;Senaryo dosyası boş.&quot;)
+audio_file = Path(&quot;shorts/007/ses.mp3&quot;)
+output_file = Path(&quot;shorts/007/transkript.txt&quot;)
 
 
 print()
-print(&quot;=== AI TTS ===&quot;)
-print(&quot;🎙️ Ses oluşturuluyor...&quot;)
+print(&quot;=== AI TRANSCRIBE ===&quot;)
+print(&quot;🎙️ Ses yazıya çevriliyor...&quot;)
 
 
-generate_speech(
-    text,
-    output_file
+result = transcribe_audio(audio_file)
+
+
+print()
+print(&quot;=== TRANSKRİPT ===&quot;)
+print(result.text)
+
+
+output_file.write_text(
+    result.text,
+    encoding=&quot;utf-8&quot;
 )
 
 
 print()
-print(&quot;✅ SES OLUŞTURULDU&quot;)
+print(&quot;✅ TRANSKRİPT TAMAMLANDI&quot;)
 print(f&quot;Dosya: {output_file}&quot;)</code></pre>
 
 </section>
@@ -8303,315 +9085,110 @@ print(f&quot;Dosya: {output_file}&quot;)</code></pre>
 <section class="file-card">
 
 <div class="file-title">
-📄 app/upload/__init__.py
-</div>
-
-<pre><code class="language-python"></code></pre>
-
-</section>
-
-<section class="file-card">
-
-<div class="file-title">
-📄 app/upload/upload_state.py
+📄 app/core/word_timestamp_test.py
 </div>
 
 <pre><code class="language-python">from pathlib import Path
-import json
+
+from app.content.transcriber import transcribe_audio
 
 
-BASE_DIR = Path(__file__).resolve().parents[2]
-
-STATE_FILE = BASE_DIR / &quot;data&quot; / &quot;upload_state.json&quot;
+audio_file = Path(&quot;shorts/007/ses.mp3&quot;)
 
 
-def load_state():
+print()
+print(&quot;=== GERÇEK KELİME ZAMANLARI TESTİ ===&quot;)
+print(&quot;🎙️ Ses analiz ediliyor...&quot;)
 
-    if not STATE_FILE.exists():
-        return {}
 
-    try:
+result = transcribe_audio(audio_file)
 
-        return json.loads(
-            STATE_FILE.read_text(
-                encoding=&quot;utf-8&quot;
-            )
+
+print()
+print(&quot;=== TRANSKRİPT ===&quot;)
+print(result.text)
+
+print()
+print(&quot;=== KELİME ZAMANLARI ===&quot;)
+
+
+if hasattr(result, &quot;words&quot;) and result.words:
+
+    for word in result.words[:20]:
+
+        print(
+            f&quot;{word.word}  &quot;
+            f&quot;{word.start:.2f}s → &quot;
+            f&quot;{word.end:.2f}s&quot;
         )
 
-    except Exception:
+else:
 
-        return {}
-
-
-def save_state(state):
-
-    STATE_FILE.parent.mkdir(
-        parents=True,
-        exist_ok=True
-    )
-
-    STATE_FILE.write_text(
-        json.dumps(
-            state,
-            ensure_ascii=False,
-            indent=4
-        ),
-        encoding=&quot;utf-8&quot;
-    )
+    print(&quot;⚠️ Kelime zamanları döndürülmedi.&quot;)
 
 
-def get_video_state(video_number):
-
-    state = load_state()
-
-    return state.get(
-        str(video_number)
-    )
-
-
-def set_video_state(
-    video_number,
-    status,
-    youtube_id=None,
-    upload_time=None,
-    publish_at=None,
-    error=None,
-):
-
-    state = load_state()
-
-    video_key = str(video_number)
-
-    state[video_key] = {
-        &quot;status&quot;: status,
-        &quot;youtube_id&quot;: youtube_id,
-        &quot;upload_time&quot;: upload_time,
-        &quot;publish_at&quot;: publish_at,
-        &quot;error&quot;: error,
-    }
-
-    save_state(state)
-
-    return state[video_key]
-
-
-def is_uploaded(video_number):
-
-    video_state = get_video_state(
-        video_number
-    )
-
-    if not video_state:
-        return False
-
-    return video_state.get(
-        &quot;status&quot;
-    ) == &quot;uploaded&quot;</code></pre>
+print()
+print(&quot;✅ TEST TAMAMLANDI&quot;)</code></pre>
 
 </section>
 
 <section class="file-card">
 
 <div class="file-title">
-📄 app/youtube/youtube_auth.py
+📄 app/upload/upload_config.py
+</div>
+
+<pre><code class="language-python">UPLOAD_ENABLED = True
+
+# Videonun YouTube&#x27;a yükleneceği saat
+UPLOAD_TIME = &quot;17:00&quot;
+
+# YouTube&#x27;da yayınlanacağı saat
+PUBLISH_TIME = &quot;18:00&quot;</code></pre>
+
+</section>
+
+<section class="file-card">
+
+<div class="file-title">
+📄 app/youtube/youtube_analytics_sync.py
 </div>
 
 <pre><code class="language-python">from pathlib import Path
+import sqlite3
 
-from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
 
 
 # ============================================================
-# CREATOR ENGINE — YOUTUBE OAUTH
+# CREATOR ENGINE — YOUTUBE ANALYTICS SYNC
 # ============================================================
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 
-# Google Cloud&#x27;dan indirdiğin OAuth JSON dosyası
-CLIENT_SECRET_FILE = (
-    BASE_DIR
-    / &quot;client_secret_150956391796-vpb251vj5d9dib3qccgpjqjmmnjmv4p9.apps.googleusercontent.com.json&quot;
-)
-
-# OAuth sonrası oluşturulacak token
-TOKEN_FILE = (
-    BASE_DIR
-    / &quot;data&quot;
-    / &quot;youtube_token.json&quot;
-)
+TOKEN_FILE = BASE_DIR / &quot;data&quot; / &quot;youtube_token.json&quot;
+DB_FILE = BASE_DIR / &quot;data&quot; / &quot;creator_engine.db&quot;
 
 
 # ============================================================
-# YOUTUBE İZİNLERİ
+# AYAR
 # ============================================================
 
-SCOPES = [
-    &quot;https://www.googleapis.com/auth/youtube.readonly&quot;,
-    &quot;https://www.googleapis.com/auth/yt-analytics.readonly&quot;,
-    &quot;https://www.googleapis.com/auth/youtube.upload&quot;,
-]
+# İlk çalıştırmada False bırakıyoruz.
+# True yaptığımızda veriler DB&#x27;ye yazılacak.
+WRITE_TO_DATABASE = True
 
 
 # ============================================================
-# OAUTH BAĞLANTISI
+# YOUTUBE
 # ============================================================
 
-def authenticate_youtube():
+def get_youtube():
 
-    print()
-    print(&quot;========================================&quot;)
-    print(&quot;🔐 CREATOR ENGINE — YOUTUBE BAĞLANTISI&quot;)
-    print(&quot;========================================&quot;)
-    print()
-
-    if not CLIENT_SECRET_FILE.exists():
-
-        print(&quot;❌ OAuth JSON dosyası bulunamadı.&quot;)
-        print()
-        print(
-            f&quot;Aranan dosya:&quot;
-        )
-        print(
-            CLIENT_SECRET_FILE
-        )
-
-        return None
-
-    credentials = None
-
-    # --------------------------------------------------------
-    # Daha önce alınmış token varsa kullan
-    # --------------------------------------------------------
-
-    if TOKEN_FILE.exists():
-
-        try:
-
-            credentials = Credentials.from_authorized_user_file(
-                TOKEN_FILE,
-                SCOPES,
-            )
-
-            print(&quot;✅ Mevcut YouTube yetkilendirmesi bulundu.&quot;)
-
-        except Exception as error:
-
-            print()
-            print(
-                f&quot;⚠️ Mevcut token okunamadı: {error}&quot;
-            )
-
-            credentials = None
-
-    # --------------------------------------------------------
-    # Yeni OAuth bağlantısı
-    # --------------------------------------------------------
-
-    if credentials is None or not credentials.valid:
-
-        print()
-        print(&quot;🌐 Google OAuth başlatılıyor...&quot;)
-        print()
-        print(
-            &quot;Tarayıcı açılacak.&quot;
-        )
-        print(
-            &quot;33 Shorts bulunan YouTube kanalının&quot;
-        )
-        print(
-            &quot;Google hesabıyla giriş yap.&quot;
-        )
-        print()
-
-        try:
-
-            flow = InstalledAppFlow.from_client_secrets_file(
-                CLIENT_SECRET_FILE,
-                SCOPES,
-            )
-
-            credentials = flow.run_local_server(
-                port=0
-            )
-
-        except Exception as error:
-
-            print()
-            print(
-                f&quot;❌ OAuth bağlantısı başarısız: {error}&quot;
-            )
-
-            return None
-
-        # ----------------------------------------------------
-        # Token kaydet
-        # ----------------------------------------------------
-
-        TOKEN_FILE.parent.mkdir(
-            parents=True,
-            exist_ok=True
-        )
-
-        TOKEN_FILE.write_text(
-            credentials.to_json(),
-            encoding=&quot;utf-8&quot;
-        )
-
-        print()
-        print(&quot;✅ YouTube yetkilendirmesi tamamlandı.&quot;)
-        print()
-        print(
-            f&quot;🔐 Token kaydedildi:&quot;
-        )
-        print(
-            TOKEN_FILE
-        )
-
-    print()
-    print(&quot;========================================&quot;)
-    print(&quot;✅ YOUTUBE BAĞLANTISI HAZIR&quot;)
-    print(&quot;========================================&quot;)
-    print()
-
-    return credentials
-
-
-# ============================================================
-# TEST
-# ============================================================
-
-if __name__ == &quot;__main__&quot;:
-
-    authenticate_youtube()</code></pre>
-
-</section>
-
-<section class="file-card">
-
-<div class="file-title">
-📄 app/youtube/youtube_uploader.py
-</div>
-
-<pre><code class="language-python">from pathlib import Path
-
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaFileUpload
-
-from app.youtube.youtube_auth import authenticate_youtube
-
-
-BASE_DIR = Path(__file__).resolve().parents[2]
-
-
-def get_youtube_service():
-
-    credentials = authenticate_youtube()
-
-    if credentials is None:
-        raise RuntimeError(
-            &quot;YouTube yetkilendirmesi alınamadı.&quot;
-        )
+    credentials = Credentials.from_authorized_user_file(
+        TOKEN_FILE
+    )
 
     return build(
         &quot;youtube&quot;,
@@ -8620,140 +9197,770 @@ def get_youtube_service():
     )
 
 
-def test_connection():
+def get_analytics():
 
-    youtube = get_youtube_service()
+    credentials = Credentials.from_authorized_user_file(
+        TOKEN_FILE
+    )
+
+    return build(
+        &quot;youtubeAnalytics&quot;,
+        &quot;v2&quot;,
+        credentials=credentials
+    )
+
+
+# ============================================================
+# KANAL VİDEOLARI
+# ============================================================
+
+def get_all_video_ids(youtube):
 
     response = youtube.channels().list(
-        part=&quot;snippet&quot;,
+        part=&quot;contentDetails&quot;,
         mine=True
     ).execute()
 
-    items = response.get(
+    channels = response.get(&quot;items&quot;, [])
+
+    if not channels:
+        return []
+
+    uploads_playlist = (
+        channels[0]
+        [&quot;contentDetails&quot;]
+        [&quot;relatedPlaylists&quot;]
+        [&quot;uploads&quot;]
+    )
+
+    video_ids = []
+    page_token = None
+
+    while True:
+
+        response = youtube.playlistItems().list(
+            part=&quot;contentDetails&quot;,
+            playlistId=uploads_playlist,
+            maxResults=50,
+            pageToken=page_token
+        ).execute()
+
+        for item in response.get(&quot;items&quot;, []):
+
+            video_ids.append(
+                item[&quot;contentDetails&quot;][&quot;videoId&quot;]
+            )
+
+        page_token = response.get(
+            &quot;nextPageToken&quot;
+        )
+
+        if not page_token:
+            break
+
+    return video_ids
+
+
+# ============================================================
+# VİDEO DETAYLARI
+# ============================================================
+
+def get_video_details(youtube, video_ids):
+
+    videos = []
+
+    for start in range(
+        0,
+        len(video_ids),
+        50
+    ):
+
+        batch = video_ids[
+            start:start + 50
+        ]
+
+        response = youtube.videos().list(
+            part=&quot;snippet,contentDetails,statistics&quot;,
+            id=&quot;,&quot;.join(batch)
+        ).execute()
+
+        videos.extend(
+            response.get(&quot;items&quot;, [])
+        )
+
+    return videos
+
+
+# ============================================================
+# SÜRE
+# ============================================================
+
+def parse_duration(duration):
+
+    import re
+
+    match = re.fullmatch(
+        r&quot;PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?&quot;,
+        duration
+    )
+
+    if not match:
+        return 0
+
+    hours = int(match.group(1) or 0)
+    minutes = int(match.group(2) or 0)
+    seconds = int(match.group(3) or 0)
+
+    return (
+        hours * 3600
+        + minutes * 60
+        + seconds
+    )
+
+
+# ============================================================
+# SHORTS BELİRLE
+# ============================================================
+
+def get_shorts(videos):
+
+    shorts = []
+
+    for video in videos:
+
+        duration = parse_duration(
+            video[&quot;contentDetails&quot;][&quot;duration&quot;]
+        )
+
+        # Önceden gördüğümüz kanal yapısına göre
+        # 4 uzun video + 1 canlı yayın Shorts değildir.
+        #
+        # 3 dakikaya kadar Shorts olabileceği için
+        # sadece süreye göre 60 saniye sınırı koymuyoruz.
+
+        title = video[&quot;snippet&quot;].get(
+            &quot;title&quot;,
+            &quot;&quot;
+        )
+
+        # Canlı yayın
+        if title.lower().find(
+            &quot;kanalı canlı yayında&quot;
+        ) &gt;= 0:
+
+            continue
+
+        # 3 dakikadan uzun içerikler
+        if duration &gt; 180:
+
+            continue
+
+        shorts.append(video)
+
+    return shorts
+
+
+# ============================================================
+# ANALYTICS
+# ============================================================
+
+def get_video_analytics(
+    analytics,
+    video_id
+):
+
+    try:
+
+        response = analytics.reports().query(
+            ids=&quot;channel==MINE&quot;,
+            startDate=&quot;2020-01-01&quot;,
+            endDate=&quot;2030-01-01&quot;,
+            metrics=(
+                &quot;views,&quot;
+                &quot;likes,&quot;
+                &quot;comments,&quot;
+                &quot;estimatedMinutesWatched,&quot;
+                &quot;averageViewDuration,&quot;
+                &quot;averageViewPercentage&quot;
+            ),
+            filters=f&quot;video=={video_id}&quot;
+        ).execute()
+
+        rows = response.get(
+            &quot;rows&quot;,
+            []
+        )
+
+        if not rows:
+            return None
+
+        row = rows[0]
+
+        return {
+            &quot;views&quot;: int(row[0]),
+            &quot;likes&quot;: int(row[1]),
+            &quot;comments&quot;: int(row[2]),
+            &quot;estimated_minutes&quot;: float(row[3]),
+            &quot;average_watch_time&quot;: float(row[4]),
+            &quot;watch_percentage&quot;: float(row[5]),
+        }
+
+    except Exception as error:
+
+        print(
+            f&quot;⚠️ Analytics alınamadı: &quot;
+            f&quot;{video_id}&quot;
+        )
+
+        print(
+            f&quot;   {error}&quot;
+        )
+
+        return None
+
+
+# ============================================================
+# DB
+# ============================================================
+
+def get_existing_video_numbers():
+
+    db = sqlite3.connect(DB_FILE)
+
+    rows = db.execute(
+        &quot;&quot;&quot;
+        SELECT
+            video_number,
+            youtube_id
+        FROM videos
+        WHERE youtube_id IS NOT NULL
+        &quot;&quot;&quot;
+    ).fetchall()
+
+    db.close()
+
+    return {
+        youtube_id: video_number
+        for video_number, youtube_id
+        in rows
+        if youtube_id
+    }
+
+
+def get_next_video_number():
+
+    db = sqlite3.connect(DB_FILE)
+
+    row = db.execute(
+        &quot;&quot;&quot;
+        SELECT COALESCE(
+            MAX(video_number),
+            0
+        )
+        FROM videos
+        &quot;&quot;&quot;
+    ).fetchone()
+
+    db.close()
+
+    return int(row[0]) + 1
+
+
+# ============================================================
+# AKTARIM
+# ============================================================
+
+def sync():
+
+    print()
+    print(&quot;========================================&quot;)
+    print(&quot;🧠 CREATOR ENGINE — YOUTUBE ANALYTICS&quot;)
+    print(&quot;========================================&quot;)
+    print()
+
+    youtube = get_youtube()
+    analytics = get_analytics()
+
+    video_ids = get_all_video_ids(
+        youtube
+    )
+
+    videos = get_video_details(
+        youtube,
+        video_ids
+    )
+
+    shorts = get_shorts(
+        videos
+    )
+
+    print(
+        f&quot;🎬 YouTube videoları: &quot;
+        f&quot;{len(videos)}&quot;
+    )
+
+    print(
+        f&quot;📱 Shorts olarak belirlenen: &quot;
+        f&quot;{len(shorts)}&quot;
+    )
+
+    print()
+
+    existing = get_existing_video_numbers()
+
+    next_number = get_next_video_number()
+
+    db = None
+
+    if WRITE_TO_DATABASE:
+
+        db = sqlite3.connect(
+            DB_FILE
+        )
+
+    added = 0
+    updated = 0
+    analytics_ok = 0
+
+    print(&quot;----------------------------------------&quot;)
+
+    for video in shorts:
+
+        youtube_id = video[&quot;id&quot;]
+
+        title = video[&quot;snippet&quot;].get(
+            &quot;title&quot;,
+            &quot;&quot;
+        )
+
+        published_at = video[&quot;snippet&quot;].get(
+            &quot;publishedAt&quot;,
+            &quot;&quot;
+        )
+
+        duration = parse_duration(
+            video[&quot;contentDetails&quot;][&quot;duration&quot;]
+        )
+
+        stats = video.get(
+            &quot;statistics&quot;,
+            {}
+        )
+
+        views = int(
+            stats.get(
+                &quot;viewCount&quot;,
+                0
+            )
+        )
+
+        likes = int(
+            stats.get(
+                &quot;likeCount&quot;,
+                0
+            )
+        )
+
+        comments = int(
+            stats.get(
+                &quot;commentCount&quot;,
+                0
+            )
+        )
+
+        analytics_data = get_video_analytics(
+            analytics,
+            youtube_id
+        )
+
+        if analytics_data:
+
+            average_watch_time = (
+                analytics_data[
+                    &quot;average_watch_time&quot;
+                ]
+            )
+
+            watch_percentage = (
+                analytics_data[
+                    &quot;watch_percentage&quot;
+                ]
+            )
+
+            analytics_ok += 1
+
+        else:
+
+            average_watch_time = 0
+            watch_percentage = 0
+
+        if youtube_id in existing:
+
+            video_number = existing[
+                youtube_id
+            ]
+
+            action = &quot;GÜNCELLE&quot;
+
+            if WRITE_TO_DATABASE:
+
+                db.execute(
+                    &quot;&quot;&quot;
+                    UPDATE videos
+                    SET
+                        topic = ?,
+                        duration = ?,
+                        published_at = ?,
+                        views = ?,
+                        likes = ?,
+                        comments = ?,
+                        average_watch_time = ?,
+                        watch_percentage = ?
+                    WHERE youtube_id = ?
+                    &quot;&quot;&quot;,
+                    (
+                        title,
+                        duration,
+                        published_at,
+                        views,
+                        likes,
+                        comments,
+                        average_watch_time,
+                        watch_percentage,
+                        youtube_id,
+                    )
+                )
+
+            updated += 1
+
+        else:
+
+            video_number = next_number
+            next_number += 1
+
+            action = &quot;YENİ&quot;
+
+            if WRITE_TO_DATABASE:
+
+                db.execute(
+                    &quot;&quot;&quot;
+                    INSERT INTO videos (
+                        video_number,
+                        topic,
+                        category,
+                        hook,
+                        duration,
+                        image_count,
+                        created_at,
+                        published_at,
+                        views,
+                        likes,
+                        comments,
+                        shares,
+                        average_watch_time,
+                        watch_percentage,
+                        youtube_id
+                    )
+                    VALUES (
+                        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                    )
+                    &quot;&quot;&quot;,
+                    (
+                        video_number,
+                        title,
+                        &quot;youtube&quot;,
+                        &quot;&quot;,
+                        duration,
+                        0,
+                        published_at,
+                        published_at,
+                        views,
+                        likes,
+                        comments,
+                        0,
+                        average_watch_time,
+                        watch_percentage,
+                        youtube_id,
+                    )
+                )
+
+            added += 1
+
+        print(
+            f&quot;{action:8} &quot;
+            f&quot;#{video_number:03d} | &quot;
+            f&quot;{duration:3d} sn | &quot;
+            f&quot;{views:7d} izlenme | &quot;
+            f&quot;{title}&quot;
+        )
+
+    if db:
+
+        db.commit()
+        db.close()
+
+    print(&quot;----------------------------------------&quot;)
+
+    print()
+    print(
+        f&quot;🆕 Yeni: {added}&quot;
+    )
+
+    print(
+        f&quot;🔄 Güncellenen: {updated}&quot;
+    )
+
+    print(
+        f&quot;📊 Analytics alınan: &quot;
+        f&quot;{analytics_ok}/{len(shorts)}&quot;
+    )
+
+    if WRITE_TO_DATABASE:
+
+        print()
+        print(
+            &quot;💾 Veriler veritabanına yazıldı.&quot;
+        )
+
+    else:
+
+        print()
+        print(
+            &quot;⚠️ ÖNİZLEME MODU&quot;
+        )
+
+        print(
+            &quot;💾 Veritabanına hiçbir değişiklik yapılmadı.&quot;
+        )
+
+    print()
+    print(&quot;========================================&quot;)
+    print(&quot;✅ SENKRONİZASYON TAMAMLANDI&quot;)
+    print(&quot;========================================&quot;)
+    print()
+
+
+# ============================================================
+# ÇALIŞTIR
+# ============================================================
+
+if __name__ == &quot;__main__&quot;:
+
+    sync()</code></pre>
+
+</section>
+
+<section class="file-card">
+
+<div class="file-title">
+📄 app/youtube/youtube_list.py
+</div>
+
+<pre><code class="language-python">from pathlib import Path
+
+from googleapiclient.discovery import build
+from google.oauth2.credentials import Credentials
+
+
+# ============================================================
+# CREATOR ENGINE — YOUTUBE VIDEO LİSTELEME
+# ============================================================
+
+BASE_DIR = Path(__file__).resolve().parents[2]
+
+TOKEN_FILE = (
+    BASE_DIR
+    / &quot;data&quot;
+    / &quot;youtube_token.json&quot;
+)
+
+
+# ============================================================
+# YOUTUBE BAĞLANTISI
+# ============================================================
+
+def get_youtube():
+
+    if not TOKEN_FILE.exists():
+
+        print()
+        print(&quot;❌ YouTube token bulunamadı.&quot;)
+        print(
+            f&quot;📁 {TOKEN_FILE}&quot;
+        )
+
+        return None
+
+    credentials = Credentials.from_authorized_user_file(
+        TOKEN_FILE
+    )
+
+    youtube = build(
+        &quot;youtube&quot;,
+        &quot;v3&quot;,
+        credentials=credentials
+    )
+
+    return youtube
+
+
+# ============================================================
+# KANAL VİDEOLARINI BUL
+# ============================================================
+
+def get_all_videos(youtube):
+
+    # --------------------------------------------------------
+    # Önce kanalın uploads playlist ID&#x27;sini al
+    # --------------------------------------------------------
+
+    channel_response = youtube.channels().list(
+        part=&quot;contentDetails&quot;,
+        mine=True
+    ).execute()
+
+    channels = channel_response.get(
         &quot;items&quot;,
         []
     )
 
-    if not items:
-        raise RuntimeError(
-            &quot;YouTube kanalı bulunamadı.&quot;
-        )
+    if not channels:
 
-    channel = items[0][&quot;snippet&quot;]
+        return []
 
-    print()
-    print(&quot;========================================&quot;)
-    print(&quot;✅ YOUTUBE API BAĞLANTISI BAŞARILI&quot;)
-    print(&quot;========================================&quot;)
-    print()
-    print(
-        f&quot;📺 Kanal: {channel.get(&#x27;title&#x27;)}&quot;
+    uploads_playlist_id = (
+        channels[0]
+        [&quot;contentDetails&quot;]
+        [&quot;relatedPlaylists&quot;]
+        [&quot;uploads&quot;]
     )
-    print()
 
+    # --------------------------------------------------------
+    # Uploads playlistinden videoları al
+    # --------------------------------------------------------
 
-def upload_video(
-    video_file,
-    title,
-    description=&quot;&quot;,
-    tags=None,
-    publish_at=None,
-):
+    videos = []
 
-    video_file = Path(video_file)
+    next_page_token = None
 
-    if not video_file.exists():
-        raise FileNotFoundError(
-            f&quot;Video bulunamadı: {video_file}&quot;
+    while True:
+
+        response = youtube.playlistItems().list(
+            part=&quot;snippet,contentDetails&quot;,
+            playlistId=uploads_playlist_id,
+            maxResults=50,
+            pageToken=next_page_token
+        ).execute()
+
+        videos.extend(
+            response.get(
+                &quot;items&quot;,
+                []
+            )
         )
 
-    if tags is None:
-        tags = []
+        next_page_token = response.get(
+            &quot;nextPageToken&quot;
+        )
 
-    youtube = get_youtube_service()
+        if not next_page_token:
+
+            break
+
+    return videos
+
+
+# ============================================================
+# VİDEO LİSTESİNİ YAZDIR
+# ============================================================
+
+def list_videos():
 
     print()
     print(&quot;========================================&quot;)
-    print(&quot;📤 YOUTUBE VIDEO YÜKLEME&quot;)
+    print(&quot;📺 CREATOR ENGINE — YOUTUBE VİDEOLARI&quot;)
     print(&quot;========================================&quot;)
     print()
-    print(f&quot;🎬 Video : {video_file}&quot;)
-    print(f&quot;📝 Başlık: {title}&quot;)
 
-    if publish_at:
+    youtube = get_youtube()
+
+    if youtube is None:
+
+        return
+
+    videos = get_all_videos(
+        youtube
+    )
+
+    if not videos:
+
+        print(&quot;❌ Video bulunamadı.&quot;)
+        return
+
+    print(
+        f&quot;🎬 Toplam bulunan video: &quot;
+        f&quot;{len(videos)}&quot;
+    )
+
+    print()
+
+    print(&quot;----------------------------------------&quot;)
+
+    for index, video in enumerate(
+        videos,
+        start=1
+    ):
+
+        snippet = video[&quot;snippet&quot;]
+
+        video_id = (
+            video[&quot;contentDetails&quot;]
+            [&quot;videoId&quot;]
+        )
+
+        title = snippet.get(
+            &quot;title&quot;,
+            &quot;&quot;
+        )
+
+        published_at = snippet.get(
+            &quot;publishedAt&quot;,
+            &quot;&quot;
+        )
+
         print(
-            f&quot;📅 Yayın zamanı: {publish_at}&quot;
+            f&quot;#{index:02d} | &quot;
+            f&quot;{video_id} | &quot;
+            f&quot;{published_at} | &quot;
+            f&quot;{title}&quot;
         )
 
-    body = {
-        &quot;snippet&quot;: {
-            &quot;title&quot;: title,
-            &quot;description&quot;: description,
-            &quot;tags&quot;: tags,
-            &quot;categoryId&quot;: &quot;22&quot;,
-        },
-        &quot;status&quot;: {
-            &quot;privacyStatus&quot;: &quot;private&quot;,
-        },
-    }
-
-    if publish_at:
-        body[&quot;status&quot;][&quot;publishAt&quot;] = publish_at
-
-    media = MediaFileUpload(
-        str(video_file),
-        mimetype=&quot;video/mp4&quot;,
-        resumable=True,
-    )
-
-    print()
-    print(&quot;📤 YouTube&#x27;a yükleme başlıyor...&quot;)
-
-    request = youtube.videos().insert(
-        part=&quot;snippet,status&quot;,
-        body=body,
-        media_body=media,
-    )
-
-    response = None
-
-    while response is None:
-
-        status, response = request.next_chunk()
-
-        if status:
-            progress = int(
-                status.progress() * 100
-            )
-
-            print(
-                f&quot;📤 Yükleme: %{progress}&quot;
-            )
-
-    video_id = response.get(&quot;id&quot;)
-
-    if not video_id:
-        raise RuntimeError(
-            &quot;YouTube video ID döndürmedi.&quot;
-        )
+    print(&quot;----------------------------------------&quot;)
 
     print()
     print(&quot;========================================&quot;)
-    print(&quot;✅ YOUTUBE YÜKLEME BAŞARILI&quot;)
+    print(&quot;✅ VİDEO LİSTESİ TAMAMLANDI&quot;)
     print(&quot;========================================&quot;)
     print()
-    print(f&quot;🆔 Video ID: {video_id}&quot;)
-    print(
-        f&quot;🔗 https://www.youtube.com/watch?v={video_id}&quot;
-    )
-    print()
 
-    return video_id
 
+# ============================================================
+# TEST
+# ============================================================
 
 if __name__ == &quot;__main__&quot;:
 
-    test_connection()</code></pre>
+    list_videos()</code></pre>
+
+</section>
+
+<section class="file-card">
+
+<div class="file-title">
+📄 config/__init__.py
+</div>
+
+<pre><code class="language-python"></code></pre>
 
 </section>
 
