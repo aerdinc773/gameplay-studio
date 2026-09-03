@@ -3,828 +3,482 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Core Control Center v3.0</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <style>
-        :root {
-            --bg-main: #060b13;
-            --bg-card: #0b1320;
-            --bg-sidebar: #080d16;
-            --border-color: #162235;
-            --text-main: #e2e8f0;
-            --text-muted: #64748b;
-            --color-primary: #38bdf8;
-            --color-success: #10b981;
-            --color-warning: #f59e0b;
-            --color-danger: #ef4444;
-            --color-ai: #8b5cf6;
-            --font-main: 'Inter', sans-serif;
-            --font-mono: 'JetBrains Mono', monospace;
-        }
 
+    <title>AI Video Engine — Master Notes</title>
+
+    <style>
         * {
-            margin: 0;
-            padding: 0;
             box-sizing: border-box;
-            user-select: none;
         }
 
         body {
-            background-color: var(--bg-main);
-            color: var(--text-main);
-            font-family: var(--font-main);
-            overflow: hidden;
-            height: 100vh;
-            display: flex;
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #0f1115;
+            color: #e8e8e8;
         }
 
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: var(--bg-main);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: var(--border-color);
-            border-radius: 3px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--text-muted);
+        header {
+            padding: 25px;
+            background: #171a21;
+            border-bottom: 1px solid #292d36;
         }
 
-        .app-container {
-            display: flex;
+        header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        header p {
+            margin: 8px 0 0;
+            color: #8f96a3;
+        }
+
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 25px;
+        }
+
+        .panels {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .panel {
+            background: #171a21;
+            border: 1px solid #292d36;
+            border-radius: 12px;
+            padding: 20px;
+            min-height: 500px;
+        }
+
+        .panel h2 {
+            margin: 0 0 20px 0;
+            font-size: 20px;
+        }
+
+        textarea {
             width: 100%;
-            height: 100vh;
-        }
-
-        .btn {
-            background: var(--border-color);
-            color: var(--text-main);
-            border: 1px solid transparent;
-            padding: 8px 16px;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.2s ease;
-        }
-        .btn:hover {
-            opacity: 0.9;
-            transform: translateY(-1px);
-        }
-        .btn-primary { background: var(--color-primary); color: #000; font-weight: 600; }
-        .btn-ai { background: var(--color-ai); color: #fff; }
-        .btn-danger { background: var(--color-danger); color: #fff; }
-
-        .status-badge {
-            font-size: 0.7rem;
-            font-weight: 700;
-            padding: 2px 8px;
-            border-radius: 4px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .status-online { background: rgba(16, 185, 129, 0.1); color: var(--color-success); border: 1px solid rgba(16, 185, 129, 0.2); }
-        .status-offline { background: rgba(239, 68, 68, 0.1); color: var(--color-danger); border: 1px solid rgba(239, 68, 68, 0.2); }
-        .status-process { background: rgba(56, 189, 248, 0.1); color: var(--color-primary); border: 1px solid rgba(56, 189, 248, 0.2); }
-
-        .form-control {
-            background: var(--bg-main);
-            border: 1px solid var(--border-color);
-            color: var(--text-main);
-            padding: 10px 14px;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            width: 100%;
-            outline: none;
-            transition: border-color 0.2s ease;
-        }
-        .form-control:focus {
-            border-color: var(--color-primary);
-        }
-
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.75);
-            backdrop-filter: blur(4px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            opacity: 0; pointer-events: none;
-            transition: opacity 0.3s ease;
-        }
-        .modal-overlay.active {
-            opacity: 1; pointer-events: auto;
-        }
-        .modal-wrapper {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            width: 500px;
+            height: 120px;
+            resize: vertical;
+            padding: 14px;
             border-radius: 8px;
-            padding: 24px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+            border: 1px solid #343945;
+            background: #0f1115;
+            color: #fff;
+            font-size: 15px;
+            outline: none;
         }
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        .modal-title { font-size: 1.1rem; font-weight: 600; color: var(--text-main); }
-        .modal-close { color: var(--text-muted); cursor: pointer; font-size: 1.2rem; }
-        .modal-close:hover { color: var(--color-danger); }
 
-        .nav-link:hover { color: var(--text-main) !important; background: rgba(22, 34, 53, 0.4); }
-        .nav-link.active { color: var(--color-primary) !important; background: rgba(56, 189, 248, 0.08) !important; border-left: 2px solid var(--color-primary); border-radius: 0 6px 6px 0; }
-        
-        .tab-panel { display: none; width: 100%; }
-        .tab-panel.active-panel { display: flex !important; }
-        
-        .pipe-step.active-step { border-color: var(--color-primary) !important; background: rgba(56, 189, 248, 0.05) !important; }
-        .pipe-step.active-step .pipe-status { color: var(--color-primary) !important; }
-        .pipe-step.success-step { border-color: var(--color-success) !important; background: rgba(16, 185, 129, 0.05) !important; }
-        .pipe-step.success-step .pipe-status { color: var(--color-success) !important; }
-        @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
+        textarea:focus {
+            border-color: #5865f2;
+        }
+
+        button {
+            margin-top: 10px;
+            padding: 11px 18px;
+            border: none;
+            border-radius: 7px;
+            background: #5865f2;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .content {
+            margin-top: 20px;
+        }
+
+        .item {
+            background: #0f1115;
+            border: 1px solid #292d36;
+            border-radius: 8px;
+            padding: 14px;
+            margin-bottom: 10px;
+            white-space: pre-wrap;
+        }
+
+        .date {
+            color: #7f8794;
+            font-size: 12px;
+            margin-bottom: 7px;
+        }
+
+        .empty {
+            color: #777f8c;
+            font-style: italic;
+        }
+
+        @media (max-width: 800px) {
+
+            .panels {
+                grid-template-columns: 1fr;
+            }
+
+        }
     </style>
 </head>
+
 <body>
-    <div class="app-container">
-        <aside style="width: 260px; background: var(--bg-sidebar); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; justify-content: space-between; padding: 20px 0; flex-shrink: 0;">
-            <div>
-                <div style="padding: 0 24px 24px 24px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 12px;">
-                    <div style="background: rgba(56, 189, 248, 0.1); border: 1px solid var(--color-primary); width: 36px; height: 36px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-weight: 700; color: var(--color-primary); font-size: 0.9rem;">
-                        AI
-                    </div>
-                    <div>
-                        <h1 style="font-size: 0.95rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">Creator Engine</h1>
-                        <span style="font-size: 0.7rem; font-family: var(--font-mono); color: var(--text-muted);">AI CORE V3.0</span>
-                    </div>
-                </div>
 
-                <div style="padding: 20px 12px;">
-                    <span style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; padding-left: 12px; display: block; margin-bottom: 8px;">Core System</span>
-                    <ul style="list-style: none; display: flex; flex-direction: column; gap: 4px; margin-bottom: 24px;">
-                        <li>
-                            <a href="#" class="nav-link active" data-target="panel-dashboard" style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 6px; color: var(--text-main); text-decoration: none; font-size: 0.85rem; font-weight: 500; transition: all 0.2s;">
-                                <i class="fa-solid fa-chart-pie" style="width: 16px; text-align: center;"></i> Dashboard
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#" class="nav-link" data-target="panel-channels" style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 6px; color: var(--text-muted); text-decoration: none; font-size: 0.85rem; font-weight: 500; transition: all 0.2s;">
-                                <i class="fa-solid fa-circle-dot" style="width: 16px; text-align: center;"></i> Channels
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#" class="nav-link" data-target="panel-analytics" style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 6px; color: var(--text-muted); text-decoration: none; font-size: 0.85rem; font-weight: 500; transition: all 0.2s;">
-                                <i class="fa-solid fa-chart-line" style="width: 16px; text-align: center;"></i> Analytics
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#" class="nav-link" data-target="panel-strategy" style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 6px; color: var(--text-muted); text-decoration: none; font-size: 0.85rem; font-weight: 500; transition: all 0.2s;">
-                                <i class="fa-solid fa-wand-magic-sparkles" style="width: 16px; text-align: center;"></i> AI Strategy
-                            </a>
-                        </li>
-                    </ul>
+<header>
+    <h1>🧠 AI Video Engine — Master Notes</h1>
+    <p>Proje hafızası</p>
+</header>
 
-                    <span style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; padding-left: 12px; display: block; margin-bottom: 8px;">Content Pipeline</span>
-                    <ul style="list-style: none; display: flex; flex-direction: column; gap: 4px; margin-bottom: 24px;">
-                        <li>
-                            <a href="#" class="nav-link" data-target="panel-content-engine" style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 6px; color: var(--text-muted); text-decoration: none; font-size: 0.85rem; font-weight: 500; transition: all 0.2s;">
-                                <i class="fa-solid fa-cubes" style="width: 16px; text-align: center;"></i> Content Engine
-                            </a>
-                        </li>
-                    </ul>
+<main>
+
+    <div class="panels">
+
+        <!-- SOL PENCERE -->
+
+        <section class="panel">
+
+            <h2>📝 NOTLARIMIZ</h2>
+
+            <textarea
+                id="noteInput"
+                placeholder="Önemli kararları, fikirleri ve notları buraya yaz..."
+            ></textarea>
+
+            <button onclick="addNote()">+ Not Ekle</button>
+
+            <div id="notes" class="content">
+                <div class="empty">
+                    Notlar yükleniyor...
                 </div>
             </div>
 
-            <div style="padding: 0 24px;">
-                <div style="background: var(--bg-main); border: 1px solid var(--border-color); padding: 12px; border-radius: 6px; display: flex; align-items: center; gap: 12px;">
-                    <div id="engine-status-pulse" style="width: 8px; height: 8px; background: var(--text-muted); border-radius: 50%;"></div>
-                    <div>
-                        <span style="font-size: 0.65rem; color: var(--text-muted); display: block; text-transform: uppercase; font-weight: 600;">System Bridge</span>
-                        <span id="engine-status-text" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); white-space: nowrap;">Bağlantı Bekleniyor...</span>
-                    </div>
+        </section>
+
+
+        <!-- SAĞ PENCERE -->
+
+        <section class="panel">
+
+            <h2>🚀 PROJE AŞAMALARI</h2>
+
+            <textarea
+                id="progressInput"
+                placeholder="Projenin ilerlemesini ve sonraki adımları buraya yaz..."
+            ></textarea>
+
+            <button onclick="addProgress()">+ Aşama Ekle</button>
+
+            <div id="progress" class="content">
+                <div class="empty">
+                    Proje aşamaları yükleniyor...
                 </div>
             </div>
-        </aside>
 
-        <main style="flex: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; background: var(--bg-main);">
-            <header style="height: 64px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; flex-shrink: 0;">
-                <div>
-                    <h2 style="font-size: 1rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">AI Core Control Center</h2>
-                    <span style="font-size: 0.75rem; color: var(--text-muted);">Lokal Otomasyon Paneli</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <span id="bridge-badge" class="status-badge status-offline"><i class="fa-solid fa-circle-notch fa-spin"></i> API OFFLINE</span>
-                </div>
-            </header>
+        </section>
 
-            <div style="flex: 1; overflow-y: auto; padding: 30px; display: flex; flex-direction: column; gap: 30px;">
-                <section style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; flex-shrink: 0;">
-                    <div style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 24px; border-radius: 6px; display: flex; justify-content: space-between; align-items: flex-start;">
-                        <div>
-                            <span style="font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 8px;">Channels</span>
-                            <span id="ui-channels-count" style="font-size: 2rem; font-family: var(--font-mono); font-weight: 700; color: var(--text-main); line-height: 1;">--</span>
-                            <span id="ui-channels-subtext" style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600; display: block; margin-top: 8px; text-transform: uppercase;">Yükleniyor...</span>
-                        </div>
-                        <i class="fa-solid fa-circle-dot" style="color: var(--color-primary); font-size: 1.2rem; background: rgba(56, 189, 248, 0.08); padding: 10px; border-radius: 6px;"></i>
-                    </div>
-
-                    <div style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 24px; border-radius: 6px; display: flex; justify-content: space-between; align-items: flex-start;">
-                        <div>
-                            <span style="font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 8px;">Videos</span>
-                            <span id="ui-videos-count" style="font-size: 2rem; font-family: var(--font-mono); font-weight: 700; color: var(--text-main); line-height: 1;">--</span>
-                            <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600; display: block; margin-top: 8px; text-transform: uppercase;">Analyzed Content</span>
-                        </div>
-                        <i class="fa-solid fa-play" style="color: var(--color-success); font-size: 1.2rem; background: rgba(16, 185, 129, 0.08); padding: 10px; border-radius: 6px;"></i>
-                    </div>
-
-                    <div style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 24px; border-radius: 6px; display: flex; justify-content: space-between; align-items: flex-start;">
-                        <div>
-                            <span style="font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 8px;">Upload Time</span>
-                            <span id="ui-upload-time" style="font-size: 2rem; font-family: var(--font-mono); font-weight: 700; color: var(--text-main); line-height: 1;">--:--</span>
-                            <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600; display: block; margin-top: 8px; text-transform: uppercase;">Lokal Ayar</span>
-                        </div>
-                        <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-end;">
-                            <i class="fa-solid fa-upload" style="color: var(--color-warning); font-size: 1.2rem; background: rgba(245, 158, 11, 0.08); padding: 10px; border-radius: 6px;"></i>
-                        </div>
-                    </div>
-
-                    <div style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 24px; border-radius: 6px; display: flex; justify-content: space-between; align-items: flex-start;">
-                        <div>
-                            <span style="font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 8px;">Publish Time</span>
-                            <span id="ui-publish-time" style="font-size: 2rem; font-family: var(--font-mono); font-weight: 700; color: var(--text-main); line-height: 1;">--:--</span>
-                            <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600; display: block; margin-top: 8px; text-transform: uppercase;">Scheduler</span>
-                        </div>
-                        <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-end;">
-                            <i class="fa-solid fa-clock" style="color: var(--color-ai); font-size: 1.2rem; background: rgba(139, 92, 246, 0.08); padding: 10px; border-radius: 6px;"></i>
-                        </div>
-                    </div>
-                </section>
-
-                <div style="flex: 1; display: flex; flex-direction: column;">
-                    <div id="panel-dashboard" class="tab-panel active-panel" style="display: flex; flex-direction: column; gap: 30px; width: 100%;">
-                        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; padding: 24px;">
-                            <h3 style="font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 20px; color: var(--text-main);">Core Modules</h3>
-                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
-                                <div style="border: 1px solid var(--border-color); padding: 16px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
-                                    <div>
-                                        <h4 style="font-size: 0.85rem; font-weight: 600; margin-bottom: 4px;">Channel Manager</h4>
-                                        <p style="font-size: 0.75rem; color: var(--text-muted);">Dış kanal izleme ve yapılandırma.</p>
-                                    </div>
-                                    <span id="status-channel-manager" class="status-badge status-online">ONLINE</span>
-                                </div>
-                                <div style="border: 1px solid var(--border-color); padding: 16px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
-                                    <div>
-                                        <h4 style="font-size: 0.85rem; font-weight: 600; margin-bottom: 4px;">Analytics Engine</h4>
-                                        <p style="font-size: 0.75rem; color: var(--text-muted);">Video ve etkileşim veri işleme motoru.</p>
-                                    </div>
-                                    <span id="status-analytics-engine" class="status-badge status-online">ONLINE</span>
-                                </div>
-                                <div style="border: 1px solid var(--border-color); padding: 16px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
-                                    <div>
-                                        <h4 style="font-size: 0.85rem; font-weight: 600; margin-bottom: 4px;">Content Engine</h4>
-                                        <p style="font-size: 0.75rem; color: var(--text-muted);">Otomatik AI Shorts üretim pipeline hattı.</p>
-                                    </div>
-                                    <span id="status-content-engine" class="status-badge status-online">ONLINE</span>
-                                </div>
-                                <div style="border: 1px solid var(--border-color); padding: 16px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
-                                    <div>
-                                        <h4 style="font-size: 0.85rem; font-weight: 600; margin-bottom: 4px;">Upload Engine</h4>
-                                        <p style="font-size: 0.75rem; color: var(--text-muted);">YouTube API otomatik yükleme ve zamanlayıcı.</p>
-                                    </div>
-                                    <span id="status-upload-engine" class="status-badge status-online">ONLINE</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; padding: 24px;">
-                            <h3 style="font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 20px; color: var(--text-main);">Quick Actions</h3>
-                            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;">
-                                <button class="btn btn-primary" onclick="triggerPythonModule('sync')" style="justify-content: center; padding: 14px;"><i class="fa-solid fa-sync"></i> KANAL SENKRONİZE ET</button>
-                                <button class="btn btn-ai" onclick="triggerPythonModule('strategy')" style="justify-content: center; padding: 14px;"><i class="fa-solid fa-brain"></i> AI STRATEJİ ÜRET</button>
-                                <button class="btn" onclick="openCreateShortModal()" style="border-color: var(--border-color); justify-content: center; padding: 14px; background: rgba(22, 34, 53, 0.5);"><i class="fa-solid fa-plus"></i> SHORTS OLUŞTUR</button>
-                                <button class="btn" onclick="triggerPythonModule('batch')" style="border-color: var(--border-color); justify-content: center; padding: 14px; background: rgba(22, 34, 53, 0.5);"><i class="fa-solid fa-layer-group"></i> TOPLU ÜRETİM (BATCH)</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="panel-channels" class="tab-panel" style="display: none; flex-direction: column; gap: 24px; width: 100%;">
-                        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; padding: 24px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                                <div>
-                                    <h3 style="font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-main);">External Channel Manager</h3>
-                                    <p style="font-size: 0.75rem; color: var(--text-muted);">channel_analysis.db veritabanında kayıtlı dış kanalları yönetin.</p>
-                                </div>
-                                <button class="btn btn-primary" onclick="openAddChannelModal()"><i class="fa-solid fa-plus"></i> Yeni Kanal Analiz Et & Ekle</button>
-                            </div>
-                            
-                            <div style="overflow-x: auto; border: 1px solid var(--border-color); border-radius: 6px;">
-                                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
-                                    <thead>
-                                        <tr style="background: #080d16; border-bottom: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">
-                                            <th style="padding: 12px 16px;">Kanal Bilgisi</th>
-                                            <th style="padding: 12px 16px;">Abone</th>
-                                            <th style="padding: 12px 16px;">DB Video / Shorts</th>
-                                            <th style="padding: 12px 16px;">Toplam İzlenme</th>
-                                            <th style="padding: 12px 16px;">Son Analiz</th>
-                                            <th style="padding: 12px 16px; text-align: right;">Aksiyon</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="channels-table-body">
-                                        <tr>
-                                            <td colspan="6" style="padding: 30px; text-align: center; color: var(--text-muted); font-family: var(--font-mono); font-size: 0.8rem;">
-                                                <i class="fa-solid fa-circle-notch fa-spin"></i> channel_analysis.db bekleniyor...
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="panel-analytics" class="tab-panel" style="display: none; flex-direction: column; gap: 24px; width: 100%;">
-                        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; padding: 24px;">
-                            <h3 style="font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; color: var(--text-main);">Creator Engine Database Summary</h3>
-                            <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 20px;">creator_engine.db içerisindeki yerel videoların performans verileri.</p>
-                            
-                            <div style="overflow-x: auto; border: 1px solid var(--border-color); border-radius: 6px; max-height: 400px; overflow-y: auto;">
-                                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
-                                    <thead style="position: sticky; top: 0; background: #080d16; z-index: 10;">
-                                        <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">
-                                            <th style="padding: 12px 16px; width: 80px;">No</th>
-                                            <th style="padding: 12px 16px;">Video Konusu / Başlık</th>
-                                            <th style="padding: 12px 16px; width: 100px;">Süre (sn)</th>
-                                            <th style="padding: 12px 16px; width: 120px;">İzlenme</th>
-                                            <th style="padding: 12px 16px; width: 100px;">Beğeni</th>
-                                            <th style="padding: 12px 16px; width: 120px;">Ort. İzlenme %</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="analytics-table-body">
-                                        <tr>
-                                            <td colspan="6" style="padding: 30px; text-align: center; color: var(--text-muted); font-family: var(--font-mono); font-size: 0.8rem;">
-                                                <i class="fa-solid fa-circle-notch fa-spin"></i> creator_engine.db bekleniyor...
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="panel-strategy" class="tab-panel" style="display: none; flex-direction: column; gap: 24px; width: 100%;">
-                        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; padding: 24px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                                <div>
-                                    <h3 style="font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-main);">AI Strategy Analyst</h3>
-                                    <p style="font-size: 0.75rem; color: var(--text-muted);">Yapay zekâ tarafından oluşturulan en son kanal büyüme ve içerik stratejisi raporu.</p>
-                                </div>
-                                <button class="btn btn-ai" onclick="triggerPythonModule('strategy')"><i class="fa-solid fa-brain"></i> Yeni Strateji Raporu Yenile</button>
-                            </div>
-
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                                <div style="display: flex; flex-direction: column; gap: 20px;">
-                                    <div style="border: 1px solid var(--border-color); border-radius: 6px; padding: 16px; background: var(--bg-main);">
-                                        <h4 style="font-size: 0.8rem; font-weight: 700; color: var(--color-success); text-transform: uppercase; margin-bottom: 12px;"><i class="fa-solid fa-trophy"></i> Başarılı / Kazanan Konular</h4>
-                                        <ul id="ai-winning-topics" style="list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem;">
-                                            <li style="color: var(--text-muted);">Veri bekleniyor...</li>
-                                        </ul>
-                                    </div>
-                                    <div style="border: 1px solid var(--border-color); border-radius: 6px; padding: 16px; background: var(--bg-main);">
-                                        <h4 style="font-size: 0.8rem; font-weight: 700; color: var(--color-primary); text-transform: uppercase; margin-bottom: 12px;"><i class="fa-solid fa-lightbulb"></i> AI Önerilen Yeni Konular</h4>
-                                        <ul id="ai-recommended-topics" style="list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem;">
-                                            <li style="color: var(--text-muted);">Veri bekleniyor...</li>
-                                        </ul>
-                                    </div>
-                                </div>
-
-                                <div style="display: flex; flex-direction: column; gap: 20px;">
-                                    <div style="border: 1px solid var(--border-color); border-radius: 6px; padding: 16px; background: var(--bg-main);">
-                                        <h4 style="font-size: 0.8rem; font-weight: 700; color: var(--color-ai); text-transform: uppercase; margin-bottom: 8px;"><i class="fa-solid fa-stopwatch"></i> Süre ve Görsel Stratejisi</h4>
-                                        <p id="ai-duration-strategy" style="font-size: 0.85rem; line-height: 1.5; color: var(--text-main); margin-bottom: 12px;">Yükleniyor...</p>
-                                        <p id="ai-visual-strategy" style="font-size: 0.85rem; line-height: 1.5; color: var(--text-muted);">Yükleniyor...</p>
-                                    </div>
-                                    <div style="border: 1px solid var(--border-color); border-radius: 6px; padding: 16px; background: var(--bg-main);">
-                                        <h4 style="font-size: 0.8rem; font-weight: 700; color: var(--color-warning); text-transform: uppercase; margin-bottom: 12px;"><i class="fa-solid fa-flask"></i> Gelecek Test Önerileri</h4>
-                                        <ul id="ai-test-suggestions" style="list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem;">
-                                            <li style="color: var(--text-muted);">Veri bekleniyor...</li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="panel-content-engine" class="tab-panel" style="display: none; flex-direction: column; gap: 24px; width: 100%;">
-                        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; padding: 24px;">
-                            <h3 style="font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; color: var(--text-main);">Content Engine Factory</h3>
-                            <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 20px;">Buradan tekil bir konu girerek senaryodan kurguya kadar tüm video üretim hattını asenkron tetikleyebilirsiniz.</p>
-                            
-                            <div style="display: flex; gap: 12px; margin-bottom: 20px;">
-                                <input type="text" id="manual-topic-input" class="form-control" placeholder="Örn: İnsan beyninin bilinmeyen şaşırtıcı özellikleri..." style="flex: 1;">
-                                <button class="btn btn-primary" onclick="startManualCreation()"><i class="fa-solid fa-wand-magic-sparkles"></i> Videoyu Üretmeye Başla</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <section style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 10px; min-height: 320px; flex-shrink: 0;">
-                    <div style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 24px; border-radius: 6px; display: flex; flex-direction: column;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                            <h3 style="font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-main);">Pipeline</h3>
-                            <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Creation Flow</span>
-                        </div>
-                        
-                        <div style="display: flex; flex-direction: column; gap: 12px; flex: 1; justify-content: center;">
-                            <div id="pipe-step-1" class="pipe-step" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border: 1px solid var(--border-color); border-radius: 6px; background: rgba(8, 13, 22, 0.5); transition: all 0.3s;">
-                                <div style="display: flex; align-items: center; gap: 14px;">
-                                    <span style="font-family: var(--font-mono); font-weight: 700; color: var(--text-muted); font-size: 0.85rem;">01</span>
-                                    <div>
-                                        <h4 style="font-size: 0.85rem; font-weight: 600;">Analyze</h4>
-                                        <p style="font-size: 0.7rem; color: var(--text-muted);">CHANNEL DATA</p>
-                                    </div>
-                                </div>
-                                <span class="pipe-status" style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted);">BEKLEMEDE</span>
-                            </div>
-
-                            <div id="pipe-step-2" class="pipe-step" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border: 1px solid var(--border-color); border-radius: 6px; background: rgba(8, 13, 22, 0.5); transition: all 0.3s;">
-                                <div style="display: flex; align-items: center; gap: 14px;">
-                                    <span style="font-family: var(--font-mono); font-weight: 700; color: var(--text-muted); font-size: 0.85rem;">02</span>
-                                    <div>
-                                        <h4 style="font-size: 0.85rem; font-weight: 600;">Strategy</h4>
-                                        <p style="font-size: 0.7rem; color: var(--text-muted);">AI DECISION</p>
-                                    </div>
-                                </div>
-                                <span class="pipe-status" style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted);">BEKLEMEDE</span>
-                            </div>
-
-                            <div id="pipe-step-3" class="pipe-step" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border: 1px solid var(--border-color); border-radius: 6px; background: rgba(8, 13, 22, 0.5); transition: all 0.3s;">
-                                <div style="display: flex; align-items: center; gap: 14px;">
-                                    <span style="font-family: var(--font-mono); font-weight: 700; color: var(--text-muted); font-size: 0.85rem;">03</span>
-                                    <div>
-                                        <h4 style="font-size: 0.85rem; font-weight: 600;">Generate</h4>
-                                        <p style="font-size: 0.7rem; color: var(--text-muted);">CONTENT ENGINE</p>
-                                    </div>
-                                </div>
-                                <span class="pipe-status" style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted);">BEKLEMEDE</span>
-                            </div>
-
-                            <div id="pipe-step-4" class="pipe-step" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border: 1px solid var(--border-color); border-radius: 6px; background: rgba(8, 13, 22, 0.5); transition: all 0.3s;">
-                                <div style="display: flex; align-items: center; gap: 14px;">
-                                    <span style="font-family: var(--font-mono); font-weight: 700; color: var(--text-muted); font-size: 0.85rem;">04</span>
-                                    <div>
-                                        <h4 style="font-size: 0.85rem; font-weight: 600;">Render</h4>
-                                        <p style="font-size: 0.7rem; color: var(--text-muted);">VIDEO PIPELINE</p>
-                                    </div>
-                                </div>
-                                <span class="pipe-status" style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted);">BEKLEMEDE</span>
-                            </div>
-
-                            <div id="pipe-step-5" class="pipe-step" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border: 1px solid var(--border-color); border-radius: 6px; background: rgba(8, 13, 22, 0.5); transition: all 0.3s;">
-                                <div style="display: flex; align-items: center; gap: 14px;">
-                                    <span style="font-family: var(--font-mono); font-weight: 700; color: var(--text-muted); font-size: 0.85rem;">05</span>
-                                    <div>
-                                        <h4 style="font-size: 0.85rem; font-weight: 600;">Upload</h4>
-                                        <p style="font-size: 0.7rem; color: var(--text-muted);">YOUTUBE</p>
-                                    </div>
-                                </div>
-                                <span class="pipe-status" style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted);">BEKLEMEDE</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 24px; border-radius: 6px; display: flex; flex-direction: column;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                            <h3 style="font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-main);">System Activity</h3>
-                            <span class="status-badge status-process" style="animation: pulse 2s infinite;"><i class="fa-solid fa-satellite-dish"></i> Live</span>
-                        </div>
-                        
-                        <div id="terminal-log-box" style="flex: 1; background: #04070d; border: 1px solid var(--border-color); border-radius: 6px; padding: 16px; font-family: var(--font-mono); font-size: 0.75rem; color: #a3b3c9; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; max-height: 230px; scroll-behavior: smooth;">
-                            <div style="color: var(--color-success);">[OK] Creator Engine initialized</div>
-                            <div style="color: var(--color-primary);">[OK] Uvicorn Local System Bridge Connected</div>
-                            <div style="color: var(--text-muted);">[INFO] AI Core waiting for local command...</div>
-                        </div>
-                    </div>
-                </section>
-            </div>
-        </main>
     </div>
 
-    <div id="modal-add-channel" class="modal-overlay">
-        <div class="modal-wrapper">
-            <div class="modal-header">
-                <h3 class="modal-title"><i class="fa-solid fa-circle-dot" style="color: var(--color-primary);"></i> Dış Kanal Analizi Başlat</h3>
-                <i class="fa-solid fa-xmark modal-close" onclick="closeModal('modal-add-channel')"></i>
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 16px;">
-                <div>
-                    <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 6px; text-transform: uppercase;">YouTube Kanal URL veya @Handle</label>
-                    <input type="text" id="input-channel-url" class="form-control" placeholder="Örn: https://www.youtube.com/@KanalAdi">
-                </div>
-                <div>
-                    <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 6px; text-transform: uppercase;">Maksimum Çekilecek Video Sayısı</label>
-                    <input type="number" id="input-channel-max-videos" class="form-control" value="100" min="1" max="500">
-                </div>
-                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
-                    <button class="btn" onclick="closeModal('modal-add-channel')">İptal</button>
-                    <button class="btn btn-primary" onclick="submitAddChannel()"><i class="fa-solid fa-magnifying-glass"></i> Analizi Tetikle</button>
-                </div>
-            </div>
-        </div>
-    </div>
+</main>
 
-    <div id="modal-create-short" class="modal-overlay">
-        <div class="modal-wrapper">
-            <div class="modal-header">
-                <h3 class="modal-title"><i class="fa-solid fa-wand-magic-sparkles" style="color: var(--color-ai);"></i> Hızlı Shorts Üretim Emri</h3>
-                <i class="fa-solid fa-xmark modal-close" onclick="closeModal('modal-create-short')"></i>
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 16px;">
+
+<script>
+
+    let notesData = {
+        notes: []
+    };
+
+    let progressData = {
+        project: "AI Video Engine",
+        current_stage: "Temel mimari",
+        completed: [],
+        in_progress: [],
+        next_steps: []
+    };
+
+
+    // NOTLARI YÜKLE
+
+    async function loadNotes() {
+
+        try {
+
+            const response =
+                await fetch("notes.json?" + Date.now());
+
+            if (!response.ok) {
+                throw new Error("notes.json bulunamadı.");
+            }
+
+            notesData = await response.json();
+
+            renderNotes();
+
+        } catch (error) {
+
+            console.error(error);
+
+            document.getElementById("notes").innerHTML =
+                '<div class="empty">Henüz not yok.</div>';
+        }
+    }
+
+
+    // PROJE AŞAMALARINI YÜKLE
+
+    async function loadProgress() {
+
+        try {
+
+            const response =
+                await fetch("progress.json?" + Date.now());
+
+            if (!response.ok) {
+                throw new Error("progress.json bulunamadı.");
+            }
+
+            progressData = await response.json();
+
+            renderProgress();
+
+        } catch (error) {
+
+            console.error(error);
+
+            document.getElementById("progress").innerHTML =
+                '<div class="empty">Henüz aşama yok.</div>';
+        }
+    }
+
+
+    // NOTLARI GÖSTER
+
+    function renderNotes() {
+
+        const container =
+            document.getElementById("notes");
+
+        if (
+            !notesData.notes ||
+            notesData.notes.length === 0
+        ) {
+
+            container.innerHTML =
+                '<div class="empty">Henüz kayıtlı not yok.</div>';
+
+            return;
+        }
+
+        container.innerHTML = "";
+
+        [...notesData.notes].reverse().forEach(note => {
+
+            const item =
+                document.createElement("div");
+
+            item.className = "item";
+
+            item.innerHTML = `
+                <div class="date">
+                    ${escapeHtml(note.date || "")}
+                </div>
+
                 <div>
-                    <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 6px; text-transform: uppercase;">Üretilecek İçerik Konusu</label>
-                    <input type="text" id="input-short-topic" class="form-control" placeholder="Örn: Roma İmparatorluğu'nun çöküşündeki gizemler">
+                    ${escapeHtml(note.text || "")}
                 </div>
-                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
-                    <button class="btn" onclick="closeModal('modal-create-short')">Vazgeç</button>
-                    <button class="btn btn-ai" onclick="submitCreateShort()"><i class="fa-solid fa-gears"></i> Pipeline'a Gönder</button>
+            `;
+
+            container.appendChild(item);
+
+        });
+    }
+
+
+    // PROJE AŞAMALARINI GÖSTER
+
+    function renderProgress() {
+
+        const container =
+            document.getElementById("progress");
+
+        let html = "";
+
+
+        if (progressData.current_stage) {
+
+            html += `
+                <div class="item">
+
+                    <div class="date">
+                        MEVCUT AŞAMA
+                    </div>
+
+                    <strong>
+                        ${escapeHtml(
+                            progressData.current_stage
+                        )}
+                    </strong>
+
                 </div>
-            </div>
-        </div>
-    </div>
+            `;
+        }
 
-    <script>
-        const API_URL = 'http://localhost:8000';
 
-        document.addEventListener('DOMContentLoaded', () => {
-            initNavigation();
-            checkBackendConnection();
-            setInterval(checkBackendConnection, 3600000);
+        if (
+            progressData.completed &&
+            progressData.completed.length
+        ) {
+
+            html += `
+                <div class="item">
+
+                    <div class="date">
+                        TAMAMLANANLAR
+                    </div>
+
+                    ${progressData.completed
+                        .map(x =>
+                            "✓ " + escapeHtml(x)
+                        )
+                        .join("<br>")}
+
+                </div>
+            `;
+        }
+
+
+        if (
+            progressData.in_progress &&
+            progressData.in_progress.length
+        ) {
+
+            html += `
+                <div class="item">
+
+                    <div class="date">
+                        DEVAM EDENLER
+                    </div>
+
+                    ${progressData.in_progress
+                        .map(x =>
+                            "⏳ " + escapeHtml(x)
+                        )
+                        .join("<br>")}
+
+                </div>
+            `;
+        }
+
+
+        if (
+            progressData.next_steps &&
+            progressData.next_steps.length
+        ) {
+
+            html += `
+                <div class="item">
+
+                    <div class="date">
+                        SONRAKİ ADIMLAR
+                    </div>
+
+                    ${progressData.next_steps
+                        .map(x =>
+                            "→ " + escapeHtml(x)
+                        )
+                        .join("<br>")}
+
+                </div>
+            `;
+        }
+
+
+        if (!html) {
+
+            html =
+                '<div class="empty">Henüz aşama yok.</div>';
+        }
+
+        container.innerHTML = html;
+    }
+
+
+    // NOT EKLE
+
+    function addNote() {
+
+        const input =
+            document.getElementById("noteInput");
+
+        const text =
+            input.value.trim();
+
+        if (!text) {
+            return;
+        }
+
+
+        notesData.notes.push({
+
+            date:
+                new Date().toLocaleString("tr-TR"),
+
+            text: text
+
         });
 
-        function initNavigation() {
-            const links = document.querySelectorAll('.nav-link');
-            links.forEach(link => {
-                link.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    links.forEach(l => l.classList.remove('active'));
-                    link.classList.add('active');
 
-                    document.querySelectorAll('.tab-panel').forEach(panel => {
-                        panel.classList.remove('active-panel');
-                    });
+        input.value = "";
 
-                    const targetId = link.getAttribute('data-target');
-                    const targetPanel = document.getElementById(targetId);
-                    if (targetPanel) {
-                        targetPanel.classList.add('active-panel');
-                    }
+        renderNotes();
+    }
 
-                    if (targetId === 'panel-channels') loadChannelsData();
-                    if (targetId === 'panel-analytics') loadAnalyticsData();
-                    if (targetId === 'panel-strategy') loadStrategyData();
-                });
-            });
+
+    // AŞAMA EKLE
+
+    function addProgress() {
+
+        const input =
+            document.getElementById("progressInput");
+
+        const text =
+            input.value.trim();
+
+        if (!text) {
+            return;
         }
 
-        async function checkBackendConnection() {
-            try {
-                const response = await fetch(`${API_URL}/api/system-status`);
-                if (!response.ok) throw new Error();
-                const data = await response.json();
 
-                document.getElementById('bridge-badge').className = 'status-badge status-online';
-                document.getElementById('bridge-badge').innerHTML = '<i class="fa-solid fa-circle-check"></i> API ONLINE';
-                document.getElementById('engine-status-pulse').style.background = 'var(--color-success)';
-                document.getElementById('engine-status-pulse').style.boxShadow = '0 0 8px var(--color-success)';
-                document.getElementById('engine-status-text').style.color = 'var(--text-main)';
-                document.getElementById('engine-status-text').innerText = 'Sistem Köprüsü Hazır';
+        progressData.in_progress.push(text);
 
-                document.getElementById('ui-channels-count').innerText = data.channels_count !== undefined ? data.channels_count : '0';
-                document.getElementById('ui-channels-subtext').innerText = 'KAYITLI DIŞ KANAL';
-                document.getElementById('ui-videos-count').innerText = data.videos_count !== undefined ? data.videos_count : '0';
-                document.getElementById('ui-upload-time').innerText = data.upload_time || '--:--';
-                document.getElementById('ui-publish-time').innerText = data.publish_time || '--:--';
+        input.value = "";
 
-            } catch (error) {
-                document.getElementById('bridge-badge').className = 'status-badge status-offline';
-                document.getElementById('bridge-badge').innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> API OFFLINE';
-                document.getElementById('engine-status-pulse').style.background = 'var(--color-danger)';
-                document.getElementById('engine-status-pulse').style.boxShadow = '0 0 8px var(--color-danger)';
-                document.getElementById('engine-status-text').style.color = 'var(--color-danger)';
-                document.getElementById('engine-status-text').innerText = 'Bağlantı Kesildi';
-            }
-        }
+        renderProgress();
+    }
 
-        async function loadChannelsData() {
-            const tbody = document.getElementById('channels-table-body');
-            if (!tbody) return;
-            try {
-                const response = await fetch(`${API_URL}/api/channels`);
-                const channels = await response.json();
-                
-                if (!channels || channels.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="6" style="padding:20px; text-align:center; color:var(--text-muted);">Veritabanında kayıtlı dış kanal bulunamadı.</td></tr>`;
-                    return;
-                }
 
-                tbody.innerHTML = channels.map(ch => `
-                    <tr style="border-bottom: 1px solid var(--border-color);">
-                        <td style="padding: 14px 16px; font-weight:600;">${ch.title}<br><span style="font-size:0.7rem; color:var(--text-muted); font-family:var(--font-mono);">${ch.channel_id}</span></td>
-                        <td style="padding: 14px 16px; font-family:var(--font-mono);">${Number(ch.subscriber_count).toLocaleString()}</td>
-                        <td style="padding: 14px 16px;">${ch.database_videos} video / <span style="color:var(--color-primary);">${ch.shorts} Shorts</span></td>
-                        <td style="padding: 14px 16px; font-family:var(--font-mono);">${Number(ch.total_views).toLocaleString()}</td>
-                        <td style="padding: 14px 16px; font-size:0.75rem; color:var(--text-muted);">${ch.last_analyzed_at ? ch.last_analyzed_at.replace('T', ' ') : '---'}</td>
-                        <td style="padding: 14px 16px; text-align:right;">
-                            <button class="btn btn-danger" style="padding:4px 8px; font-size:0.7rem;" onclick="deleteChannel('${ch.channel_id}')"><i class="fa-solid fa-trash"></i></button>
-                        </td>
-                    </tr>
-                `).join('');
-            } catch (e) {
-                tbody.innerHTML = `<tr><td colspan="6" style="padding:20px; text-align:center; color:var(--color-danger);">Kanal verileri lokal API'den çekilemedi.</td></tr>`;
-            }
-        }
+    // HTML GÜVENLİĞİ
 
-        async function loadAnalyticsData() {
-            const tbody = document.getElementById('analytics-table-body');
-            if (!tbody) return;
-            try {
-                const response = await fetch(`${API_URL}/api/analytics/videos`);
-                const videos = await response.json();
+    function escapeHtml(text) {
 
-                if (!videos || videos.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="6" style="padding:20px; text-align:center; color:var(--text-muted);">Yerel video veritabanı boş.</td></tr>`;
-                    return;
-                }
+        const div =
+            document.createElement("div");
 
-                tbody.innerHTML = videos.map(v => `
-                    <tr style="border-bottom: 1px solid var(--border-color);">
-                        <td style="padding: 12px 16px; font-family:var(--font-mono); color:var(--color-primary);">#${String(v.video_number).padStart(3, '0')}</td>
-                        <td style="padding: 12px 16px; font-weight:500;">${v.topic || v.title}</td>
-                        <td style="padding: 12px 16px; font-family:var(--font-mono);">${v.duration}</td>
-                        <td style="padding: 12px 16px; font-family:var(--font-mono);">${Number(v.views).toLocaleString()}</td>
-                        <td style="padding: 12px 16px; font-family:var(--font-mono);">${Number(v.likes).toLocaleString()}</td>
-                        <td style="padding: 12px 16px; font-family:var(--font-mono); color:var(--color-success);">${v.watch_percentage || v.average_view_percentage}%</td>
-                    </tr>
-                `).join('');
-            } catch (e) {
-                tbody.innerHTML = `<tr><td colspan="6" style="padding:20px; text-align:center; color:var(--color-danger);">creator_engine.db bağlanamadı.</td></tr>`;
-            }
-        }
+        div.textContent = text;
 
-        async function loadStrategyData() {
-            try {
-                const response = await fetch(`${API_URL}/api/strategy/latest`);
-                const data = await response.json();
-                
-                if (data.status === 'OK' && data.strategy) {
-                    const st = data.strategy;
-                    if(document.getElementById('ai-winning-topics')) {
-                        document.getElementById('ai-winning-topics').innerHTML = st.winning_topics.map(t => `<li><i class="fa-solid fa-circle-check" style="color:var(--color-success);"></i> ${t}</li>`).join('');
-                    }
-                    if(document.getElementById('ai-recommended-topics')) {
-                        document.getElementById('ai-recommended-topics').innerHTML = st.recommended_topics.map(t => `<li><i class="fa-solid fa-arrow-trend-up" style="color:var(--color-primary);"></i> ${t}</li>`).join('');
-                    }
-                    if(document.getElementById('ai-duration-strategy')) document.getElementById('ai-duration-strategy').innerText = st.duration_strategy;
-                    if(document.getElementById('ai-visual-strategy')) document.getElementById('ai-visual-strategy').innerText = st.visual_strategy || st.image_strategy || 'Görsel strateji belirtilmedi.';
-                    if(document.getElementById('ai-test-suggestions')) {
-                        document.getElementById('ai-test-suggestions').innerHTML = st.tests.map(t => `<li><i class="fa-solid fa-flask" style="color:var(--color-warning);"></i> ${t}</li>`).join('');
-                    }
-                }
-            } catch (e) {
-                pushLog('[ERROR] AI strateji dosyası okunamadı.');
-            }
-        }
+        return div.innerHTML;
+    }
 
-        async function triggerPythonModule(moduleName) {
-            pushLog(`[COMMAND] ${moduleName.toUpperCase()} modülü tetiklendi. İşlem lokal PC'de asenkron başladı...`);
-            updatePipelineUI(moduleName, 'RUNNING');
-            
-            try {
-                const response = await fetch(`${API_URL}/api/run-module`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ module: moduleName })
-                });
-                const result = await response.json();
-                pushLog(`[SUCCESS] ${moduleName.toUpperCase()}: ${result.message}`);
-                updatePipelineUI(moduleName, 'SUCCESS');
-                checkBackendConnection();
-            } catch (e) {
-                pushLog(`[❌ ERROR] ${moduleName.toUpperCase()} modül çalıştırılırken kilitlendi.`);
-                updatePipelineUI(moduleName, 'FAILED');
-            }
-        }
 
-        function pushLog(message) {
-            const box = document.getElementById('terminal-log-box');
-            if (!box) return;
-            const time = new Date().toLocaleTimeString();
-            const log = document.createElement('div');
-            log.innerText = `[${time}] ${message}`;
-            if (message.includes('❌') || message.includes('ERROR')) log.style.color = 'var(--color-danger)';
-            else if (message.includes('SUCCESS') || message.includes('[OK]')) log.style.color = 'var(--color-success)';
-            box.appendChild(log);
-            box.scrollTop = box.scrollHeight;
-        }
+    // BAŞLAT
 
-        function updatePipelineUI(moduleName, status) {
-            let stepId = 'pipe-step-3';
-            if (moduleName === 'sync') stepId = 'pipe-step-1';
-            if (moduleName === 'strategy') stepId = 'pipe-step-2';
-            if (moduleName === 'batch') stepId = 'pipe-step-3';
+    loadNotes();
 
-            const step = document.getElementById(stepId);
-            if (!step) return;
+    loadProgress();
 
-            if (status === 'RUNNING') {
-                step.className = 'pipe-step active-step';
-                step.querySelector('.pipe-status').innerText = 'ÇALIŞIYOR...';
-            } else if (status === 'SUCCESS') {
-                step.className = 'pipe-step success-step';
-                step.querySelector('.pipe-status').innerText = 'TAMAMLANDI';
-            } else {
-                step.className = 'pipe-step';
-                step.querySelector('.pipe-status').innerText = 'HATA';
-            }
-        }
+</script>
 
-        function openAddChannelModal() { document.getElementById('modal-add-channel').classList.add('active'); }
-        function openCreateShortModal() { document.getElementById('modal-create-short').classList.add('active'); }
-        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
-
-        async function submitAddChannel() {
-            const url = document.getElementById('input-channel-url').value;
-            const maxVideos = document.getElementById('input-channel-max-videos').value;
-            if (!url) return alert('Lütfen geçerli bir kanal linki veya handle girin!');
-
-            closeModal('modal-add-channel');
-            pushLog(`[URL ANALYZE] ${url} hedefi için tarama emri backend'e gönderildi.`);
-            updatePipelineUI('sync', 'RUNNING');
-
-            try {
-                const res = await fetch(`${API_URL}/api/channels/analyze`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: url, max_videos: parseInt(maxVideos) })
-                });
-                const data = await res.json();
-                pushLog(`[SUCCESS] Dış kanal veritabanına eklendi.`);
-                updatePipelineUI('sync', 'SUCCESS');
-                loadChannelsData();
-                checkBackendConnection();
-            } catch (e) {
-                pushLog('❌ Kanal analizi sırasında YouTube sınırlarına takıldı veya kilitlendi.');
-                updatePipelineUI('sync', 'FAILED');
-            }
-        }
-
-        async function submitCreateShort() {
-            const topic = document.getElementById('input-short-topic').value;
-            if (!topic) return alert('Lütfen bir video konusu girin!');
-
-            closeModal('modal-create-short');
-            pushLog(`[CONTENT ENGINE] "${topic}" konusu için 14 adımlık video üretim boru hattı lokalde tetiklendi.`);
-            updatePipelineUI('batch', 'RUNNING');
-
-            try {
-                const res = await fetch(`${API_URL}/api/content/create-short`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ topic: topic })
-                });
-                const data = await res.json();
-                pushLog(`[SUCCESS] Video pipeline tamamlandı! Konu başarıyla işlendi.`);
-                updatePipelineUI('batch', 'SUCCESS');
-                checkBackendConnection();
-            } catch (e) {
-                pushLog('❌ Video render hattında FFmpeg veya API hatası meydana geldi.');
-                updatePipelineUI('batch', 'FAILED');
-            }
-        }
-
-        async function deleteChannel(channelId) {
-            if (!confirm('Bu kanalı veritabanından silmek istediğinize emin misiniz?')) return;
-            try {
-                await fetch(`${API_URL}/api/channels/${channelId}`, { method: 'DELETE' });
-                pushLog(`[DB CLEAN] ${channelId} kanalı başarıyla silindi.`);
-                loadChannelsData();
-                checkBackendConnection();
-            } catch (e) {
-                pushLog('❌ Veritabanından kanal silme işlemi başarısız.');
-            }
-        }
-    </script>
 </body>
 </html>
